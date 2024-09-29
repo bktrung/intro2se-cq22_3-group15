@@ -41,3 +41,24 @@
   
     ```bash
     git branch -d backend-feature/<feature-name>
+
+## Additional setup on local for running and testing
+
+1. **Set up virtual environment**
+   
+   ```bash
+   python -m venv venv
+   venv\Scripts\activate
+   pip install -r requirements.txt
+
+2. **Active virtual environment**
+
+   ```bash
+   venv\Script\activate
+
+- In case it did not work, check your interpreter by Ctr + Shift + P then choose select interpreter.
+- Choose your venv (recommend) instead of default (global).
+
+3. **Recommend using Postman**
+- Testing CRUD
+- Testing Google login
