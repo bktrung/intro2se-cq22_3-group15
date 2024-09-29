@@ -22,9 +22,9 @@ The repository is organized into three main branches:
 - **backend**: Contains the code for the backend, built with Django and Django REST Framework.
 
 ### Branch Naming
-- **Feature Branches**: `<backend/frontend>/feature/<feature-name>`
-- **Bug Fix Branches**: `<backend/frontend>/bugfix/<bug-description>`
-- **Hotfix Branches**: `<backend/frontend>/hotfix/<hotfix-description>`
+- **Feature Branches**: `<backend/frontend>-feature/<feature-name>`
+- **Bug Fix Branches**: `<backend/frontend>-bugfix/<bug-description>`
+- **Hotfix Branches**: `<backend/frontend>-hotfix/<hotfix-description>`
 
 ## Workflow
 1. **Clone the Repository**:
