@@ -35,11 +35,11 @@ The repository is organized into three main branches:
 2. **Create a New Branch**:
 - For frontend work:
    ```bash
-   git checkout -b frontend/feature/<feature-name>
+   git checkout -b frontend-feature/<feature-name>
 
 - For backend work:
    ```bash
-   git checkout -b backend/feature/<feature-name>
+   git checkout -b backend-feature/<feature-name>
 
 3. **Make Changes**:
 - Ensure that changes in the frontend branch only affect the src/frontend directory.
