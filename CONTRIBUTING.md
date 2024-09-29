@@ -29,17 +29,17 @@ The repository is organized into three main branches:
 ## Workflow
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/bktrung/intro2se-cq22_3-group15
+   git clone -b <frontend/backend> --single-branch https://github.com/bktrung/intro2se-cq22_3-group15
    cd intro2se-cq22_3-group15
 
 2. **Create a New Branch**:
 - For frontend work:
    ```bash
-   git checkout -b frontend/feature/<feature-name> frontend
+   git checkout -b frontend/feature/<feature-name>
 
 - For backend work:
    ```bash
-   git checkout -b backend/feature/<feature-name> backend
+   git checkout -b backend/feature/<feature-name>
 
 3. **Make Changes**:
 - Ensure that changes in the frontend branch only affect the src/frontend directory.
