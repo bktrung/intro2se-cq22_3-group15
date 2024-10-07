@@ -5,6 +5,8 @@ from rest_framework.permissions import AllowAny
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework_simplejwt.tokens import RefreshToken
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from .serializers import UserSerializer
@@ -19,6 +21,19 @@ class RegisterView(generics.CreateAPIView):
 class LoginView(APIView):
     permission_classes = [AllowAny]
     
+    @swagger_auto_schema(
+        operation_description="User login using username or email and password",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'username_or_email': openapi.Schema(type=openapi.TYPE_STRING, description='Username or email'),
+                'password': openapi.Schema(type=openapi.TYPE_STRING, description='Password'),
+            },
+            required=['username_or_email', 'password']
+        ),
+        responses={200: 'Tokens returned on success', 400: 'Bad request', 401: 'Invalid credentials'}
+    )
+    
     def post(self, request):
         username_or_email = request.data.get('username_or_email')
         password = request.data.get('password')
@@ -31,7 +46,7 @@ class LoginView(APIView):
         ).first()
 
         if user and user.check_password(password):
-            logout_user_from_other_devices(user)
+            # logout_user_from_other_devices(user)
             
             refresh = RefreshToken.for_user(user)
             
@@ -43,6 +58,25 @@ class LoginView(APIView):
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
     
 class LogoutView(APIView):
+    
+    @swagger_auto_schema(
+        operation_description="Log out a user by blacklisting the refresh token",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'refresh': openapi.Schema(type=openapi.TYPE_STRING, description='Refresh token'),
+            },
+            required=['refresh'],
+            example={
+                'refresh': 'your-refresh-token-here'
+            }
+        ),
+        responses={
+            200: openapi.Response(description="User logged out successfully"),
+            400: openapi.Response(description="Invalid or missing refresh token"),
+        }
+    )
+    
     def post(self, request):
         refresh_token = request.data.get('refresh')
         
@@ -60,6 +94,24 @@ class LogoutView(APIView):
 class GoogleLoginView(APIView):
     permission_classes = [AllowAny]
     
+    @swagger_auto_schema(
+        operation_description="Login or register using Google ID token",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'id_token': openapi.Schema(type=openapi.TYPE_STRING, description='Google ID token'),
+            },
+            required=['id_token'],
+            example={
+                'id_token': 'your-google-id-token'
+            }
+        ),
+        responses={
+            200: openapi.Response(description="JWT access and refresh tokens"),
+            400: openapi.Response(description="Bad request or invalid token")
+        }
+    )
+    
     def post(self, request):
         id_token_str = request.data.get('id_token')
         if not id_token_str:
@@ -75,8 +127,8 @@ class GoogleLoginView(APIView):
             if created:
                 user.set_unusable_password()
                 user.save()
-                
-            logout_user_from_other_devices(user)
+            
+            # logout_user_from_other_devices(user)
             
             refresh = RefreshToken.for_user(user)
             
