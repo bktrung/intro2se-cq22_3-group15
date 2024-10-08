@@ -47,6 +47,7 @@
 **Set up virtual environment**
 
 - Open cmd/terminal in your ...\AppData\Local\Android\Sdk\platform-tools :
+  
     ```bash
     adb reverse tcp:8000 tcp:8000
 
