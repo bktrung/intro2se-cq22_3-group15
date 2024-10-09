@@ -62,3 +62,12 @@
 3. **Recommend using Postman**
 - Testing CRUD
 - Testing Google login
+
+## Docker
+
+1. **Make sure you have Docker installed on your machine.**
+
+2. **cd into the backend folder and run the following command:**
+
+   ```bash
+    docker-compose up --build
