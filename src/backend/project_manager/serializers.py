@@ -8,6 +8,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email']
+        ref_name = 'ProjectManagerUser'
         
 
 class ProjectSerializer(serializers.ModelSerializer):
