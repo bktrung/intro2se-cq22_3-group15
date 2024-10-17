@@ -1,6 +1,7 @@
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from django.core.mail import send_mail
 import random
+from .models import OTPModel, CustomUser
 
 def logout_user_from_other_devices(user):
     # Get all outstanding tokens for the user
@@ -15,8 +16,14 @@ def generate_otp():
 
 def send_email(email, otp, phrase):
     subject = phrase
-    message = f"Your OTP for {phrase} is {otp}, valid for 5 minutes."
+    message = f'Your OTP for {phrase} is {otp}, valid for 5 minutes.'
     sender = "test@gmail.com"
     receiver = [email]
-    
     send_mail(subject, message, sender, receiver)
+    
+def send_otp_to_email(user_id, phrase):
+    user = CustomUser.objects.get(id=user_id)
+    otp = generate_otp()
+    OTPModel.objects.create(user=user, otp=otp)
+
+    send_email(user.email, otp, phrase)

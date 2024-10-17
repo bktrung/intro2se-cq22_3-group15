@@ -12,8 +12,8 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from .serializers import UserSerializer
 from .utils import logout_user_from_other_devices
-from .models import OTPModel, CustomUser
-from .utils import *
+from .models import OTPModel
+from .utils import send_otp_to_email
 
 User = get_user_model()
 
@@ -150,21 +150,13 @@ class Home(APIView):
     def get(self, request):
         content = {'message': 'Hello, World!'}
         return Response(content)
-    
-def create_otp(user_id):
-    user = User.objects.get(id=user_id)
-    otp = generate_otp()
-    OTPModel.objects.create(user=user, otp=otp)
 
 @api_view(['PUT'])
 def verify_email(request, user_id):
+    send_otp_to_email(user_id, 'Email verification')
     user = User.objects.get(id=user_id)
-    # otp_object is the current valid OTP for the user
+    # current_otp is the latest current valid OTP for the user
     current_otp = OTPModel.objects.filter(user=user).order_by('-created_at').first()
-    
-    if not current_otp:
-        create_otp(user_id)
-        current_otp = OTPModel.objects.filter(user=user).order_by('-created_at').first()
     
     if request.method == 'PUT':
         # otp is the OTP entered by the user
@@ -182,7 +174,6 @@ def verify_email(request, user_id):
                 user.save()
                 return Response({'message': 'Email verified successfully'}, status=status.HTTP_200_OK)
             else:
-                create_otp(user_id)
                 return Response({'error': 'OTP expired'}, status=status.HTTP_400_BAD_REQUEST)
             
         else:
