@@ -10,7 +10,6 @@ class OTPModel(models.Model):
     user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     otp = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
-    expired_at = created_at + timezone.timedelta(minutes=5)
     
     def isValid(self):
         if timezone.now() > self.created_at + timezone.timedelta(minutes=5):
