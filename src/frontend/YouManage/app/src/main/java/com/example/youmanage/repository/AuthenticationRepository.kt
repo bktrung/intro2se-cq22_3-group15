@@ -1,6 +1,8 @@
 package com.example.youmanage.repository
 
 import com.example.youmanage.data.remote.ApiInterface
+import com.example.youmanage.data.remote.authentication.RefreshToken
+import com.example.youmanage.data.remote.authentication.LogoutResponse
 import com.example.youmanage.data.remote.authentication.UserGoogleLogIn
 import com.example.youmanage.data.remote.authentication.UserLogIn
 import com.example.youmanage.data.remote.authentication.UserLogInResponse
@@ -39,11 +41,9 @@ class AuthenticationRepository @Inject constructor(
         } catch (e: HttpException) {
             if (e.code() == 400) {
                 Resource.Error("${e.response()?.errorBody()?.string()}")
-            }
-            else if (e.code() == 401) {
+            } else if (e.code() == 401) {
                 Resource.Error("${e.response()?.errorBody()?.string()}")
-            }
-            else {
+            } else {
                 Resource.Error("HTTP Error: ${e.code()}")
             }
         } catch (e: Exception) {
@@ -71,4 +71,20 @@ class AuthenticationRepository @Inject constructor(
         return response
     }
 
+    suspend fun logOut(logoutRequest: RefreshToken, authorization: String): Resource<LogoutResponse> {
+        val response = try {
+            Resource.Success(api.logOut(logoutRequest = logoutRequest, authorization = authorization))
+        } catch (e: HttpException) {
+            if (e.code() == 400) {
+                Resource.Error("${e.response()?.errorBody()?.string()}")
+            } else {
+                Resource.Error("HTTP Error: ${e.code()}")
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Resource.Error(e.message.toString())
+        }
+
+        return response
+    }
 }

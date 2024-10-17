@@ -1,9 +1,11 @@
 package com.example.youmanage.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.youmanage.data.remote.authentication.RefreshToken
 import com.example.youmanage.data.remote.authentication.UserGoogleLogIn
 import com.example.youmanage.data.remote.authentication.UserLogIn
 import com.example.youmanage.data.remote.authentication.UserLogInResponse
@@ -44,4 +46,16 @@ class AuthenticationViewModel @Inject constructor(
         }
     }
 
+    fun logOut(logoutRequest: RefreshToken, authorization: String) {
+        viewModelScope.launch {
+           val response = repository.logOut(logoutRequest = logoutRequest, authorization = authorization)
+
+            if(response is Resource.Success){
+                Log.d("LogOut", "Success ${response.data?.message.toString()}")
+            }
+            if(response is Resource.Error){
+                Log.d("Logout", "Error ${response.message.toString()}")
+            }
+        }
+    }
 }
