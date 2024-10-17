@@ -26,11 +26,12 @@ SECRET_KEY = 'django-insecure-a(1c$9dux0hhj$^wa4_if6^&9_iz16=d&#-___l_tm9qgicbt%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -42,7 +43,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'drf_yasg',
     'custom_auth',
-    'project_manager'
+    'project_manager',
+    'notification',
 ]
 
 AUTH_USER_MODEL = 'custom_auth.CustomUser'
@@ -91,8 +93,18 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'project_management.wsgi.application'
+# WSGI_APPLICATION = 'project_management.wsgi.application'
 
+ASGI_APPLICATION = 'project_management.asgi.application'
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
