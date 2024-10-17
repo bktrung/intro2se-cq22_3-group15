@@ -13,7 +13,7 @@ from google.auth.transport import requests as google_requests
 from .serializers import UserSerializer
 from .utils import logout_user_from_other_devices
 from .models import OTPModel
-from .utils import generate_otp
+from .utils import *
 
 User = get_user_model()
 
@@ -150,15 +150,12 @@ class Home(APIView):
     def get(self, request):
         content = {'message': 'Hello, World!'}
         return Response(content)
-    
-def create_email(request, user_id):
-    ...
 
 @api_view(['PUT'])
 def verify_email(request, user_id):
     user = User.objects.get(id=user_id)
-    # otp_object is the current OTP for the user
-    otp_object = OTPModel.objects.get(user=user)
+    # otp_object is the current valid OTP for the user
+    otp_object = OTPModel.objects.filter(user=user).order_by('-created_at').first()
     
     if request.method == 'PUT':
         # otp is the OTP entered by the user
@@ -166,13 +163,19 @@ def verify_email(request, user_id):
         if not otp:
             return Response({'error': 'OTP is required'}, status=status.HTTP_400_BAD_REQUEST)
         
-        if otp_object.otp == otp and otp_object.isValid() and user.is_active == False:
-            user.is_active = True
-            user.save()
-            return Response({'message': 'Email verified successfully'}, status=status.HTTP_200_OK)
-        
-        elif user.is_active == True:
+        # Assume that user registered using email has its is_active set to True
+        if user.is_active == True:
             return Response({'error': 'Email already verified'}, status=status.HTTP_400_BAD_REQUEST)
         
+        if otp_object.otp == otp:
+            if otp_object.isValid() == True:
+                user.is_active = True
+                user.save()
+                return Response({'message': 'Email verified successfully'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'OTP expired'}, status=status.HTTP_400_BAD_REQUEST)
+            
         else:
             return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
+    
+       

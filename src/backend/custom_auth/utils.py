@@ -1,4 +1,5 @@
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+from django.core.mail import send_mail
 import random
 
 def logout_user_from_other_devices(user):
@@ -12,5 +13,10 @@ def logout_user_from_other_devices(user):
 def generate_otp():
     return ''.join([str(random.randint(0, 9)) for _ in range(6)])
 
-def create_otp(user):
-    ...
+def send_email(email, otp, phrase):
+    subject = phrase
+    message = f"Your OTP for {phrase} is {otp}, valid for 5 minutes."
+    sender = "test@gmail.com"
+    receiver = [email]
+    
+    send_mail(subject, message, sender, receiver)
