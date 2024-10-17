@@ -1,5 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.decorators import api_view
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
 from django.contrib.auth import get_user_model
@@ -11,6 +12,8 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from .serializers import UserSerializer
 from .utils import logout_user_from_other_devices
+from .models import OTPModel
+from .utils import generate_otp
 
 User = get_user_model()
 
@@ -147,3 +150,29 @@ class Home(APIView):
     def get(self, request):
         content = {'message': 'Hello, World!'}
         return Response(content)
+    
+def create_email(request, user_id):
+    ...
+
+@api_view(['PUT'])
+def verify_email(request, user_id):
+    user = User.objects.get(id=user_id)
+    # otp_object is the current OTP for the user
+    otp_object = OTPModel.objects.get(user=user)
+    
+    if request.method == 'PUT':
+        # otp is the OTP entered by the user
+        otp = request.data.get('otp')
+        if not otp:
+            return Response({'error': 'OTP is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if otp_object.otp == otp and otp_object.isValid() and user.is_active == False:
+            user.is_active = True
+            user.save()
+            return Response({'message': 'Email verified successfully'}, status=status.HTTP_200_OK)
+        
+        elif user.is_active == True:
+            return Response({'error': 'Email already verified'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        else:
+            return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
