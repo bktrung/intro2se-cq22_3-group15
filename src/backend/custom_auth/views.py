@@ -150,6 +150,12 @@ class Home(APIView):
     def get(self, request):
         content = {'message': 'Hello, World!'}
         return Response(content)
+    
+def create_otp(user_id):
+    user = User.objects.get(id=user_id)
+    otp = generate_otp()
+    OTPModel.objects.create(user=user, otp=otp)
+    send_email(user.email, otp, 'Email verification')
 
 @api_view(['PUT'])
 def verify_email(request, user_id):
