@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import generics, status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -151,32 +151,33 @@ class Home(APIView):
         content = {'message': 'Hello, World!'}
         return Response(content)
 
-@api_view(['PUT'])
-def verify_email(request, user_id):
-    send_otp_to_email(user_id, 'Email verification')
-    user = User.objects.get(id=user_id)
-    # current_otp is the latest current valid OTP for the user
-    current_otp = OTPModel.objects.filter(user=user).order_by('-created_at').first()
-    
-    if request.method == 'PUT':
-        # otp is the OTP entered by the user
-        otp = request.data.get('otp')
-        if not otp:
-            return Response({'error': 'OTP is required'}, status=status.HTTP_400_BAD_REQUEST)
+# @api_view(['PUT'])
+class verify_email(APIView):
+    permission_classes = [IsAuthenticated]
+    def put(self, request, user_id):
+        send_otp_to_email(user_id, 'Email verification')
+        user = User.objects.get(id=user_id)
+        # current_otp is the latest current valid OTP for the user
+        current_otp = OTPModel.objects.filter(user=user).order_by('-created_at').first()
         
-        # Assume that user registered using email has its is_verified set to True
-        if user.is_verified == True:
-            return Response({'error': 'Email already verified'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if current_otp.otp == otp:
-            if current_otp.isValid() == True:
-                user.is_verified = True
-                user.save()
-                return Response({'message': 'Email verified successfully'}, status=status.HTTP_200_OK)
-            else:
-                return Response({'error': 'OTP expired'}, status=status.HTTP_400_BAD_REQUEST)
+        if request.method == 'PUT':
+            # otp is the OTP entered by the user
+            otp = request.data.get('otp')
+            if not otp:
+                return Response({'error': 'OTP is required'}, status=status.HTTP_400_BAD_REQUEST)
             
-        else:
-            return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
-    
+            # Assume that user registered using email has its is_verified set to True
+            if user.is_verified == True:
+                return Response({'error': 'Email already verified'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if current_otp.otp == otp:
+                if current_otp.isValid() == True:
+                    user.is_verified = True
+                    user.save()
+                    return Response({'message': 'Email verified successfully'}, status=status.HTTP_200_OK)
+                else:
+                    return Response({'error': 'OTP expired'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            else:
+                return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
        
