@@ -12,7 +12,7 @@ class OTPModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     def isValid(self):
-        if timezone.now() > self.created_at + timezone.timedelta(minutes=5):
+        if timezone.now() > self.created_at + timezone.timedelta(minutes=1):
             return False
         else:
             return True
