@@ -1,7 +1,7 @@
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from django.core.mail import send_mail
 import random
-from .models import OTPModel, CustomUser
+from .models import OTPModel
 
 def logout_user_from_other_devices(user):
     # Get all outstanding tokens for the user
