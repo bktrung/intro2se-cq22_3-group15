@@ -17,7 +17,7 @@ def generate_otp():
 def send_email(email, otp, phrase):
     subject = phrase
     message = f'Your OTP for {phrase} is {otp}, valid for 5 minutes.'
-    sender = "test@gmail.com"
+    sender = "vvtung2004@gmail.com"
     receiver = [email]
     send_mail(subject, message, sender, receiver)
     
