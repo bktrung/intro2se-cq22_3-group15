@@ -202,6 +202,9 @@ class ForgotPasswordView(APIView):
         if not user:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
         
+        if not user.is_verified:
+            return Response({'error': 'Email not verified'}, status=status.HTTP_400_BAD_REQUEST)
+        
         send_otp_to_email(user, 'Password reset')
         return Response({'message': 'OTP sent to email'}, status=status.HTTP_200_OK)
     
