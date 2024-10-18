@@ -21,9 +21,7 @@ def send_email(email, otp, phrase):
     receiver = [email]
     send_mail(subject, message, sender, receiver)
     
-def send_otp_to_email(user_id, phrase):
-    user = CustomUser.objects.get(id=user_id)
+def send_otp_to_email(user, phrase):
     otp = generate_otp()
     OTPModel.objects.create(user=user, otp=otp)
-
     send_email(user.email, otp, phrase)
