@@ -164,7 +164,7 @@ class EmailAuthenticationView(APIView):
         return Response({'message': 'OTP sent to email'}, status=status.HTTP_200_OK)
     
     # User enters OTP to verify email
-    def put(self, request):
+    def patch(self, request):
         user = request.user
         otp = request.data.get('otp')
 
@@ -177,7 +177,7 @@ class EmailAuthenticationView(APIView):
         current_otp = OTPModel.objects.filter(user=user).order_by('-created_at').first()
 
         if not current_otp:
-            return Response({'error': 'No OTP found. Please request a new one.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'No OTP found. Please request a new one.'}, status=status.HTTP_404_NOT_FOUND)
 
         if current_otp.otp == otp:
             if current_otp.isValid():
@@ -188,3 +188,60 @@ class EmailAuthenticationView(APIView):
                 return Response({'error': 'OTP expired'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
+        
+class ForgotPasswordView(APIView):
+    permission_classes = [AllowAny]
+
+    # User clicks on a button to request an OTP for password reset
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        send_otp_to_email(user, 'Password reset')
+        return Response({'message': 'OTP sent to email'}, status=status.HTTP_200_OK)
+    
+    # User enters OTP 
+    def put(self, request):
+        email = request.data.get('email')
+        otp = request.data.get('otp')
+        
+        if not email or not otp:
+            return Response({'error': 'Email and OTP are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        current_otp = OTPModel.objects.filter(user=user).order_by('-created_at').first()
+        if not current_otp:
+            return Response({'error': 'No OTP found. Please request a new one.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if current_otp.otp != otp:
+            return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not current_otp.isValid():
+            return Response({'error': 'OTP expired'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({'message': 'OTP is valid, proceed to reset password'}, status=status.HTTP_200_OK)
+    
+    # User enters new password
+    def patch(self, request):
+        email = request.data.get('email')
+        new_password = request.data.get('new_password')
+
+        if not email or not new_password:
+            return Response({'error': 'Email and new password are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
