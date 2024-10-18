@@ -14,6 +14,7 @@ RUN /venv/bin/pip install --no-cache-dir -r ./backend/requirements.txt && \
 
 COPY . ./backend
 
-RUN /venv/bin/python ./backend/manage.py migrate
+RUN /venv/bin/python ./backend/manage.py makemigrations && \
+    /venv/bin/python ./backend/manage.py migrate
 
 CMD ["/venv/bin/python", "./backend/manage.py", "runserver", "0.0.0.0:8000"]
