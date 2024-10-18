@@ -154,6 +154,7 @@ class Home(APIView):
 class EmailAuthenticationView(APIView):
     permission_classes = [IsAuthenticated]
 
+    # User clicks on a button to request an OTP
     def post(self, request):
         user = request.user
         if user.is_verified:
@@ -161,7 +162,8 @@ class EmailAuthenticationView(APIView):
         
         send_otp_to_email(user, 'Email verification')
         return Response({'message': 'OTP sent to email'}, status=status.HTTP_200_OK)
-
+    
+    # User enters OTP to verify email
     def put(self, request):
         user = request.user
         otp = request.data.get('otp')
