@@ -1,7 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.decorators import api_view
 from rest_framework import generics, status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -11,6 +12,8 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from .serializers import UserSerializer
 from .utils import logout_user_from_other_devices
+from .models import OTPModel
+from .utils import send_otp_to_email
 
 User = get_user_model()
 
@@ -147,3 +150,41 @@ class Home(APIView):
     def get(self, request):
         content = {'message': 'Hello, World!'}
         return Response(content)
+
+class EmailAuthenticationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    # User clicks on a button to request an OTP
+    def post(self, request):
+        user = request.user
+        if user.is_verified:
+            return Response({'error': 'Email already verified'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        send_otp_to_email(user, 'Email verification')
+        return Response({'message': 'OTP sent to email'}, status=status.HTTP_200_OK)
+    
+    # User enters OTP to verify email
+    def put(self, request):
+        user = request.user
+        otp = request.data.get('otp')
+
+        if not otp:
+            return Response({'error': 'OTP is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if user.is_verified:
+            return Response({'error': 'Email already verified'}, status=status.HTTP_400_BAD_REQUEST)
+
+        current_otp = OTPModel.objects.filter(user=user).order_by('-created_at').first()
+
+        if not current_otp:
+            return Response({'error': 'No OTP found. Please request a new one.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if current_otp.otp == otp:
+            if current_otp.isValid():
+                user.is_verified = True
+                user.save()
+                return Response({'message': 'Email verified successfully'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'OTP expired'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
