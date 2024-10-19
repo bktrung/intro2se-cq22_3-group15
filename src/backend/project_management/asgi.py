@@ -20,7 +20,10 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'project_management.settings')
 # is populated before importing code that may import ORM models.
 django_asgi_app = get_asgi_application()
 
-from notification.routing import websocket_urlpatterns
+from notification.routing import websocket_urlpatterns as notification_websocket_urlpatterns
+from chat.routing import websocket_urlpatterns as chat_websocket_urlpatterns
+
+websocket_urlpatterns = notification_websocket_urlpatterns + chat_websocket_urlpatterns
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,

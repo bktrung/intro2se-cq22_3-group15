@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'custom_auth',
     'project_manager',
     'notification',
+    'chat',
 ]
 
 AUTH_USER_MODEL = 'custom_auth.CustomUser'
