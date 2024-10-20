@@ -2,6 +2,7 @@ package com.example.youmanage.di
 
 import com.example.youmanage.data.remote.ApiInterface
 import com.example.youmanage.repository.AuthenticationRepository
+import com.example.youmanage.repository.ProjectManagementRepository
 import com.example.youmanage.utils.Constants.BASE_URL
 import dagger.Module
 import dagger.Provides
@@ -29,4 +30,7 @@ object AppModule {
     @Singleton
     fun provideAuthenticationRepository(api: ApiInterface) = AuthenticationRepository(api)
 
+    @Provides
+    @Singleton
+    fun provideProjectManagementRepository(api: ApiInterface) = ProjectManagementRepository(api)
 }
