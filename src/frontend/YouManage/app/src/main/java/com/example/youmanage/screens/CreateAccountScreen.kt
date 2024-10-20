@@ -1,21 +1,33 @@
 package com.example.youmanage.screens
 
-
 import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -82,13 +94,15 @@ fun CreateAccountScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            val textFieldColors = TextFieldDefaults.outlinedTextFieldColors(
-                containerColor = Color(0xFFD9D9D9), // Màu nền xám sẫm
-                focusedBorderColor = Color(0xff9bca60),
-                unfocusedBorderColor = Color.Gray,
+            // Định nghĩa màu sắc cho TextField
+            val textFieldColors = TextFieldDefaults.colors(
+                focusedContainerColor = Color(0x1A000000),
+                unfocusedContainerColor = Color(0x1A000000),
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
             )
 
-            OutlinedTextField(
+            TextField(
                 value = username,
                 onValueChange = { username = it },
                 label = { Text("Username", color = Color.Gray) },
@@ -101,7 +115,7 @@ fun CreateAccountScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
+            TextField(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("Email Address", color = Color.Gray) },
@@ -114,7 +128,7 @@ fun CreateAccountScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
+            TextField(
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Password", color = Color.Gray) },
@@ -127,7 +141,7 @@ fun CreateAccountScreen(navController: NavController) {
                         modifier = Modifier.clickable {
                             passwordVisible = !passwordVisible
                         },
-                        tint = Color(0xFFB0B0B0)
+                        tint = Color(0xFFB0B0B0) // Màu xám nhạt dễ nhìn
                     )
                 },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -141,7 +155,7 @@ fun CreateAccountScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
+            TextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
                 label = { Text("Confirm Password", color = Color.Gray) },
@@ -154,7 +168,7 @@ fun CreateAccountScreen(navController: NavController) {
                         modifier = Modifier.clickable {
                             confirmPasswordVisible = !confirmPasswordVisible
                         },
-                        tint = Color(0xFFB0B0B0)
+                        tint = Color(0xFFB0B0B0) // Màu xám nhạt dễ nhìn
                     )
                 },
                 visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -216,4 +230,3 @@ fun PreviewCreateAccountScreen() {
     val navController = rememberNavController()
     CreateAccountScreen(navController)
 }
-

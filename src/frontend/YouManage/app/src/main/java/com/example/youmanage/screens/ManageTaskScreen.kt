@@ -1,6 +1,5 @@
 package com.example.youmanage.screens
 
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -104,4 +103,3 @@ fun PreviewManageTaskScreen() {
     val navController = rememberNavController()
     ManageTaskScreen(navController)
 }
-

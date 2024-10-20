@@ -39,23 +39,23 @@ fun LoginScreen2(navController: NavController) {
             .background(Color.White)
             .padding(16.dp)
     ) {
-
+        // Mũi tên chỉ về bên trái
         Image(
             painter = painterResource(id = R.drawable.left),
             contentDescription = "Back",
             modifier = Modifier
                 .size(24.dp)
-                .clickable { navController.navigate("manage_task") }
+                .clickable { navController.navigate("manage_task") } // Chuyển hướng đến ManageTaskScreen
         )
 
-
+        // Nội dung chính
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = 40.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
+            // Tiêu đề
             Text(
                 text = "Login",
                 style = TextStyle(
@@ -66,29 +66,31 @@ fun LoginScreen2(navController: NavController) {
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(60.dp))
+            Spacer(modifier = Modifier.height(60.dp)) // Khoảng cách lớn hơn giữa tiêu đề và các trường nhập liệu
 
+            // Màu nền cho TextField
+            val textFieldBackgroundColor = Color(0x1A000000) // Màu nền #0000001A
 
-            val textFieldColors = TextFieldDefaults.outlinedTextFieldColors(
-                containerColor = Color(0xFFD9D9D9),
-                focusedBorderColor = Color(0xff9bca60),
-                unfocusedBorderColor = Color.Gray,
-            )
-
-
-            OutlinedTextField(
+            // Trường nhập tài khoản
+            TextField(
                 value = username,
                 onValueChange = { username = it },
                 label = { Text("Username/Email", color = Color.Gray) },
-                colors = textFieldColors,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = textFieldBackgroundColor,
+                    unfocusedContainerColor = textFieldBackgroundColor,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 30.dp)
             )
 
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(30.dp)) // Khoảng cách lớn hơn giữa các trường nhập liệu
 
-            OutlinedTextField(
+            // Trường nhập mật khẩu
+            TextField(
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Password", color = Color.Gray) },
@@ -97,29 +99,36 @@ fun LoginScreen2(navController: NavController) {
                         painter = painterResource(id = if (passwordVisible) R.drawable.view_password_icon else R.drawable.hide_password_icon),
                         contentDescription = "Toggle password visibility",
                         modifier = Modifier.clickable { passwordVisible = !passwordVisible },
-                        tint = Color(0xFFB0B0B0)
+                        tint = Color(0xFFB0B0B0) // Màu xám nhạt dễ nhìn
                     )
                 },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                colors = textFieldColors,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = textFieldBackgroundColor,
+                    unfocusedContainerColor = textFieldBackgroundColor,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 30.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp)) // Khoảng cách giữa trường mật khẩu và link quên mật khẩu
 
-
+            // Link quên mật khẩu
             Text(
                 text = "Forgot password?",
                 color = Color.Gray,
-                modifier = Modifier.align(Alignment.End)
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .padding(end = 30.dp)
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(40.dp)) // Khoảng cách lớn hơn trước nút đăng nhập
 
-
+            // Nút đăng nhập
             Button(
                 onClick = { /* TODO: Thêm xử lý đăng nhập */ },
                 modifier = Modifier
@@ -139,7 +148,7 @@ fun LoginScreen2(navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-
+            // Hoặc
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -156,7 +165,7 @@ fun LoginScreen2(navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-
+            // Nút đăng nhập với Google
             IconButton(
                 onClick = { /* TODO: Thêm xử lý đăng nhập bằng Google */ },
                 modifier = Modifier
