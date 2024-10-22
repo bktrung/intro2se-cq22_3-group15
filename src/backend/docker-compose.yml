@@ -7,3 +7,10 @@ services:
     container_name: only-app
     ports:
       - "8000:8000"
+      
+  redis:
+    image: redis:7 
+    restart: unless-stopped
+    container_name: redis-db
+    ports:
+      - 6379:6379
