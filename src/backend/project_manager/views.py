@@ -3,7 +3,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from .models import Project, Task, Comment
+from .models import Project, Task
 from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer
 
 User = get_user_model()
