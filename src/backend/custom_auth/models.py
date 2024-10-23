@@ -9,10 +9,11 @@ class CustomUser(AbstractUser):
 class OTPModel(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     otp = models.CharField(max_length=6)
+    #! If django based its time on the device, it would be a security issue
     created_at = models.DateTimeField(auto_now_add=True)
     
     def isValid(self):
-        if timezone.now() > self.created_at + timezone.timedelta(minutes=1):
+        if timezone.now() > self.created_at + timezone.timedelta(minutes=5):
             return False
         else:
             return True
