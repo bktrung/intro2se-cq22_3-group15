@@ -10,9 +10,11 @@ def logout_user_from_other_devices(user):
     # Blacklist all outstanding tokens
     for token in outstanding_tokens:
         BlacklistedToken.objects.get_or_create(token=token)
+
         
 def generate_otp():
     return ''.join([str(random.randint(0, 9)) for _ in range(6)])
+
 
 def send_email(email, otp, phrase):
     subject = phrase
@@ -20,6 +22,7 @@ def send_email(email, otp, phrase):
     sender = "onlyapp@gmail.com"
     receiver = [email]
     send_mail(subject, message, sender, receiver)
+
     
 def send_otp_to_email(user, phrase):
     otp = generate_otp()

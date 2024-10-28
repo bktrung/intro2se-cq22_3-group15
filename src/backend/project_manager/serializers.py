@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Project, Task, Comment
+from .models import Project, Task, Comment, Role
 
 User = get_user_model()
 
@@ -58,3 +58,10 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         fields = ['id', 'content', 'author', 'created_at', 'updated_at']
         read_only_fields = ['author', 'created_at', 'updated_at']
+        
+        
+class RoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Role
+        fields = ['id', 'role_name', 'description', 'project']
+        read_only_fields = ['project']
