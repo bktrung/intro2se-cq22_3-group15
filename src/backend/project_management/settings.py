@@ -164,5 +164,5 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 # If the Outlook account cant be used, contact C0smic for the email and password
-EMAIL_HOST_USER = ''
-EMAIL_HOST_PASSWORD = ''
+EMAIL_HOST_USER = 'vvtung2004@gmail.com'
+EMAIL_HOST_PASSWORD = 'irqa vavd buzv brlc'
