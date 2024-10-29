@@ -70,4 +70,4 @@
 2. **cd into the backend folder and run the following command:**
 
    ```bash
-    docker-compose up --build
+    docker compose up --build
