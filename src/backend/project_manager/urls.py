@@ -6,7 +6,10 @@ from .views import (
     TaskListCreateView,
     TaskRetrieveUpdateDestroyView,
     CommentListCreateView,
-    CommentRetrieveUpdateDestroyView
+    CommentRetrieveUpdateDestroyView,
+    RoleListCreateView,
+    RoleRetrieveUpdateDestroyView,
+    RoleManagementView,
 )
 
 urlpatterns = [
@@ -17,4 +20,7 @@ urlpatterns = [
     path('projects/<int:project_id>/tasks/<int:pk>/', TaskRetrieveUpdateDestroyView.as_view(), name='task-detail'),
     path('projects/<int:project_id>/tasks/<int:task_id>/comments/', CommentListCreateView.as_view(), name='comment-list-create'),
     path('projects/<int:project_id>/tasks/<int:task_id>/comments/<int:pk>/', CommentRetrieveUpdateDestroyView.as_view(), name='comment-detail'),
+    path('projects/<int:pk>/roles/', RoleListCreateView.as_view(), name='role-list-create'),
+    path('projects/<int:project_id>/roles/<int:pk>/', RoleRetrieveUpdateDestroyView.as_view(), name='role-retrieve-update-destroy'),
+    path('projects/<int:project_id>/roles/<int:pk>/<str:action>/', RoleManagementView.as_view(), name='role-management'),
 ]

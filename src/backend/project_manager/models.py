@@ -40,3 +40,14 @@ class Comment(TimeStampedModel):
     content = models.TextField()
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='authored_comments')
+
+
+class Role(models.Model):
+    role_name = models.CharField(max_length=50)
+    description = models.TextField(blank=True, null=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='roles')
+    users = models.ManyToManyField(User, related_name='project_roles')
+
+    class Meta:
+        unique_together = ('role_name', 'project')
+    

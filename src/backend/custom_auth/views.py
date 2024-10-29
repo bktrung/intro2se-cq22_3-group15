@@ -160,94 +160,100 @@ class EmailAuthenticationView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, action):
-        email = request.data.get('email')
-
         if action == 'send_otp':
-            user = User.objects.filter(email=email).first()
-            if not user:
-                return Response({'error': 'No user found with the provided email'}, status=status.HTTP_404_NOT_FOUND)
-
-            if user.is_verified:
-                return Response({'error': 'Email already verified'}, status=status.HTTP_400_BAD_REQUEST)
-
-            send_otp_to_email(user, 'Email verification')
-            return Response({'message': 'OTP sent to email'}, status=status.HTTP_200_OK)
-
+            return self.send_otp(request)
         elif action == 'verify':
-            otp = request.data.get('otp')
-
-            if not email or not otp:
-                return Response({'error': 'Email and OTP are required'}, status=status.HTTP_400_BAD_REQUEST)
-
-            user = User.objects.filter(email=email).first()
-            if not user:
-                return Response({'error': 'No user found with the provided email'}, status=status.HTTP_404_NOT_FOUND)
-
-            if user.is_verified:
-                return Response({'error': 'Email already verified'}, status=status.HTTP_400_BAD_REQUEST)
-
-            current_otp = OTPModel.objects.filter(user=user).order_by('-created_at').first()
-
-            if not current_otp:
-                return Response({'error': 'No OTP found. Please request a new one.'}, status=status.HTTP_400_BAD_REQUEST)
-
-            if current_otp.otp == otp:
-                if current_otp.isValid():
-                    user.is_verified = True
-                    user.save()
-                    return Response({'message': 'Email verified successfully'}, status=status.HTTP_200_OK)
-                else:
-                    return Response({'error': 'OTP expired'}, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
+            return self.verify(request)
         else:
             return Response({'error': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    def send_otp(self, request):
+        email = request.data.get('email')
+        user = User.objects.filter(email=email).first()
+        
+        if not user:
+            return Response({'error': 'No user found with the provided email'}, status=status.HTTP_404_NOT_FOUND)
+        if user.is_verified:
+            return Response({'error': 'Email already verified'}, status=status.HTTP_400_BAD_REQUEST)
+
+        send_otp_to_email(user, 'Email verification')
+        return Response({'message': 'OTP sent to email'}, status=status.HTTP_200_OK)
+    
+    def verify(self, request):
+        email = request.data.get('email')
+        otp = request.data.get('otp')
+        
+        if not email or not otp:
+            return Response({'error': 'Email and OTP are required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response({'error': 'No user found with the provided email'}, status=status.HTTP_404_NOT_FOUND)
+        if user.is_verified:
+            return Response({'error': 'Email already verified'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        current_otp = OTPModel.objects.filter(user=user).order_by('-created_at').first()
+        
+        if not current_otp:
+            return Response({'error': 'No OTP found. Please request a new one.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if current_otp.otp == otp:
+            if current_otp.isValid():
+                user.is_verified = True
+                user.save()
+                return Response({'message': 'Email verified successfully'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'OTP expired'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
         
 class ForgotPasswordView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, action):
+        
         if action == 'send_otp':
-            email = request.data.get('email')
-            if not email:
-                return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            user = User.objects.filter(email=email).first()
-            if not user:
-                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-            
-            if not user.is_verified:
-                return Response({'error': 'Email not verified'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            send_otp_to_email(user, 'Password reset')
-            return Response({'message': 'OTP sent to email'}, status=status.HTTP_200_OK)
-        
+            return self.send_otp(request)
         elif action == 'change_password':
-            email = request.data.get('email')
-            otp = request.data.get('otp')
-            new_password = request.data.get('new_password')
-            
-            if not email or not otp or not new_password:
-                return Response({'error': 'Email, OTP, and new password are required'}, status=status.HTTP_400_BAD_REQUEST)
-
-            user = User.objects.filter(email=email).first()
-            if not user:
-                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-
-            current_otp = OTPModel.objects.filter(user=user).order_by('-created_at').first()
-            if not current_otp:
-                return Response({'error': 'No OTP found. Please request a new one.'}, status=status.HTTP_400_BAD_REQUEST)
-
-            if current_otp.otp != otp:
-                return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
-
-            if not current_otp.isValid():
-                return Response({'error': 'OTP expired'}, status=status.HTTP_400_BAD_REQUEST)
-
-            user.set_password(new_password)
-            user.save()
-
-            return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
-        
+            return self.change_password(request)
         else:
             return Response({'error': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    def send_otp(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        if not user.is_verified:
+            return Response({'error': 'Email not verified'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        send_otp_to_email(user, 'Password reset')
+        return Response({'message': 'OTP sent to email'}, status=status.HTTP_200_OK)
+    
+    def change_password(self, request):
+        email = request.data.get('email')
+        otp = request.data.get('otp')
+        new_password = request.data.get('new_password')
+        
+        if not email or not otp or not new_password:
+            return Response({'error': 'Email, OTP, and new password are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        current_otp = OTPModel.objects.filter(user=user).order_by('-created_at').first()
+        if not current_otp:
+            return Response({'error': 'No OTP found. Please request a new one.'}, status=status.HTTP_400_BAD_REQUEST)
+        if current_otp.otp != otp:
+            return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
+        if not current_otp.isValid():
+            return Response({'error': 'OTP expired'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)

@@ -3,8 +3,8 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from .models import Project, Task
-from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer
+from .models import Project, Task, Role
+from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer, RoleSerializer
 
 User = get_user_model()
 
@@ -141,3 +141,69 @@ class CommentRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         if instance.author != self.request.user and not instance.task.project.host == self.request.user:
             raise PermissionDenied("You can only delete your own comments or as the project host.")
         instance.delete()
+        
+        
+class RoleListCreateView(generics.ListCreateAPIView):
+    serializer_class = RoleSerializer
+    permission_classes = [IsProjectHostOrReadOnly]
+    
+    def get_queryset(self):
+        return Role.objects.filter(project_id=self.kwargs['pk']).select_related('project')
+    
+    def perform_create(self, serializer):
+        project = get_object_or_404(Project, id=self.kwargs['pk'])
+        serializer.save(project=project)
+        
+        
+class RoleRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = RoleSerializer
+    permission_classes = [IsProjectHostOrReadOnly]
+    
+    def get_queryset(self):
+        return Role.objects.filter(project_id=self.kwargs['project_id']).select_related('project')
+    
+
+class RoleManagementView(generics.GenericAPIView):
+    permission_classes = [IsProjectHostOrReadOnly]
+    
+    def post(self, request, project_id, pk, action):
+        project = get_object_or_404(Project, id=project_id)
+        role = get_object_or_404(Role, pk=pk, project=project)
+        self.check_object_permissions(request, role)
+        
+        if action == 'assign':
+            return self.assign_role(request, project, role)
+        elif action == 'unassign':
+            return self.unassign_role(request, project, role)
+        else:
+            return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
+        
+    def assign_role(self, request, project, role):
+        user_id = request.data.get('user_id')
+        
+        if not user_id:
+            return Response({"detail": "Please provide user_id."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = get_object_or_404(User, id=user_id)
+        
+        if user not in project.members.all():
+            return Response({"detail": "User must be a project member to be assigned a role."}, status=status.HTTP_400_BAD_REQUEST)
+        if user in role.users.all():
+            return Response({"detail": "User is already assigned to this role."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        role.users.add(user)
+        return Response({"detail": "User assigned to role successfully."}, status=status.HTTP_200_OK)
+    
+    def unassign_role(self, request, project, role):
+        user_id = request.data.get('user_id')
+        
+        if not user_id:
+            return Response({"detail": "Please provide user_id."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = get_object_or_404(User, id=user_id)
+        
+        if user not in role.users.all():
+            return Response({"detail": "User is not assigned to this role."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        role.users.remove(user)
+        return Response({"detail": "User unassigned from role successfully."}, status=status.HTTP_200_OK)
