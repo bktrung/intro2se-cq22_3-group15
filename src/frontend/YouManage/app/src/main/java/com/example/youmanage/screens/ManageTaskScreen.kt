@@ -1,6 +1,5 @@
 package com.example.youmanage.screens
 
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -18,9 +17,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.youmanage.R
 
 @Composable
@@ -57,7 +58,7 @@ fun ManageTaskScreen(navController: NavController) {
 
             Text(
                 text = "Make your project or task on track easily and seamlessly",
-                style = TextStyle(fontSize = 16.sp),
+                style = TextStyle(fontSize = 18.sp),
                 color = Color.White,
                 textAlign = TextAlign.Center
             )
@@ -69,7 +70,7 @@ fun ManageTaskScreen(navController: NavController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                 border = BorderStroke(1.dp, Color.White)
             ) {
@@ -94,4 +95,11 @@ fun ManageTaskScreen(navController: NavController) {
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewManageTaskScreen() {
+    val navController = rememberNavController()
+    ManageTaskScreen(navController)
 }
