@@ -20,7 +20,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             user = await self.get_user(decoded_data['user_id'])
             self.scope['user'] = user  # Set user in scope
         except (InvalidToken, TokenError) as e:
-            await self.close(code=4001)  # Invalid token
+            await self.close(code=401)  # Invalid token
             return
 
         self.project_id = self.scope['url_route']['kwargs']['project_id']
