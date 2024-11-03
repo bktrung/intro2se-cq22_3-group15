@@ -1,9 +1,15 @@
 package com.example.youmanage.utils
 
+import android.app.DatePickerDialog
+import android.content.Context
+import android.os.Build
 import android.util.Base64
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.Color
 import org.json.JSONObject
+import java.time.LocalDate
+import java.util.Locale
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 fun extractMessages(jsonResponse: String): String {
@@ -57,3 +63,20 @@ fun isTokenExpired(token: String): Boolean {
     return currentTime > exp
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
+fun openDatePicker(
+    context: Context,
+    onDateSetListener: DatePickerDialog.OnDateSetListener,
+    date: LocalDate
+    ){
+    Locale.setDefault(Locale.ENGLISH)
+    val datePickerDialog = DatePickerDialog(
+        context,
+        onDateSetListener,
+        date.year,
+        date.monthValue,
+        date.dayOfMonth
+    )
+
+    datePickerDialog.show()
+}

@@ -53,6 +53,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
 import com.example.youmanage.data.remote.authentication.UserLogIn
 import com.example.youmanage.screens.AlertDialog
+import com.example.youmanage.screens.PasswordTextField
+import com.example.youmanage.screens.TextFieldComponent
 import com.example.youmanage.utils.Constants.ACCESS_TOKEN_KEY
 import com.example.youmanage.utils.Constants.REFRESH_TOKEN_KEY
 import com.example.youmanage.utils.GoogleSignIn.googleSignIn
@@ -279,79 +281,3 @@ fun LoginScreen(
 }
 
 
-@Composable
-fun PasswordTextField(
-    content: String,
-    onChangeValue: (String) -> Unit,
-    placeholderContent: String,
-    placeholderColor: Color,
-    containerColor: Color
-) {
-
-    var passwordVisibility by remember {
-        mutableStateOf(false)
-    }
-
-    val icon = if (passwordVisibility)
-        painterResource(id = R.drawable.view_password_icon)
-    else
-        painterResource(id = R.drawable.hide_password_icon)
-
-    TextField(
-        value = content,
-        onValueChange = { onChangeValue(it) },
-        placeholder = {
-            Text(
-                text = placeholderContent,
-                color = placeholderColor
-            )
-        },
-        trailingIcon = {
-            IconButton(onClick = { passwordVisibility = !passwordVisibility }) {
-                Icon(
-                    painter = icon,
-                    tint = Color.Gray,
-                    contentDescription = null
-                )
-            }
-        },
-        visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = containerColor,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 30.dp)
-    )
-}
-
-@Composable
-fun TextFieldComponent(
-    content: String,
-    onChangeValue: (String) -> Unit,
-    placeholderContent: String,
-    placeholderColor: Color,
-    containerColor: Color
-) {
-    TextField(
-        value = content,
-        onValueChange = { onChangeValue(it) },
-        placeholder = {
-            Text(
-                text = placeholderContent,
-                color = placeholderColor
-            )
-        },
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = containerColor,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 30.dp)
-    )
-}

@@ -58,6 +58,7 @@ fun HomeScreen(
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
     paddingValues: PaddingValues
 ) {
+    val textFieldColor = Color(0xFFF5F5F5)
     var searchQuery by remember { mutableStateOf("") }
 
     val projects by projectManagementViewModel.projects.observeAsState()
@@ -93,11 +94,11 @@ fun HomeScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth(),
-                colors = TextFieldDefaults.textFieldColors(
-                    containerColor = Color(0xFFD9D9D9),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = textFieldColor,
+                    unfocusedContainerColor = textFieldColor,
                     focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    cursorColor = Color.Black
+                    unfocusedIndicatorColor = Color.Transparent
                 ),
                 shape = RoundedCornerShape(16.dp)
             )

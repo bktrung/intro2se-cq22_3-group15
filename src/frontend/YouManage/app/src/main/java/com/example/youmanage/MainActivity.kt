@@ -1,17 +1,24 @@
 package com.example.youmanage
 
+import android.app.DatePickerDialog
+import android.os.Build
 import android.os.Bundle
+import android.widget.DatePicker
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import com.example.youmanage.navigation.RootNavGraph
+import com.example.youmanage.screens.project_management.AddProjectScreen
 import com.example.youmanage.ui.theme.YouManageTheme
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.Calendar
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -41,8 +48,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             YouManageTheme {
-
-               RootNavGraph()
+                AddProjectScreen()
 
             }
         }

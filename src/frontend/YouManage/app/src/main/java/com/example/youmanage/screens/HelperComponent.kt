@@ -1,5 +1,7 @@
 package com.example.youmanage.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,22 +10,45 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.youmanage.R
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun AlertDialog(
@@ -160,3 +185,150 @@ fun AlertDialog1(
     }
 }
 
+@Composable
+fun PasswordTextField(
+    content: String,
+    onChangeValue: (String) -> Unit,
+    placeholderContent: String,
+    placeholderColor: Color,
+    containerColor: Color
+) {
+
+    var passwordVisibility by remember {
+        mutableStateOf(false)
+    }
+
+    val icon = if (passwordVisibility)
+        painterResource(id = R.drawable.view_password_icon)
+    else
+        painterResource(id = R.drawable.hide_password_icon)
+
+    TextField(
+        value = content,
+        onValueChange = { onChangeValue(it) },
+        placeholder = {
+            Text(
+                text = placeholderContent,
+                color = placeholderColor
+            )
+        },
+        trailingIcon = {
+            IconButton(onClick = { passwordVisibility = !passwordVisibility }) {
+                Icon(
+                    painter = icon,
+                    tint = Color.Gray,
+                    contentDescription = null
+                )
+            }
+        },
+        visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = containerColor,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 30.dp)
+    )
+}
+
+@Composable
+fun TextFieldComponent(
+    content: String,
+    onChangeValue: (String) -> Unit,
+    placeholderContent: String,
+    placeholderColor: Color,
+    containerColor: Color
+) {
+    TextField(
+        value = content,
+        onValueChange = { onChangeValue(it) },
+        placeholder = {
+            Text(
+                text = placeholderContent,
+                color = placeholderColor
+            )
+        },
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = containerColor,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 30.dp)
+    )
+}
+
+@Composable
+fun LeadingTextFieldComponent(
+    content: String,
+    onChangeValue: (String) -> Unit,
+    placeholderContent: String,
+    placeholderColor: Color,
+    containerColor: Color,
+    icon: Int
+) {
+    TextField(
+        value = content,
+        leadingIcon = {
+            Icon(painter = painterResource(id = icon), contentDescription = "")
+        },
+        onValueChange = { onChangeValue(it) },
+        placeholder = {
+            Text(
+                text = placeholderContent,
+                color = placeholderColor
+            )
+        },
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = containerColor,
+            unfocusedContainerColor = containerColor,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+
+    )
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DatePickerModal(
+    onDateSelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val datePickerState = rememberDatePickerState()
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.getDefault())
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            Button(
+                onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val instant = Instant.ofEpochMilli(millis)
+                        val date = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
+                        val formattedDate = formatter.format(date)
+                        onDateSelected(formattedDate)
+                    }
+                    onDismiss()
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+            ) {
+                Text("OK", color = Color.White, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Color.Black)
+            }
+        }
+    ) {
+        DatePicker(state = datePickerState)
+    }
+}
