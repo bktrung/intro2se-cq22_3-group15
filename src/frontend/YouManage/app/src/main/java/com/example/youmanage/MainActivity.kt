@@ -4,40 +4,36 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
-import com.example.youmanage.data.remote.authentication.RefreshToken
-import com.example.youmanage.data.remote.projectmanagement.Host
-import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
+import com.example.youmanage.navigation.RootNavGraph
 import com.example.youmanage.ui.theme.YouManageTheme
-import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.runBlocking
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val viewModel: ProjectManagementViewModel by viewModels()
 
-        val project = ProjectCreate(
-            "My Project Update 1",
-            "2024-04-09",
-            Host(email = "string@gmail.com", username= "string"),
-            "derat"
-        )
-
-        val authorization = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzI5MjU5MzQ5LCJpYXQiOjE3MjkwODY1NDksImp0aSI6IjdiMmU1NzVkNjc1NDQ5NjViOWNmYTY2MGU3NWEzMzA1IiwidXNlcl9pZCI6MX0.wITO6OwnhH5smemrfuj6aPeBwrbcRFQc_QOZoF9pgcQ"
-
-        runBlocking {
-            viewModel.deleteProject(
-                id = "3",
-                authorization = authorization
-            )
-        }
+//        val viewModel: ProjectManagementViewModel by viewModels()
+//
+//        val project = ProjectCreate(
+//            "My Project Update 1",
+//            "2024-04-09",
+//            Host(email = "string@gmail.com", username= "string"),
+//            "derat"
+//        )
+//
+//        val authorization = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzI5MjU5MzQ5LCJpYXQiOjE3MjkwODY1NDksImp0aSI6IjdiMmU1NzVkNjc1NDQ5NjViOWNmYTY2MGU3NWEzMzA1IiwidXNlcl9pZCI6MX0.wITO6OwnhH5smemrfuj6aPeBwrbcRFQc_QOZoF9pgcQ"
+//
+//        runBlocking {
+//            viewModel.deleteProject(
+//                id = "3",
+//                authorization = authorization
+//            )
+//        }
 
 
 
@@ -45,7 +41,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             YouManageTheme {
-               // AuthenticationNavigation()
+
+               RootNavGraph()
+
             }
         }
     }

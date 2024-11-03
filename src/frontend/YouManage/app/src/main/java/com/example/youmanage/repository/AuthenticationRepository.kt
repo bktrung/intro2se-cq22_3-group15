@@ -1,5 +1,11 @@
 package com.example.youmanage.repository
 
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import com.example.youmanage.data.remote.ApiInterface
 import com.example.youmanage.data.remote.authentication.RefreshToken
 import com.example.youmanage.data.remote.authentication.LogoutResponse
@@ -8,14 +14,22 @@ import com.example.youmanage.data.remote.authentication.UserLogIn
 import com.example.youmanage.data.remote.authentication.UserLogInResponse
 import com.example.youmanage.data.remote.authentication.UserSignUp
 import com.example.youmanage.data.remote.authentication.UserSignUpResponse
+import com.example.youmanage.utils.Constants.ACCESS_TOKEN_KEY
+import com.example.youmanage.utils.Constants.REFRESH_TOKEN_KEY
 import com.example.youmanage.utils.Resource
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.scopes.ActivityScoped
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import retrofit2.HttpException
 import javax.inject.Inject
 
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "accessToken")
+
 @ActivityScoped
 class AuthenticationRepository @Inject constructor(
-    private val api: ApiInterface
+    private val api: ApiInterface,
+    @ApplicationContext private val context: Context
 ) {
 
     suspend fun signUp(user: UserSignUp): Resource<UserSignUpResponse> {
@@ -87,4 +101,28 @@ class AuthenticationRepository @Inject constructor(
 
         return response
     }
+
+    suspend fun saveToken(token: String, key: Preferences.Key<String>) {
+        context.dataStore.edit { preferences ->
+            preferences[key] = token
+        }
+    }
+
+    val accessToken: Flow<String?> = context.dataStore.data
+        .map { preferences ->
+            preferences[ACCESS_TOKEN_KEY]
+        }
+
+    val refreshToken: Flow<String?> = context.dataStore.data
+        .map {
+            preferences ->
+            preferences[REFRESH_TOKEN_KEY]
+        }
+
+    suspend fun clearToken(key: Preferences.Key<String>) {
+        context.dataStore.edit { preferences ->
+            preferences.remove(key)
+        }
+    }
+
 }

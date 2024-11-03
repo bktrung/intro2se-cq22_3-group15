@@ -1,5 +1,6 @@
 package com.example.youmanage.di
 
+import android.content.Context
 import com.example.youmanage.data.remote.ApiInterface
 import com.example.youmanage.repository.AuthenticationRepository
 import com.example.youmanage.repository.ProjectManagementRepository
@@ -7,6 +8,7 @@ import com.example.youmanage.utils.Constants.BASE_URL
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -28,7 +30,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAuthenticationRepository(api: ApiInterface) = AuthenticationRepository(api)
+    fun provideAuthenticationRepository(api: ApiInterface, @ApplicationContext context: Context) = AuthenticationRepository(api, context)
 
     @Provides
     @Singleton

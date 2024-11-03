@@ -64,6 +64,7 @@ dependencies {
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.googleid)
     implementation(libs.firebase.auth.ktx)
+    //implementation(libs.androidx.datastore.core.jvm)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -102,6 +103,13 @@ dependencies {
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     //implementation ("com.google.android.libraries.identity.googleid:1.3.0")
 
+
     implementation ("com.google.android.gms:play-services-auth:21.2.0")
+
+    // Data Store
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+
+
 
 }

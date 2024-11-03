@@ -1,47 +1,47 @@
 package com.example.youmanage.navigation
 
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.navigation.compose.NavHost
+import androidx.navigation.NavController
+import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navigation
 import com.example.youmanage.screens.HomeScreen
-import com.example.youmanage.screens.LoginScreen
-import com.example.youmanage.screens.SignUpScreen
-import com.example.youmanage.screens.WelComeScreen
+import com.example.youmanage.screens.authetication.CreateAccountScreen
+import com.example.youmanage.screens.authetication.LoginScreen
+import com.example.youmanage.screens.authetication.WelcomeScreen
 
-@Composable
-fun AuthenticationNavigation(
-    modifier: Modifier = Modifier
-) {
 
-    val navController = rememberNavController()
-
-    NavHost(navController = navController, startDestination = "welcome") {
-
-        composable("home") {
-            HomeScreen()
-        }
-
-        composable("welcome") {
-            WelComeScreen(
-                onLoginClick = { navController.navigate("login") },
-                onSignUpClick = { navController.navigate("signup") }
+fun NavGraphBuilder.authenticationNavGraph(rootNavController: NavHostController) {
+    navigation(
+        route = Graph.AUTHENTICATION,
+        startDestination = AuthRouteScreen.Welcome.route
+    ) {
+        composable(AuthRouteScreen.Welcome.route) {
+            WelcomeScreen(
+                onLoginClick = { rootNavController.navigate(AuthRouteScreen.Login.route) },
+                onSignUpClick = { rootNavController.navigate(AuthRouteScreen.CreateAccount.route) }
             )
         }
 
-        composable("login") {
+        composable(AuthRouteScreen.Login.route) {
             LoginScreen(
-                onNavigateBack = { navController.navigate("welcome") },
-                navController = navController
+                onNavigateBack = { rootNavController.navigate(AuthRouteScreen.Welcome.route) },
+                onLoginSuccess = {
+                    rootNavController.navigate(Graph.PROJECT_MANAGEMENT) {
+                        popUpTo(AuthRouteScreen.Welcome.route) {
+                            inclusive = true
+                        }
+                    }
+                },
+                navController = rootNavController
             )
         }
 
-        composable("signup") {
-            SignUpScreen(
-                navController = navController,
-                onNavigateBack = { navController.navigate("welcome") }
-            )
+        composable(AuthRouteScreen.CreateAccount.route) {
+            CreateAccountScreen(
+                navController = rootNavController,
+                onNavigateBack = { rootNavController.navigate(AuthRouteScreen.Welcome.route) },
+                onLogin = { rootNavController.navigate(AuthRouteScreen.Login.route) })
         }
     }
 }
