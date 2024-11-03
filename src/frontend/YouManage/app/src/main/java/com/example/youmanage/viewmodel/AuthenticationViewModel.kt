@@ -24,7 +24,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AuthenticationViewModel @Inject constructor(
     private val repository: AuthenticationRepository
-): ViewModel() {
+) : ViewModel() {
 
     private val _signUpResponse = MutableLiveData<Resource<UserSignUpResponse>>()
     val signUpResponse: LiveData<Resource<UserSignUpResponse>> get() = _signUpResponse
@@ -50,7 +50,7 @@ class AuthenticationViewModel @Inject constructor(
         }
     }
 
-    fun logInWithGoogle(user: UserGoogleLogIn){
+    fun logInWithGoogle(user: UserGoogleLogIn) {
         viewModelScope.launch {
             _logInResponse.value = repository.logInWithGoogle(user)
         }
@@ -58,13 +58,19 @@ class AuthenticationViewModel @Inject constructor(
 
     fun logOut(logoutRequest: RefreshToken, authorization: String) {
         viewModelScope.launch {
-           _logOutResponse.value = repository.logOut(logoutRequest = logoutRequest, authorization = authorization)
+            _logOutResponse.value =
+                repository.logOut(logoutRequest = logoutRequest, authorization = authorization)
         }
     }
 
-    fun saveToken(token: String, key: Preferences.Key<String>) {
+    fun saveToken(
+        accessToken: String,
+        refreshToken: String,
+        key1: Preferences.Key<String>,
+        key2: Preferences.Key<String>
+    ) {
         viewModelScope.launch {
-            repository.saveToken(token, key)
+            repository.saveToken(accessToken, refreshToken, key1, key2)
         }
     }
 

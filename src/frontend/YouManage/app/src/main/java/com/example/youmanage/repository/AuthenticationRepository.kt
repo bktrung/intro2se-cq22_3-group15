@@ -102,9 +102,14 @@ class AuthenticationRepository @Inject constructor(
         return response
     }
 
-    suspend fun saveToken(token: String, key: Preferences.Key<String>) {
+    suspend fun saveToken(
+        accessToken: String,
+        refreshToken: String,
+        key1: Preferences.Key<String>,
+        key2: Preferences.Key<String>) {
         context.dataStore.edit { preferences ->
-            preferences[key] = token
+            preferences[key1] = accessToken
+            preferences[key2] = refreshToken
         }
     }
 

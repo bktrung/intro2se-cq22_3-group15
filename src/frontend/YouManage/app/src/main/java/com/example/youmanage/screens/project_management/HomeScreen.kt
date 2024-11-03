@@ -26,7 +26,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -39,18 +42,34 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
+import com.example.youmanage.data.remote.projectmanagement.Projects
+import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.randomColor
+import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.ProjectManagementViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
+    authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
     paddingValues: PaddingValues
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
+    val projects by projectManagementViewModel.projects.observeAsState()
+    val accessToken by authenticationViewModel.accessToken.collectAsState(initial = null)
+
+    LaunchedEffect(Unit) {
+        if (accessToken != null) {
+            projectManagementViewModel.getProjectList(
+                authorization = "Bearer $accessToken"
+            )
+        }
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -99,7 +118,21 @@ fun HomeScreen(
                         style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     )
                     Spacer(modifier = Modifier.height(5.dp))
-                    Text(text = "You have 6 projects", style = TextStyle(color = Color.Black))
+
+                    var numOfProjects = 0
+
+                    if (projects is Resource.Success) {
+                        numOfProjects = (projects as Resource.Success<Projects>).data!!.size
+                    }
+
+                    Text(
+                        text = when(numOfProjects) {
+                            0-> "You have no project"
+                            1-> "You have one project"
+                            else -> "You have $numOfProjects projects"
+                        },
+                        style = TextStyle(color = Color.Black)
+                    )
                 }
 
                 Button(
@@ -115,21 +148,25 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            val itemsList = List(5) { "Item #$it" }
 
-            LazyColumn {
-                items(5) { item ->
-                    ProjectItem(
-                        "Sciences",
-                        "Derat Team",
-                        backgroundColor = Color(randomColor(item))
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
+            if (projects is Resource.Success) {
+
+                val projectList = (projects as Resource.Success<Projects>).data!!
+
+                LazyColumn {
+                    items(projectList.size) { item ->
+                        ProjectItem(
+                            title = projectList[item].name,
+                            team = "",
+                            backgroundColor = Color(randomColor(item))
+                        )
+                    }
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun ProjectItem(title: String, team: String, backgroundColor: Color) {

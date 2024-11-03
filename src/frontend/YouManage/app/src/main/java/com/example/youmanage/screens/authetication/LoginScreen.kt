@@ -50,7 +50,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.credentials.CredentialManager
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import com.example.youmanage.R
 import com.example.youmanage.data.remote.authentication.UserLogIn
 import com.example.youmanage.screens.AlertDialog
@@ -58,17 +57,14 @@ import com.example.youmanage.utils.Constants.ACCESS_TOKEN_KEY
 import com.example.youmanage.utils.Constants.REFRESH_TOKEN_KEY
 import com.example.youmanage.utils.GoogleSignIn.googleSignIn
 import com.example.youmanage.utils.Resource
-import com.example.youmanage.utils.isTokenExpired
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 
 @Composable
 fun LoginScreen(
     onNavigateBack: () -> Unit,
     onLoginSuccess: () -> Unit,
-    navController: NavController,
     viewModel: AuthenticationViewModel = hiltViewModel()
 ) {
-
     var username by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
 
@@ -84,11 +80,18 @@ fun LoginScreen(
     LaunchedEffect(loginResponse) {
         if (loginResponse is Resource.Success) {
             Log.d("Login Success", loginResponse.data.toString())
-            onLoginSuccess()
+            Log.d("Token in Login", loginResponse.data?.refresh.toString())
+
             loginResponse.data?.let {
-                viewModel.saveToken(it.access, ACCESS_TOKEN_KEY)
-                viewModel.saveToken(it.refresh, REFRESH_TOKEN_KEY)
+                viewModel.saveToken(
+                    loginResponse.data.access,
+                    loginResponse.data.refresh,
+                    ACCESS_TOKEN_KEY,
+                    REFRESH_TOKEN_KEY
+                )
             }
+
+            onLoginSuccess()
         }
 
         if (loginResponse is Resource.Error) {
@@ -164,7 +167,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Forget password
             Text(
                 text = "Forgot password?",
                 color = Color.Gray,

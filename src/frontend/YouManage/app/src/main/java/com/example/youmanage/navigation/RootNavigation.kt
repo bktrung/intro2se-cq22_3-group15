@@ -38,6 +38,7 @@ sealed class ProjectManagementRouteScreen(
 ) {
     data object Home : ProjectManagementRouteScreen("home")
     data object UserProfile : ProjectManagementRouteScreen("user_profile")
+    data object Calender: ProjectManagementRouteScreen("calender")
     data object AddProject : ProjectManagementRouteScreen("add_project")
     data object ProjectDetail : ProjectManagementRouteScreen("project_detail")
     data object CreateTask : ProjectManagementRouteScreen("create_task")
@@ -76,7 +77,9 @@ fun RootNavGraph(
         route = Graph.ROOT,
         startDestination = startDestination
     ) {
-        authenticationNavGraph(rootNavController = navController)
+        authenticationNavGraph(
+            rootNavController = navController
+        )
 
         composable(route = Graph.PROJECT_MANAGEMENT) {
             MainScreen(rootNavController = navController)

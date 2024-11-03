@@ -101,7 +101,7 @@ val bottomNavigationItems = listOf(
         icon = R.drawable.calendar_icon,
         selectedColor = Color.Black,
         unselectedColor = Color.Gray,
-        route = ProjectManagementRouteScreen.Home.route
+        route = ProjectManagementRouteScreen.Calender.route
     ),
     BottomNavigationItem(
         title = "Profile",

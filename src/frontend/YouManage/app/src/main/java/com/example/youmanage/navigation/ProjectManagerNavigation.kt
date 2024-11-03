@@ -15,19 +15,21 @@ fun ProjectManagementNavGraph(
     rootNavController: NavHostController,
     homeNavController: NavHostController
 ) {
-    NavHost(navController = homeNavController,
+    NavHost(
+        navController = homeNavController,
         route = Graph.PROJECT_MANAGEMENT,
-        startDestination = ProjectManagementRouteScreen.Home.route)
+        startDestination = ProjectManagementRouteScreen.Home.route
+    )
     {
         composable(ProjectManagementRouteScreen.Home.route) {
             HomeScreen(paddingValues = paddingValues)
         }
 
-        composable(ProjectManagementRouteScreen.UserProfile.route)  {
+        composable(ProjectManagementRouteScreen.UserProfile.route) {
             UserProfileScreen(
                 onLogout = {
-                    homeNavController.navigate(AuthRouteScreen.Login.route){
-                        popUpTo(Graph.PROJECT_MANAGEMENT){
+                    rootNavController.navigate(Graph.AUTHENTICATION) {
+                        popUpTo(Graph.PROJECT_MANAGEMENT) {
                             inclusive = true
                         }
                     }
@@ -35,6 +37,7 @@ fun ProjectManagementNavGraph(
             )
         }
 
+        composable(ProjectManagementRouteScreen.Calender.route) {}
         composable(ProjectManagementRouteScreen.AddProject.route) {}
         composable(ProjectManagementRouteScreen.ProjectDetail.route) {}
         composable(ProjectManagementRouteScreen.CreateTask.route) {}
