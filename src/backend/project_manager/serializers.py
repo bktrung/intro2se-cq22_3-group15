@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Project, Task, Comment, Role
+from .models import Project, Task, Comment, Role, Issue
 
 User = get_user_model()
 
@@ -21,9 +21,38 @@ class ProjectSerializer(serializers.ModelSerializer):
         read_only_fields = ['host', 'created_at', 'updated_at']
         
         
+class IssueSerializer(serializers.ModelSerializer):
+    reporter = UserSerializer(read_only=True)
+    assignee = UserSerializer(read_only=True)
+    assignee_id = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), source='assignee', write_only=True, required=False)
+    task_id = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all(), required=False, allow_null=True)
+
+    class Meta:
+        model = Issue
+        fields = [
+            'id', 
+            'title', 
+            'description', 
+            'status', 
+            'project', 
+            'reporter', 
+            'assignee', 
+            'assignee_id', 
+            'task_id',
+        ]
+        read_only_fields = ['reporter', 'project']
+
+    def validate_assignee_id(self, value):
+        project = self.context['project']
+        if value not in project.members.all():
+            raise serializers.ValidationError("Assignee must be a member of the project.")
+        return value
+    
+        
 class TaskSerializer(serializers.ModelSerializer):
     assignee = UserSerializer(read_only=True)
     assignee_id = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), source='assignee', write_only=True, required=False)
+    issues = IssueSerializer(many=True, read_only=True, source='task_issues')
 
     class Meta:
         model = Task
@@ -35,12 +64,14 @@ class TaskSerializer(serializers.ModelSerializer):
             'end_date', 
             'actual_start_date', 
             'actual_end_date', 
-            'status', 
+            'status',
+            'priority',
             'project', 
-            'assignee', 
+            'assignee',
             'assignee_id',
             'created_at',
-            'updated_at'
+            'updated_at',
+            'issues'
             ]
         read_only_fields = ['project', 'created_at', 'updated_at']
 
@@ -65,3 +96,4 @@ class RoleSerializer(serializers.ModelSerializer):
         model = Role
         fields = ['id', 'role_name', 'description', 'project']
         read_only_fields = ['project']
+    

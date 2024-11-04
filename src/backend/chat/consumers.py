@@ -4,7 +4,6 @@ import json
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-from django.conf import settings
 from .models import ChatMessage
 
 CustomUser = get_user_model()
