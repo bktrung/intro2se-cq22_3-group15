@@ -237,6 +237,7 @@ class ForgotPasswordView(APIView):
         email = request.data.get('email')
         otp = request.data.get('otp')
         new_password = request.data.get('new_password')
+        confirm_password = request.data.get('confirm_password')
         
         if not email or not otp or not new_password:
             return Response({'error': 'Email, OTP, and new password are required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -252,6 +253,8 @@ class ForgotPasswordView(APIView):
             return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
         if not current_otp.isValid():
             return Response({'error': 'OTP expired'}, status=status.HTTP_400_BAD_REQUEST)
+        if new_password != confirm_password:
+            return Response({'error': 'Passwords do not match'}, status=status.HTTP_400_BAD_REQUEST)
 
         user.set_password(new_password)
         user.save()
