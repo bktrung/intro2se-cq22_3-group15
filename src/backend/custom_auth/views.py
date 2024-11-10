@@ -211,15 +211,16 @@ class ForgotPasswordView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, action):
-        
-        if action == 'send_otp':
+        if action == 'check_mail':
+            return self.check_mail(request)
+        elif action == 'send_otp':
             return self.send_otp(request)
         elif action == 'change_password':
             return self.change_password(request)
         else:
             return Response({'error': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
-        
-    def send_otp(self, request):
+    
+    def check_mail(self, request):
         email = request.data.get('email')
         if not email:
             return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -230,6 +231,11 @@ class ForgotPasswordView(APIView):
         if not user.is_verified:
             return Response({'error': 'Email not verified'}, status=status.HTTP_400_BAD_REQUEST)
         
+        return Response({'message': 'Email found'}, status=status.HTTP_200_OK)
+        
+    def send_otp(self, request):
+        email = request.data.get('email')
+        user = User.objects.filter(email=email).first()
         send_otp_to_email(user, 'Password reset')
         return Response({'message': 'OTP sent to email'}, status=status.HTTP_200_OK)
     
@@ -260,3 +266,4 @@ class ForgotPasswordView(APIView):
         user.save()
 
         return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
+    
