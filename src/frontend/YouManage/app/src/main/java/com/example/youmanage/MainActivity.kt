@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import com.example.youmanage.navigation.RootNavGraph
+import com.example.youmanage.screens.authetication.OTPVerificationScreen
 import com.example.youmanage.screens.project_management.AddProjectScreen
 import com.example.youmanage.ui.theme.YouManageTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -48,7 +49,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             YouManageTheme {
-                AddProjectScreen()
+
+
+                RootNavGraph()
+               // OTPVerificationScreen(10, onNavigateBack = {})
 
             }
         }

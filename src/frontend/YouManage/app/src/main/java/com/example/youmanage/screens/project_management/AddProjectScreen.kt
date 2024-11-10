@@ -1,10 +1,12 @@
 package com.example.youmanage.screens.project_management
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,8 +19,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -29,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,22 +53,42 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.example.youmanage.R
+import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
 import com.example.youmanage.screens.DatePickerModal
 import com.example.youmanage.screens.LeadingTextFieldComponent
+import com.example.youmanage.utils.randomVibrantLightColor
+import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.ProjectManagementViewModel
 
-@Preview
+data class MemberItem(
+    val username: String,
+    val backgroundColor: Color,
+    val avatar: Int
+)
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AddProjectScreen() {
+fun AddProjectScreen(
+    navHostController: NavHostController,
+    authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
+    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel()
+) {
 
     var showDatePicker by remember { mutableStateOf(false) }
+    var showAddMemberDialog by remember { mutableStateOf(false) }
+
+    var members by remember { mutableStateOf(listOf<MemberItem>()) }
 
     val textFieldColor = Color(0xFFF5F5F5)
 
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
     var dueDate by rememberSaveable { mutableStateOf("") }
+
+    val access = authenticationViewModel.accessToken.collectAsState(initial = null)
 
     Box(
         modifier = Modifier
@@ -86,7 +111,9 @@ fun AddProjectScreen() {
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { /*TODO*/ }) {
+                IconButton(onClick = {
+                    navHostController.navigateUp()
+                }) {
                     Icon(
                         painter = painterResource(id = R.drawable.back_arrow_icon),
                         contentDescription = "",
@@ -103,10 +130,14 @@ fun AddProjectScreen() {
 
             Spacer(modifier = Modifier.height(40.dp))
 
+            val scrollState = rememberScrollState()
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .verticalScroll(scrollState)
+                ,
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -265,7 +296,7 @@ fun AddProjectScreen() {
                     ) {
 
                         Button(
-                            onClick = { /*TODO*/ },
+                            onClick = { showAddMemberDialog = true },
                             colors = ButtonDefaults.buttonColors(
                                 contentColor = Color.Black,
                                 containerColor = Color(0xFFF5F5F5)
@@ -285,10 +316,17 @@ fun AddProjectScreen() {
 
                         LazyRow(
                             modifier = Modifier.weight(1f),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            items(5) {
-                                MemberItem()
+
+                            items(members.size) { index ->
+
+                                MemberItem(
+                                    members[index],
+                                    onDelete = {
+                                        members = members.filter { i -> i.username != it }
+                                    }
+                                )
                             }
                         }
 
@@ -297,7 +335,18 @@ fun AddProjectScreen() {
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Button(
-                        onClick = { },
+                        onClick = {
+                            Log.d("AddProjectScreen", "AddProjectScreen: $access")
+                            projectManagementViewModel.createProject(
+                                project = ProjectCreate(
+                                    description = description,
+                                    dueDate = dueDate,
+                                    name = title
+                                ),
+                                authorization = "Bearer ${access.value}"
+                            )
+                            navHostController.navigateUp()
+                        },
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
                         modifier = Modifier
@@ -317,9 +366,7 @@ fun AddProjectScreen() {
 
                 }
 
-
             }
-
         }
     }
 
@@ -332,6 +379,20 @@ fun AddProjectScreen() {
                 showDatePicker = false
             })
     }
+
+    if (showAddMemberDialog) {
+        AddMemberDialog(
+            title = "Add Member",
+            showDialog = true,
+            onDismiss = {
+                showAddMemberDialog = false
+            },
+            onConfirm = {
+                if(it.username != "") members = members + it
+                showAddMemberDialog = false
+            }
+        )
+    }
 }
 
 @Composable
@@ -339,9 +400,14 @@ fun AddMemberDialog(
     title: String,
     showDialog: Boolean,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: (MemberItem) -> Unit
 ) {
     if (showDialog) {
+
+        var username by remember {
+            mutableStateOf("")
+        }
+
         Dialog(
             onDismissRequest = onDismiss,
             properties = DialogProperties(
@@ -394,8 +460,8 @@ fun AddMemberDialog(
                         )
 
                         LeadingTextFieldComponent(
-                            content = "",
-                            onChangeValue = {},
+                            content = username,
+                            onChangeValue = { username = it },
                             placeholderContent = "Username",
                             placeholderColor = Color.Gray,
                             containerColor = Color(0x1A000000),
@@ -407,7 +473,13 @@ fun AddMemberDialog(
 
                     Button(
                         onClick = {
-                            onConfirm()
+                            onConfirm(
+                                MemberItem(
+                                    username,
+                                    randomVibrantLightColor(),
+                                    R.drawable.avatar
+                                )
+                            )
                         },
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
@@ -430,13 +502,16 @@ fun AddMemberDialog(
 }
 
 @Composable
-fun MemberItem() {
+fun MemberItem(
+    member: MemberItem,
+    onDelete: (String) -> Unit
+) {
 
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .clip(RoundedCornerShape(5.dp))
-            .background(Color.Green)
+            .background(member.backgroundColor)
     ) {
         Row(
             modifier = Modifier
@@ -446,7 +521,7 @@ fun MemberItem() {
         ) {
             Image(
                 painter = painterResource(
-                    id = R.drawable.background_image
+                    id = member.avatar
                 ),
                 contentDescription = "",
                 contentScale = ContentScale.Crop,
@@ -457,13 +532,16 @@ fun MemberItem() {
 
             Spacer(modifier = Modifier.width(20.dp))
 
-            Text(text = "Name", color = Color.Black, fontWeight = FontWeight.Medium)
+            Text(text = member.username, color = Color.Black, fontWeight = FontWeight.Medium)
 
             Spacer(modifier = Modifier.width(20.dp))
 
             Icon(
                 painter = painterResource(id = R.drawable.delete_icon),
-                contentDescription = "Delete"
+                contentDescription = "Delete",
+                modifier = Modifier.clickable {
+                    onDelete(member.username)
+                }
             )
 
         }

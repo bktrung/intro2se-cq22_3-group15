@@ -11,6 +11,8 @@ import org.json.JSONObject
 import java.time.LocalDate
 import java.util.Locale
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.math.absoluteValue
+import kotlin.random.Random
 
 fun extractMessages(jsonResponse: String): String {
     val messages = mutableListOf<String>()
@@ -37,6 +39,20 @@ fun randomColor(index: Int): Int {
     )
 
     return colors[index % colors.size].hashCode()
+}
+
+fun randomVibrantLightColor(): Color {
+    var red: Int
+    var green: Int
+    var blue: Int
+
+    do {
+        red = Random.nextInt(128, 256)
+        green = Random.nextInt(128, 256)
+        blue = Random.nextInt(128, 256)
+    } while ((red - green).absoluteValue < 50 && (green - blue).absoluteValue < 50 && (blue - red).absoluteValue < 50)
+
+    return Color(red, green, blue)
 }
 
 // Process Access Token

@@ -6,6 +6,5 @@ data class ProjectCreate(
     val description: String,
     @SerializedName("duedate")
     val dueDate: String,
-    val host: Host,
     val name: String
 )

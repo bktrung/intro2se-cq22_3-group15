@@ -81,9 +81,6 @@ fun LoginScreen(
 
     LaunchedEffect(loginResponse) {
         if (loginResponse is Resource.Success) {
-            Log.d("Login Success", loginResponse.data.toString())
-            Log.d("Token in Login", loginResponse.data?.refresh.toString())
-
             loginResponse.data?.let {
                 viewModel.saveToken(
                     loginResponse.data.access,
@@ -92,13 +89,9 @@ fun LoginScreen(
                     REFRESH_TOKEN_KEY
                 )
             }
-
             onLoginSuccess()
-        }
-
-        if (loginResponse is Resource.Error) {
+        } else if (loginResponse is Resource.Error) {
             openNoExistDialog = true
-            Log.d("Login Error", loginResponse.message.toString())
         }
     }
 

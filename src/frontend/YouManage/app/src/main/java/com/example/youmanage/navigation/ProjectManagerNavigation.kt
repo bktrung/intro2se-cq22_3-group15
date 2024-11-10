@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.youmanage.screens.project_management.AddProjectScreen
 import com.example.youmanage.screens.project_management.HomeScreen
 import com.example.youmanage.screens.project_management.UserProfileScreen
 
@@ -22,7 +23,12 @@ fun ProjectManagementNavGraph(
     )
     {
         composable(ProjectManagementRouteScreen.Home.route) {
-            HomeScreen(paddingValues = paddingValues)
+            HomeScreen(
+                paddingValues = paddingValues,
+                onAddNewProject = {
+                    rootNavController.navigate(ProjectManagementRouteScreen.AddProject.route)
+                }
+            )
         }
 
         composable(ProjectManagementRouteScreen.UserProfile.route) {
@@ -38,7 +44,9 @@ fun ProjectManagementNavGraph(
         }
 
         composable(ProjectManagementRouteScreen.Calender.route) {}
-        composable(ProjectManagementRouteScreen.AddProject.route) {}
+        composable(ProjectManagementRouteScreen.AddProject.route) {
+            AddProjectScreen(homeNavController)
+        }
         composable(ProjectManagementRouteScreen.ProjectDetail.route) {}
         composable(ProjectManagementRouteScreen.CreateTask.route) {}
         composable(ProjectManagementRouteScreen.TaskList.route) {}

@@ -29,14 +29,6 @@ class ProjectManagementViewModel @Inject constructor(
         viewModelScope.launch {
            _projects.value = repository.getProjectList(authorization = authorization)
 
-            if(_projects.value is Resource.Success){
-                Log.d("Project", _projects.value!!.data.toString())
-            }
-
-            if(_projects.value is Resource.Error){
-                Log.d("Project Fail", _projects.value!!.message.toString())
-            }
-
         }
     }
 

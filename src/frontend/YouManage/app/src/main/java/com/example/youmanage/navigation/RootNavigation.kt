@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.youmanage.screens.LoadingScreen
+import com.example.youmanage.screens.project_management.AddProjectScreen
 import com.example.youmanage.screens.project_management.MainScreen
 import com.example.youmanage.utils.isTokenExpired
 import com.example.youmanage.viewmodel.AuthenticationViewModel
@@ -31,6 +32,7 @@ sealed class AuthRouteScreen(
     data object Login : AuthRouteScreen("login")
     data object CreateAccount : AuthRouteScreen("create_account")
     data object Welcome : AuthRouteScreen("welcome")
+    data object OTPVerification: AuthRouteScreen("otp_verification/{email}")
 }
 
 sealed class ProjectManagementRouteScreen(
@@ -77,16 +79,24 @@ fun RootNavGraph(
         route = Graph.ROOT,
         startDestination = startDestination
     ) {
+
         authenticationNavGraph(
             rootNavController = navController
         )
 
         composable(route = Graph.PROJECT_MANAGEMENT) {
-            MainScreen(rootNavController = navController)
+            MainScreen(rootNavController = navController,
+                onAddNewProject = {
+                    navController.navigate(ProjectManagementRouteScreen.AddProject.route)
+                })
 
         }
         composable(route = Graph.LOADING) {
             LoadingScreen()
+        }
+
+        composable(route = ProjectManagementRouteScreen.AddProject.route) {
+            AddProjectScreen(navHostController = navController)
         }
     }
 

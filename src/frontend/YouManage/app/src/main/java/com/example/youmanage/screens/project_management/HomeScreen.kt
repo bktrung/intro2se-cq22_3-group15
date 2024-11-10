@@ -1,5 +1,9 @@
 package com.example.youmanage.screens.project_management
 
+import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -49,6 +54,7 @@ import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.randomColor
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import kotlinx.coroutines.delay
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,21 +62,24 @@ import com.example.youmanage.viewmodel.ProjectManagementViewModel
 fun HomeScreen(
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
+    onAddNewProject: () -> Unit
 ) {
     val textFieldColor = Color(0xFFF5F5F5)
     var searchQuery by remember { mutableStateOf("") }
 
     val projects by projectManagementViewModel.projects.observeAsState()
-    val accessToken by authenticationViewModel.accessToken.collectAsState(initial = null)
+    val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
 
-    LaunchedEffect(Unit) {
-        if (accessToken != null) {
+    LaunchedEffect(accessToken.value) {
+        accessToken.value?.let { token ->
             projectManagementViewModel.getProjectList(
-                authorization = "Bearer $accessToken"
+                authorization = "Bearer $token"
             )
         }
+
     }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -127,9 +136,9 @@ fun HomeScreen(
                     }
 
                     Text(
-                        text = when(numOfProjects) {
-                            0-> "You have no project"
-                            1-> "You have one project"
+                        text = when (numOfProjects) {
+                            0 -> "You have no project"
+                            1 -> "You have one project"
                             else -> "You have $numOfProjects projects"
                         },
                         style = TextStyle(color = Color.Black)
@@ -137,7 +146,7 @@ fun HomeScreen(
                 }
 
                 Button(
-                    onClick = { /* Thêm hành động cho nút thêm */ },
+                    onClick = { onAddNewProject() },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xffd9d9d9),
                         contentColor = Color.Black
@@ -150,24 +159,77 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
 
-            if (projects is Resource.Success) {
+            when(projects){
+                is Resource.Success ->{
+                    val projectList = (projects as Resource.Success<Projects>).data!!
 
-                val projectList = (projects as Resource.Success<Projects>).data!!
-
-                LazyColumn {
-                    items(projectList.size) { item ->
-                        ProjectItem(
-                            title = projectList[item].name,
-                            team = "",
-                            backgroundColor = Color(randomColor(item))
-                        )
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(projectList.size) { item ->
+                            ProjectItem(
+                                title = projectList[item].name,
+                                team = "",
+                                backgroundColor = Color(randomColor(item))
+                            )
+                        }
                     }
                 }
+//                is Resource.Loading -> {
+//                    Box (
+//                        modifier = Modifier.fillMaxWidth(),
+//                        contentAlignment = Alignment.Center
+//                    ){
+//                        CircularProgressIndicator()
+//                    }
+//                }
+
+                is Resource.Error -> {}
+                null -> {}
+                is Resource.Loading ->{}
             }
+//            AnimatedVisibility(
+//                visible = projects is Resource.Success,
+//                enter = fadeIn(),
+//                exit = fadeOut()
+//            ) {
+//                if (projects is Resource.Success) {
+//
+//                    val projectList = (projects as Resource.Success<Projects>).data!!
+//
+//                    LazyColumn(
+//                        verticalArrangement = Arrangement.spacedBy(16.dp)
+//                    ) {
+//                        items(projectList.size) { item ->
+//                            ProjectItem(
+//                                title = projectList[item].name,
+//                                team = "",
+//                                backgroundColor = Color(randomColor(item))
+//                            )
+//                        }
+//                    }
+//                }
+//            }
+//
+//
+//            AnimatedVisibility(
+//                visible = projects is Resource.Loading,
+//                enter = fadeIn(),
+//                exit = fadeOut()
+//            ) {
+//                if (projects is Resource.Loading) {
+//
+//                    Box (
+//                        modifier = Modifier.fillMaxWidth(),
+//                        contentAlignment = Alignment.Center
+//                    ){
+//                        CircularProgressIndicator()
+//                    }
+//                }
+//            }
         }
     }
 }
-
 
 @Composable
 fun ProjectItem(title: String, team: String, backgroundColor: Color) {

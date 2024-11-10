@@ -7,6 +7,7 @@ import com.example.youmanage.data.remote.authentication.UserLogIn
 import com.example.youmanage.data.remote.authentication.UserLogInResponse
 import com.example.youmanage.data.remote.authentication.UserSignUp
 import com.example.youmanage.data.remote.authentication.UserSignUpResponse
+import com.example.youmanage.data.remote.authentication.VerifyRequest
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
 import com.example.youmanage.data.remote.projectmanagement.Projects
 import com.example.youmanage.data.remote.projectmanagement.Project
@@ -101,7 +102,14 @@ interface ApiInterface {
         @Body role: Role
     )
 
+    @POST("/auth/email_auth/verify/")
+    suspend fun verifyOTP(
+        @Body verifyRequest: VerifyRequest
+    ):String
 
-
+    @POST("/auth/email_auth/send_otp/")
+    suspend fun sendOTP(
+        @Body email: String
+    )
 
 }

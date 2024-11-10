@@ -14,6 +14,7 @@ import com.example.youmanage.data.remote.authentication.UserLogIn
 import com.example.youmanage.data.remote.authentication.UserLogInResponse
 import com.example.youmanage.data.remote.authentication.UserSignUp
 import com.example.youmanage.data.remote.authentication.UserSignUpResponse
+import com.example.youmanage.data.remote.authentication.VerifyRequest
 import com.example.youmanage.utils.Constants.ACCESS_TOKEN_KEY
 import com.example.youmanage.utils.Constants.REFRESH_TOKEN_KEY
 import com.example.youmanage.utils.Resource
@@ -85,9 +86,34 @@ class AuthenticationRepository @Inject constructor(
         return response
     }
 
-    suspend fun logOut(logoutRequest: RefreshToken, authorization: String): Resource<LogoutResponse> {
+    suspend fun logOut(
+        logoutRequest: RefreshToken,
+        authorization: String
+    ): Resource<LogoutResponse> {
         val response = try {
-            Resource.Success(api.logOut(logoutRequest = logoutRequest, authorization = authorization))
+            Resource.Success(
+                api.logOut(
+                    logoutRequest = logoutRequest,
+                    authorization = authorization
+                )
+            )
+        } catch (e: HttpException) {
+            if (e.code() == 400) {
+                Resource.Error("${e.response()?.errorBody()?.string()}")
+            } else {
+                Resource.Error("HTTP Error: ${e.code()}")
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Resource.Error(e.message.toString())
+        }
+
+        return response
+    }
+
+    suspend fun verifyOTP(otp: String, email: String): Resource<String> {
+        val response = try {
+            Resource.Success(api.verifyOTP(VerifyRequest(otp, email)))
         } catch (e: HttpException) {
             if (e.code() == 400) {
                 Resource.Error("${e.response()?.errorBody()?.string()}")
@@ -106,7 +132,8 @@ class AuthenticationRepository @Inject constructor(
         accessToken: String,
         refreshToken: String,
         key1: Preferences.Key<String>,
-        key2: Preferences.Key<String>) {
+        key2: Preferences.Key<String>
+    ) {
         context.dataStore.edit { preferences ->
             preferences[key1] = accessToken
             preferences[key2] = refreshToken
@@ -119,8 +146,7 @@ class AuthenticationRepository @Inject constructor(
         }
 
     val refreshToken: Flow<String?> = context.dataStore.data
-        .map {
-            preferences ->
+        .map { preferences ->
             preferences[REFRESH_TOKEN_KEY]
         }
 

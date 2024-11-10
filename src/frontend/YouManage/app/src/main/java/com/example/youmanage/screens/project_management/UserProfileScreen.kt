@@ -25,6 +25,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.youmanage.data.remote.authentication.RefreshToken
 import com.example.youmanage.screens.AlertDialog
+import com.example.youmanage.utils.Constants.ACCESS_TOKEN_KEY
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import kotlin.math.log
@@ -88,6 +89,7 @@ fun UserProfileScreen(
                     authorization = "Bearer $accessToken"
                 )
             }
+            authenticationViewModel.clearToken(ACCESS_TOKEN_KEY)
             openLogoutDialog = false
         })
 }

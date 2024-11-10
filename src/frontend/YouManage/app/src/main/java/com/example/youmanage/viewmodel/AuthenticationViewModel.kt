@@ -19,6 +19,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import javax.inject.Singleton
 
 
 @HiltViewModel
@@ -35,11 +36,15 @@ class AuthenticationViewModel @Inject constructor(
     private val _logOutResponse = MutableLiveData<Resource<LogoutResponse>>()
     val logOutResponse: LiveData<Resource<LogoutResponse>> get() = _logOutResponse
 
+    private val _verifyOTPResponse = MutableLiveData<Resource<String>>()
+    val verifyOTPResponse: LiveData<Resource<String>> get() = _verifyOTPResponse
+
     val accessToken: Flow<String?> = repository.accessToken
     val refreshToken: Flow<String?> = repository.refreshToken
 
     fun signUp(user: UserSignUp) {
         viewModelScope.launch {
+            _signUpResponse.value = Resource.Loading(UserSignUpResponse("", ""))
             _signUpResponse.value = repository.signUp(user)
         }
     }
@@ -53,6 +58,12 @@ class AuthenticationViewModel @Inject constructor(
     fun logInWithGoogle(user: UserGoogleLogIn) {
         viewModelScope.launch {
             _logInResponse.value = repository.logInWithGoogle(user)
+        }
+    }
+
+    fun verifyOTP(otp: String, email: String){
+        viewModelScope.launch {
+            _verifyOTPResponse.value = repository.verifyOTP(otp, email)
         }
     }
 
