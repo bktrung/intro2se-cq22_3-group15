@@ -211,8 +211,8 @@ class ForgotPasswordView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, action):
-        if action == 'check_mail':
-            return self.check_mail(request)
+        if action == 'check_email':
+            return self.check_email(request)
         elif action == 'send_otp':
             return self.send_otp(request)
         elif action == 'change_password':
@@ -220,7 +220,7 @@ class ForgotPasswordView(APIView):
         else:
             return Response({'error': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
     
-    def check_mail(self, request):
+    def check_email(self, request):
         email = request.data.get('email')
         if not email:
             return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
