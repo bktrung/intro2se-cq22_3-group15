@@ -5,8 +5,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.example.youmanage.screens.authetication.CreateAccountScreen
+import com.example.youmanage.screens.authetication.FindUserScreen
 import com.example.youmanage.screens.authetication.LoginScreen
 import com.example.youmanage.screens.authetication.OTPVerificationScreen
+import com.example.youmanage.screens.authetication.ResetPasswordScreen
 import com.example.youmanage.screens.authetication.WelcomeScreen
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 
@@ -41,21 +43,34 @@ fun NavGraphBuilder.authenticationNavGraph(
                             inclusive = true
                         }
                     }
+                },
+                onForgotPassword = {
+                    rootNavController.navigate(AuthRouteScreen.FindUser.route)
                 }
             )
         }
 
-        composable(AuthRouteScreen.OTPVerification.route) { backStackEntry->
-            val email = backStackEntry.arguments?.getString("email")
+        composable(AuthRouteScreen.OTPVerification.route) { backStackEntry ->
+            val email = backStackEntry.arguments?.getString("email").orEmpty()
+            val from = backStackEntry.arguments?.getString("from")
+
             OTPVerificationScreen(
                 expiredTime = 300,
                 onNavigateBack = {
-                    rootNavController.navigate(AuthRouteScreen.CreateAccount.route)
+                    val route = when (from) {
+                        "1" -> AuthRouteScreen.CreateAccount.route
+                        else -> AuthRouteScreen.FindUser.route
+                    }
+                    rootNavController.navigate(route)
                 },
-                onVerifySuccess = {
-                    rootNavController.navigate(AuthRouteScreen.Login.route)
+                onVerifySuccess = { otp ->
+                    val route = when (from) {
+                        "1" -> AuthRouteScreen.Login.route
+                        else -> "reset_password/$email/$otp"
+                    }
+                    rootNavController.navigate(route)
                 },
-                email = email.toString()
+                email = email
             )
         }
 
@@ -67,12 +82,37 @@ fun NavGraphBuilder.authenticationNavGraph(
                 onLogin = {
                     rootNavController.navigate(AuthRouteScreen.Login.route)
                 },
-                onCreateSuccess = {
-                    email->
-                    rootNavController.navigate("otp_verification/$email")
+                onCreateSuccess = { email ->
+                    rootNavController.navigate("otp_verification/$email/1")
                 }
             )
+        }
 
+        composable(AuthRouteScreen.FindUser.route) {
+            FindUserScreen(
+                onNavigateBack = {
+                    rootNavController.navigate(AuthRouteScreen.Login.route)
+                },
+                onFindSuccess = { email ->
+                    rootNavController.navigate("otp_verification/$email/2")
+                }
+            )
+        }
+
+        composable(AuthRouteScreen.ResetPassword.route) {
+            val email = it.arguments?.getString("email")
+            val otp = it.arguments?.getString("otp")
+
+            ResetPasswordScreen(
+                onNavigateBack = {
+                    rootNavController.navigateUp()
+                },
+                email = email.toString(),
+                otp = otp.toString(),
+                onChangePasswordSuccess = {
+                    rootNavController.navigate(AuthRouteScreen.Login.route)
+                }
+            )
         }
     }
 }

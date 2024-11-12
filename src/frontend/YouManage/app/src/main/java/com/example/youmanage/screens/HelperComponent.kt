@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -48,6 +49,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.youmanage.R
+import com.example.youmanage.ui.theme.fontFamily
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -86,12 +88,14 @@ fun AlertDialog(
                     Text(
                         text = title,
                         fontSize = 22.sp,
+                        fontFamily = fontFamily,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                     Text(
                         text = content,
+                        fontFamily = fontFamily,
                         fontSize = 16.sp,
                         color = Color.Gray,
                         modifier = Modifier.padding(bottom = 24.dp)
@@ -104,7 +108,7 @@ fun AlertDialog(
                             onClick = onDismiss,
                             colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
                         ) {
-                            Text("Cancel")
+                            Text("Cancel", fontFamily = fontFamily)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
@@ -112,7 +116,7 @@ fun AlertDialog(
                             colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text("OK", color = Color.White)
+                            Text("OK", color = Color.White, fontFamily = fontFamily)
                         }
                     }
                 }
@@ -160,6 +164,7 @@ fun ErrorDialog(
                     Spacer(modifier = Modifier.height(20.dp))
                     Text(
                         text = title,
+                        fontFamily = fontFamily,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black,
@@ -167,6 +172,7 @@ fun ErrorDialog(
                     )
                     Text(
                         text = content,
+                        fontFamily = fontFamily,
                         fontSize = 16.sp,
                         color = Color.Gray,
                         modifier = Modifier.padding(bottom = 24.dp),
@@ -180,7 +186,7 @@ fun ErrorDialog(
                             onClick = onDismiss,
                             colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
                         ) {
-                            Text("Cancel")
+                            Text("Cancel", fontFamily = fontFamily)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
@@ -188,7 +194,7 @@ fun ErrorDialog(
                             colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text("OK", color = Color.White)
+                            Text("OK", color = Color.White, fontFamily = fontFamily)
                         }
                     }
                 }
@@ -217,6 +223,7 @@ fun PasswordTextField(
 
     TextField(
         value = content,
+        textStyle = TextStyle(fontFamily = fontFamily),
         onValueChange = { onChangeValue(it) },
         placeholder = {
             Text(
@@ -256,6 +263,7 @@ fun TextFieldComponent(
 ) {
     TextField(
         value = content,
+        textStyle = TextStyle(fontFamily = fontFamily),
         onValueChange = { onChangeValue(it) },
         placeholder = {
             Text(
@@ -285,6 +293,7 @@ fun LeadingTextFieldComponent(
 ) {
     TextField(
         value = content,
+        textStyle = TextStyle(fontFamily = fontFamily),
         leadingIcon = {
             Icon(painter = painterResource(id = icon), contentDescription = "")
         },
@@ -303,7 +312,6 @@ fun LeadingTextFieldComponent(
         ),
         modifier = Modifier
             .fillMaxWidth()
-
     )
 }
 

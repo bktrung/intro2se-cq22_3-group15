@@ -1,5 +1,5 @@
 package com.example.youmanage.data.remote.authentication
 
-data class LogoutResponse(
+data class Message(
     val message: String
 )

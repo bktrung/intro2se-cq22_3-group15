@@ -28,47 +28,42 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
-import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
 import com.example.youmanage.data.remote.authentication.Email
 import com.example.youmanage.screens.ErrorDialog
-import com.example.youmanage.screens.PasswordTextField
+import com.example.youmanage.screens.TextFieldComponent
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 
 @Composable
-fun ResetPasswordScreen(
+fun FindUserScreen(
+    authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
-    onChangePasswordSuccess: () -> Unit,
-    email: String,
-    otp: String,
-    authenticationViewModel: AuthenticationViewModel = hiltViewModel()
+    onFindSuccess: (String) -> Unit
 ) {
+
     var openErrorDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-    var newPassword by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-
     val response = authenticationViewModel.forgotPasswordResponse.observeAsState().value
+    var user by remember { mutableStateOf("") }
 
     LaunchedEffect(response) {
         if (response is Resource.Success) {
-            onChangePasswordSuccess()
-        } else if(response is Resource.Error){
+            authenticationViewModel.forgotPasswordSendOTP(Email(user))
+            onFindSuccess(user)
+        } else if (response is Resource.Error) {
             errorMessage = response.message.toString()
-            openErrorDialog =  true
+            openErrorDialog = true
         }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White),
-        contentAlignment = Alignment.Center
+            .background(Color.White)
     ) {
         IconButton(
             onClick = {
@@ -87,61 +82,50 @@ fun ResetPasswordScreen(
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 24.dp)
+            modifier = Modifier
+                .padding(horizontal = 24.dp)
+                .padding(vertical = 100.dp)
+
         ) {
 
+
             Image(
-                painter = painterResource(id = R.drawable.reset_password_img),
+                painter = painterResource(id = R.drawable.find_user_img),
                 contentDescription = "Reset Password",
-                modifier = Modifier.size(250.dp)
+                modifier = Modifier.size(200.dp)
 
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Text(
-                text = "Reset Password",
+                text = "Find your account",
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(modifier = Modifier.height(50.dp))
+            Spacer(modifier = Modifier.height(5.dp))
 
-            PasswordTextField(
-                content = newPassword,
-                onChangeValue = { newPassword = it },
-                placeholderContent = "Password",
+            Text(
+                text = "Enter your email"
+            )
+
+            Spacer(modifier = Modifier.height(40.dp))
+
+            TextFieldComponent(
+                content = user,
+                onChangeValue = { user = it },
+                placeholderContent = "Email",
                 placeholderColor = Color.Gray,
-                containerColor = Color.White
+                containerColor = Color(0x1A000000)
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
 
-            PasswordTextField(
-                content = confirmPassword,
-                onChangeValue = { confirmPassword = it },
-                placeholderContent = "Confirm Password",
-                placeholderColor = Color.Gray,
-                containerColor = Color.White
-            )
-
-            Spacer(modifier = Modifier.height(40.dp))
-
             Button(
                 onClick = {
-                    if (newPassword != confirmPassword) {
-                        errorMessage = "Confirmation password does not match."
-                        openErrorDialog = true
-                    } else {
-                        authenticationViewModel.changePassword(
-                            ChangePasswordRequest(
-                                email = email,
-                                newPassword = newPassword,
-                                otp = otp
-                            )
-                        )
-                    }
+                    authenticationViewModel.checkEmail(Email(user))
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Black
@@ -153,7 +137,7 @@ fun ResetPasswordScreen(
             )
             {
                 Text(
-                    "Reset Password",
+                    "Continue",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(vertical = 5.dp)
@@ -162,14 +146,12 @@ fun ResetPasswordScreen(
         }
     }
 
-    if(openErrorDialog){
-        ErrorDialog(
-            title = "Error",
-            showDialog = true,
+    if (openErrorDialog) {
+        ErrorDialog(title = "Error",
             content = errorMessage,
+            showDialog = true,
             onDismiss = { openErrorDialog = false },
-            onConfirm = { openErrorDialog = false }
-        )
+            onConfirm = { openErrorDialog = false })
     }
 
 }

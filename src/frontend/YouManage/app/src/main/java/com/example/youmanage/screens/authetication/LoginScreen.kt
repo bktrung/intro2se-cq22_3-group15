@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -65,6 +66,7 @@ import com.example.youmanage.viewmodel.AuthenticationViewModel
 fun LoginScreen(
     onNavigateBack: () -> Unit,
     onLoginSuccess: () -> Unit,
+    onForgotPassword: () -> Unit,
     viewModel: AuthenticationViewModel = hiltViewModel()
 ) {
     var username by rememberSaveable { mutableStateOf("") }
@@ -168,6 +170,9 @@ fun LoginScreen(
                 modifier = Modifier
                     .align(Alignment.End)
                     .padding(end = 30.dp)
+                    .clickable {
+                        onForgotPassword()
+                    }
             )
 
             Spacer(modifier = Modifier.height(40.dp))

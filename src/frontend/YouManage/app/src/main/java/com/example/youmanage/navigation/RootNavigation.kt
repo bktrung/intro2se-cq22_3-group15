@@ -32,7 +32,9 @@ sealed class AuthRouteScreen(
     data object Login : AuthRouteScreen("login")
     data object CreateAccount : AuthRouteScreen("create_account")
     data object Welcome : AuthRouteScreen("welcome")
-    data object OTPVerification: AuthRouteScreen("otp_verification/{email}")
+    data object OTPVerification: AuthRouteScreen("otp_verification/{email}/{from}")
+    data object FindUser: AuthRouteScreen("find_user")
+    data object ResetPassword: AuthRouteScreen("reset_password/{email}/{otp}")
 }
 
 sealed class ProjectManagementRouteScreen(

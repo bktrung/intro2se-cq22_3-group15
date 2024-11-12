@@ -320,7 +320,6 @@ fun AddProjectScreen(
                         ) {
 
                             items(members.size) { index ->
-
                                 MemberItem(
                                     members[index],
                                     onDelete = {
@@ -504,17 +503,20 @@ fun AddMemberDialog(
 @Composable
 fun MemberItem(
     member: MemberItem,
-    onDelete: (String) -> Unit
+    onDelete: (String) -> Unit,
+    modifier: Modifier = Modifier
+
 ) {
 
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier
+        modifier = modifier
             .clip(RoundedCornerShape(5.dp))
             .background(member.backgroundColor)
     ) {
         Row(
             modifier = Modifier
+                .fillMaxWidth()
                 .padding(5.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically

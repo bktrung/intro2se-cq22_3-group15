@@ -1,25 +1,26 @@
 package com.example.youmanage.viewmodel
 
-import android.util.Log
 import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.youmanage.data.remote.authentication.LogoutResponse
+import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
+import com.example.youmanage.data.remote.authentication.Message
 import com.example.youmanage.data.remote.authentication.RefreshToken
+import com.example.youmanage.data.remote.authentication.Email
 import com.example.youmanage.data.remote.authentication.UserGoogleLogIn
 import com.example.youmanage.data.remote.authentication.UserLogIn
 import com.example.youmanage.data.remote.authentication.UserLogInResponse
 import com.example.youmanage.data.remote.authentication.UserSignUp
 import com.example.youmanage.data.remote.authentication.UserSignUpResponse
+import com.example.youmanage.data.remote.authentication.VerifyRequest
 import com.example.youmanage.repository.AuthenticationRepository
 import com.example.youmanage.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import javax.inject.Singleton
 
 
 @HiltViewModel
@@ -33,11 +34,14 @@ class AuthenticationViewModel @Inject constructor(
     private val _logInResponse = MutableLiveData<Resource<UserLogInResponse>>()
     val logInResponse: LiveData<Resource<UserLogInResponse>> get() = _logInResponse
 
-    private val _logOutResponse = MutableLiveData<Resource<LogoutResponse>>()
-    val logOutResponse: LiveData<Resource<LogoutResponse>> get() = _logOutResponse
+    private val _logOutResponse = MutableLiveData<Resource<Message>>()
+    val logOutResponse: LiveData<Resource<Message>> get() = _logOutResponse
 
-    private val _verifyOTPResponse = MutableLiveData<Resource<String>>()
-    val verifyOTPResponse: LiveData<Resource<String>> get() = _verifyOTPResponse
+    private val _verifyOTPResponse = MutableLiveData<Resource<Message>>()
+    val verifyOTPResponse: LiveData<Resource<Message>> get() = _verifyOTPResponse
+
+    private val _forgotPasswordResponse = MutableLiveData<Resource<Message>>()
+    val forgotPasswordResponse: LiveData<Resource<Message>> get() = _forgotPasswordResponse
 
     val accessToken: Flow<String?> = repository.accessToken
     val refreshToken: Flow<String?> = repository.refreshToken
@@ -61,9 +65,27 @@ class AuthenticationViewModel @Inject constructor(
         }
     }
 
-    fun verifyOTP(otp: String, email: String){
+    fun verifyOTP(request: VerifyRequest){
         viewModelScope.launch {
-            _verifyOTPResponse.value = repository.verifyOTP(otp, email)
+            _verifyOTPResponse.value = repository.verifyOTP(request)
+        }
+    }
+
+    fun sendOTP(email: Email){
+        viewModelScope.launch {
+            repository.sendOPT(email)
+        }
+    }
+
+    fun checkEmail(email: Email){
+        viewModelScope.launch {
+            _forgotPasswordResponse.value = repository.checkEmail(email)
+        }
+    }
+
+    fun forgotPasswordSendOTP(email: Email){
+        viewModelScope.launch {
+           _verifyOTPResponse.value = repository.forgotPasswordSendOTP(email)
         }
     }
 
@@ -71,6 +93,12 @@ class AuthenticationViewModel @Inject constructor(
         viewModelScope.launch {
             _logOutResponse.value =
                 repository.logOut(logoutRequest = logoutRequest, authorization = authorization)
+        }
+    }
+
+    fun changePassword(request: ChangePasswordRequest){
+        viewModelScope.launch {
+            _forgotPasswordResponse.value = repository.changePassword(request)
         }
     }
 

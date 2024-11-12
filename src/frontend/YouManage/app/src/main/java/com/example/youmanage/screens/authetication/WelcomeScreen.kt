@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.youmanage.R
+import com.example.youmanage.ui.theme.fontFamily
 
 @Composable
 fun WelcomeScreen(
@@ -58,22 +59,24 @@ fun WelcomeScreen(
 
             Text(
                 text = "Manage your task",
-                style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold),
+                style = TextStyle(fontSize = 45.sp, fontWeight = FontWeight.Bold),
                 color = Color.White,
+                fontFamily = fontFamily,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Text(
                 text = "Make your project or task on track easily and seamlessly",
-                style = TextStyle(fontSize = 18.sp),
+                style = TextStyle(fontSize = 20.sp),
+                fontFamily = fontFamily,
                 color = Color.White,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(30.dp))
 
             Button(
                 onClick = {
@@ -81,6 +84,7 @@ fun WelcomeScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
                     .height(60.dp),
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
@@ -88,6 +92,7 @@ fun WelcomeScreen(
             ) {
                 Text(
                     text = "Create Account",
+                    fontFamily = fontFamily,
                     color = Color.White,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
@@ -98,10 +103,15 @@ fun WelcomeScreen(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Do you have an account? ", color = Color.LightGray, fontSize = 16.sp)
+                Text(text = "Do you have an account? ",
+                    fontFamily = fontFamily,
+                    color = Color.LightGray,
+                    fontSize = 16.sp)
+
                 TextButton(onClick = { onLoginClick()}) {
                     Text(
                         text = "Log in",
+                        fontFamily = fontFamily,
                         color = Color.White,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold

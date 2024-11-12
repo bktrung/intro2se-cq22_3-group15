@@ -1,7 +1,9 @@
 package com.example.youmanage.data.remote
 
+import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
 import com.example.youmanage.data.remote.authentication.RefreshToken
-import com.example.youmanage.data.remote.authentication.LogoutResponse
+import com.example.youmanage.data.remote.authentication.Message
+import com.example.youmanage.data.remote.authentication.Email
 import com.example.youmanage.data.remote.authentication.UserGoogleLogIn
 import com.example.youmanage.data.remote.authentication.UserLogIn
 import com.example.youmanage.data.remote.authentication.UserLogInResponse
@@ -44,7 +46,7 @@ interface ApiInterface {
         @Body logoutRequest: RefreshToken,
         @Header("Content-Type") contentType: String = "application/json",
         @Header("Authorization") authorization: String
-    ): LogoutResponse
+    ): Message
 
     @GET("auth/test_token/")
     suspend fun testRefreshToken(
@@ -101,15 +103,29 @@ interface ApiInterface {
         @Path("action") action: String,
         @Body role: Role
     )
+    @POST("/auth/forgot_password/check_email/")
+    suspend fun checkEmail(
+        @Body email: Email
+    ): Message
 
-    @POST("/auth/email_auth/verify/")
+    @POST("auth/email_auth/verify/")
     suspend fun verifyOTP(
         @Body verifyRequest: VerifyRequest
-    ):String
+    ): Message
 
     @POST("/auth/email_auth/send_otp/")
     suspend fun sendOTP(
-        @Body email: String
-    )
+        @Body email: Email
+    ): Message
+
+    @POST("/auth/forgot_password/send_otp/")
+    suspend fun  forgotPasswordSendOTP(
+        @Body email: Email
+    ): Message
+
+    @POST("/auth/forgot_password/change_password/")
+    suspend fun changePassword(
+        @Body request: ChangePasswordRequest
+    ): Message
 
 }

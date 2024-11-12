@@ -2,6 +2,7 @@ package com.example.youmanage.screens.authetication
 
 import android.annotation.SuppressLint
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
@@ -26,7 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -49,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -59,6 +60,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
+import com.example.youmanage.data.remote.authentication.Email
+import com.example.youmanage.data.remote.authentication.VerifyRequest
 import com.example.youmanage.screens.ErrorDialog
 import com.example.youmanage.screens.components.KeyboardStatus
 import com.example.youmanage.screens.components.keyboardAsState
@@ -184,7 +187,7 @@ fun OTPVerificationScreen(
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
     email: String = "",
     onNavigateBack: () -> Unit,
-    onVerifySuccess: () -> Unit
+    onVerifySuccess: (String) -> Unit
 ) {
 
     val verifyOTPResponse = authenticationViewModel.verifyOTPResponse.observeAsState().value
@@ -199,11 +202,30 @@ fun OTPVerificationScreen(
 
     var openErrorDialog by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
+
     LaunchedEffect(verifyOTPResponse) {
         if (verifyOTPResponse is Resource.Success) {
-            onVerifySuccess()
+            Log.d(
+                "Message",
+                verifyOTPResponse.data.toString()
+            )
+            Toast.makeText(context, "Verification completed successfully!", Toast.LENGTH_SHORT)
+                .show()
+            onVerifySuccess(otp)
         } else if (verifyOTPResponse is Resource.Error) {
             openErrorDialog = true
+        }
+    }
+
+    LaunchedEffect(isRunning) {
+        while (isRunning) {
+            delay(1000L)
+            timeInSeconds -= 1
+            minutes = timeInSeconds / 60
+            seconds = timeInSeconds % 60
+
+            if (timeInSeconds <= 0) isRunning = false
         }
     }
 
@@ -213,17 +235,6 @@ fun OTPVerificationScreen(
             .background(Color.White),
 
         ) {
-
-        LaunchedEffect(isRunning) {
-            while (isRunning) {
-                delay(1000L)
-                timeInSeconds -= 1
-                minutes = timeInSeconds / 60
-                seconds = timeInSeconds % 60
-
-                if (timeInSeconds <= 0) isRunning = false
-            }
-        }
 
         IconButton(
             onClick = {
@@ -256,6 +267,7 @@ fun OTPVerificationScreen(
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
+
             Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = "An 6-digits code has been sent to your email",
@@ -293,7 +305,12 @@ fun OTPVerificationScreen(
                     text = "Didn't receive code?",
                     color = Color.Black.copy(alpha = 0.5f)
                 )
-                TextButton(onClick = { /*TODO*/ }) {
+                TextButton(onClick = {
+
+                    authenticationViewModel.sendOTP(
+                        Email(email)
+                    )
+                }) {
                     Text(text = "Resend")
                 }
             }
@@ -303,9 +320,15 @@ fun OTPVerificationScreen(
             Button(
                 onClick = {
                     if (email.isNotEmpty()) {
+                        Log.d(
+                            "Email",
+                            "$email $otp"
+                        )
                         authenticationViewModel.verifyOTP(
-                            otp,
-                            email
+                            VerifyRequest(
+                                otp = otp,
+                                email = email
+                            )
                         )
                     } else {
                         openErrorDialog = true
@@ -327,7 +350,8 @@ fun OTPVerificationScreen(
     }
 
     if (openErrorDialog) {
-        AnimatedVisibility(visible = true,
+        AnimatedVisibility(
+            visible = true,
             exit = scaleOut(),
             enter = scaleIn()
         ) {

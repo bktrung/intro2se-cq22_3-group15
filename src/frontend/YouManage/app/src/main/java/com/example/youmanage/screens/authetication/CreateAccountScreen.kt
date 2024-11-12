@@ -46,6 +46,7 @@ import com.example.youmanage.data.remote.authentication.UserSignUp
 import com.example.youmanage.screens.AlertDialog
 import com.example.youmanage.screens.PasswordTextField
 import com.example.youmanage.screens.TextFieldComponent
+import com.example.youmanage.ui.theme.fontFamily
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.extractMessages
 import com.example.youmanage.viewmodel.AuthenticationViewModel
@@ -93,8 +94,6 @@ fun CreateAccountScreen(
                 .fillMaxSize()
                 .background(Color.White)
                 .padding(16.dp)
-
-
         ) {
             IconButton(
                 onClick = { onNavigateBack() },
@@ -116,6 +115,7 @@ fun CreateAccountScreen(
             ) {
                 Text(
                     text = "Create Your Account",
+                    fontFamily = fontFamily,
                     style = TextStyle(
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold
@@ -130,6 +130,7 @@ fun CreateAccountScreen(
                     style = TextStyle(
                         fontSize = 16.sp
                     ),
+                    fontFamily = fontFamily,
                     color = Color.Gray
                 )
 
@@ -200,6 +201,7 @@ fun CreateAccountScreen(
                     Text(
                         text = "Create",
                         color = Color.White,
+                        fontFamily = fontFamily,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -213,12 +215,14 @@ fun CreateAccountScreen(
                 ) {
                     Text(
                         text = "Already have an account ? ",
+                        fontFamily = fontFamily,
                         color = Color.Gray,
                         fontSize = 16.sp
                     )
                     Text(
                         text = "Log in",
                         color = Color.Black,
+                        fontFamily = fontFamily,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.clickable {

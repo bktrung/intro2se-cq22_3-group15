@@ -4,11 +4,12 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.youmanage.data.remote.ApiInterface
+import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
 import com.example.youmanage.data.remote.authentication.RefreshToken
-import com.example.youmanage.data.remote.authentication.LogoutResponse
+import com.example.youmanage.data.remote.authentication.Message
+import com.example.youmanage.data.remote.authentication.Email
 import com.example.youmanage.data.remote.authentication.UserGoogleLogIn
 import com.example.youmanage.data.remote.authentication.UserLogIn
 import com.example.youmanage.data.remote.authentication.UserLogInResponse
@@ -89,7 +90,7 @@ class AuthenticationRepository @Inject constructor(
     suspend fun logOut(
         logoutRequest: RefreshToken,
         authorization: String
-    ): Resource<LogoutResponse> {
+    ): Resource<Message> {
         val response = try {
             Resource.Success(
                 api.logOut(
@@ -111,9 +112,82 @@ class AuthenticationRepository @Inject constructor(
         return response
     }
 
-    suspend fun verifyOTP(otp: String, email: String): Resource<String> {
+    suspend fun verifyOTP(request: VerifyRequest): Resource<Message> {
         val response = try {
-            Resource.Success(api.verifyOTP(VerifyRequest(otp, email)))
+            Resource.Success(api.verifyOTP(request))
+        } catch (e: HttpException) {
+            if (e.code() == 400) {
+                Resource.Error("${e.response()?.errorBody()?.string()}")
+            } else {
+                Resource.Error("HTTP Error: ${e.code()}")
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Resource.Error(e.message.toString())
+        }
+
+        return response
+    }
+
+    suspend fun checkEmail(email: Email): Resource<Message> {
+        val response = try {
+            Resource.Success(api.checkEmail(email))
+        }
+        catch (a: HttpException){
+            if(a.code() == 400){
+                Resource.Error("Email not found or not yet verified.")
+            } else if(a.code() == 404){
+                Resource.Error("User not found in the system.")
+            }
+            else{
+                Resource.Error("HTTP Error: ${a.code()}")
+            }
+        } catch (e: Exception){
+            e.printStackTrace()
+            Resource.Error(e.message.toString())
+        }
+
+        return response
+    }
+
+    suspend fun sendOPT(email: Email): Resource<Message> {
+        val response = try {
+            Resource.Success(api.sendOTP(email))
+        } catch (e:HttpException){
+            if(e.code() == 400){
+                Resource.Error("${e.response()?.errorBody()?.string()}")
+            }else{
+                Resource.Error("HTTP Error: ${e.code()}")
+            }
+        } catch (e : Exception){
+            e.printStackTrace()
+            Resource.Error(e.message.toString())
+
+        }
+
+        return response
+    }
+
+    suspend fun forgotPasswordSendOTP(email: Email): Resource<Message> {
+        val response = try {
+            Resource.Success(api.forgotPasswordSendOTP(email))
+        } catch (e: HttpException) {
+            if (e.code() == 400) {
+                Resource.Error("${e.response()?.errorBody()?.string()}")
+            } else {
+                Resource.Error("HTTP Error: ${e.code()}")
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Resource.Error(e.message.toString())
+        }
+
+        return response
+    }
+
+    suspend fun changePassword(request: ChangePasswordRequest): Resource<Message> {
+        val response = try {
+            Resource.Success(api.changePassword(request))
         } catch (e: HttpException) {
             if (e.code() == 400) {
                 Resource.Error("${e.response()?.errorBody()?.string()}")
