@@ -4,6 +4,8 @@ from rest_framework.decorators import api_view
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
 from django.contrib.auth import get_user_model
+from django.contrib.sessions.backends.db import SessionStore
+from django.utils import timezone
 from django.db.models import Q
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_yasg.utils import swagger_auto_schema
@@ -14,6 +16,7 @@ from .serializers import UserSerializer
 from .utils import logout_user_from_other_devices
 from .models import OTPModel
 from .utils import send_otp_to_email
+import uuid
 
 User = get_user_model()
 
@@ -215,6 +218,8 @@ class ForgotPasswordView(APIView):
             return self.check_email(request)
         elif action == 'send_otp':
             return self.send_otp(request)
+        elif action == 'verify_otp':
+            return self.verify_otp(request)
         elif action == 'change_password':
             return self.change_password(request)
         else:
@@ -239,31 +244,78 @@ class ForgotPasswordView(APIView):
         send_otp_to_email(user, 'Password reset')
         return Response({'message': 'OTP sent to email'}, status=status.HTTP_200_OK)
     
-    def change_password(self, request):
+    def verify_otp(self, request):
         email = request.data.get('email')
         otp = request.data.get('otp')
-        new_password = request.data.get('new_password')
-        confirm_password = request.data.get('confirm_password')
         
-        if not email or not otp or not new_password:
-            return Response({'error': 'Email, OTP, and new password are required'}, status=status.HTTP_400_BAD_REQUEST)
+        if not email or not otp:
+            return Response({'error': 'Email and OTP are required'}, status=status.HTTP_400_BAD_REQUEST)
 
         user = User.objects.filter(email=email).first()
         if not user:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        current_otp = OTPModel.objects.filter(user=user).order_by('-created_at').first()
+        current_otp = OTPModel.objects.filter(user=user, otp=otp).order_by('-created_at').first()
         if not current_otp:
-            return Response({'error': 'No OTP found. Please request a new one.'}, status=status.HTTP_400_BAD_REQUEST)
-        if current_otp.otp != otp:
             return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
+        
         if not current_otp.isValid():
+            current_otp.delete()
             return Response({'error': 'OTP expired'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create a unique reset token
+        reset_token = str(uuid.uuid4())
+        
+        # Create a new session for password reset
+        session = SessionStore()
+        session['reset_user_id'] = user.id
+        session['reset_timestamp'] = str(timezone.now())
+        session.create()
+        
+        # Store the session key as our reset token
+        request.session[f'pwd_reset_{reset_token}'] = session.session_key
+        
+        return Response({
+            'message': 'OTP verified successfully',
+            'reset_token': reset_token
+        }, status=status.HTTP_200_OK)
+    
+    def change_password(self, request):
+        new_password = request.data.get('new_password')
+        confirm_password = request.data.get('confirm_password')
+        reset_token = request.data.get('reset_token')
+        
+        if not new_password or not confirm_password or not reset_token:
+            return Response({'error': 'New password and reset token are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        session_key = request.session.get(f'pwd_reset_{reset_token}')
+        if not session_key:
+            return Response({'error': 'Invalid or expired reset token'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        session = SessionStore(session_key=session_key)
+        
+        user_id = session.get('reset_user_id')
+        if not user_id:
+            return Response({'error': 'Invalid reset request'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        user = User.objects.filter(id=user_id).first()
+        if not user:
+            return Response({'error': 'User not found'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        reset_time = timezone.datetime.fromisoformat(session.get('reset_timestamp'))
+        if timezone.now() > reset_time + timezone.timedelta(minutes=5):
+            session.delete()
+            del request.session[f'pwd_reset_{reset_token}']
+            return Response({'error': 'Reset token expired'}, status=status.HTTP_400_BAD_REQUEST)
+
         if new_password != confirm_password:
             return Response({'error': 'Passwords do not match'}, status=status.HTTP_400_BAD_REQUEST)
 
         user.set_password(new_password)
         user.save()
 
+        session.delete()
+        del request.session[f'pwd_reset_{reset_token}']
+        OTPModel.objects.filter(user=user).delete()
+
         return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
-    
