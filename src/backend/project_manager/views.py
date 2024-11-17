@@ -3,19 +3,11 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from .models import Project, Task, Role
-from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer, RoleSerializer
+from .models import Project, Task, Role, Issue
+from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer, RoleSerializer, IssueSerializer
+from .permissons import IsProjectHostOrReadOnly, IsHostOrAssignee
 
-User = get_user_model()
-
-class IsProjectHostOrReadOnly(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        if hasattr(obj, 'project'):
-            return obj.project.host == request.user
-        return obj.host == request.user
-    
+User = get_user_model()    
 
 class ProjectListCreateView(generics.ListCreateAPIView):
     serializer_class = ProjectSerializer
@@ -207,3 +199,34 @@ class RoleManagementView(generics.GenericAPIView):
         
         role.users.remove(user)
         return Response({"detail": "User unassigned from role successfully."}, status=status.HTTP_200_OK)
+    
+    
+class IssueListCreateView(generics.ListCreateAPIView):
+    serializer_class = IssueSerializer
+
+    def get_queryset(self):
+        return Issue.objects.filter(project_id=self.kwargs['project_id'])
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['project'] = get_object_or_404(Project, id=self.kwargs['project_id'])
+        return context
+
+    def perform_create(self, serializer):
+        project = self.get_serializer_context()['project']
+        if self.request.user not in project.members.all():
+            raise PermissionDenied("You must be a project member to report an issue.")
+        serializer.save(reporter=self.request.user, project=project)
+
+
+class IssueRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = IssueSerializer
+    permission_classes = [IsHostOrAssignee]
+
+    def get_queryset(self):
+        return Issue.objects.filter(project_id=self.kwargs['project_id'])
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['project'] = get_object_or_404(Project, id=self.kwargs['project_id'])
+        return context
