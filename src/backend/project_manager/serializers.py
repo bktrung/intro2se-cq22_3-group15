@@ -97,3 +97,10 @@ class RoleSerializer(serializers.ModelSerializer):
         fields = ['id', 'role_name', 'description', 'project']
         read_only_fields = ['project']
     
+
+class ProjectMemberSerializer(serializers.ModelSerializer):
+    members = UserSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Project
+        fields = ['members']
