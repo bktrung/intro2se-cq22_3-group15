@@ -9,9 +9,8 @@ RUN apt update && \
 
 COPY ./requirements.txt ./backend/requirements.txt
 
-RUN /venv/bin/pip install --no-cache-dir -r ./backend/requirements.txt && \
-    /venv/bin/pip install --upgrade pip setuptools wheel
-RUN /venv/bin/pip install daphne channels
+RUN /venv/bin/pip install --upgrade pip && \
+    /venv/bin/pip install --no-cache-dir -r ./backend/requirements.txt 
 
 COPY . ./backend
 
