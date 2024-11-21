@@ -12,11 +12,13 @@ from .views import (
     RoleManagementView,
     IssueListCreateView,
     IssueRetrieveUpdateDestroyView,
+    ProjectMemberRetrieveView
 )
 
 urlpatterns = [
     path('projects/', ProjectListCreateView.as_view(), name='project-list-create'),
     path('projects/<int:pk>/', ProjectRetrieveUpdateDestroyView.as_view(), name='project-detail'),
+    path('projects/<int:pk>/members/', ProjectMemberRetrieveView.as_view(), name='project-member-retrieve'),
     path('projects/<int:pk>/members/<str:action>/', ProjectMemberManagementView.as_view(), name='project-member-management'),
     path('projects/<int:project_id>/tasks/', TaskListCreateView.as_view(), name='task-list-create'),
     path('projects/<int:project_id>/tasks/<int:pk>/', TaskRetrieveUpdateDestroyView.as_view(), name='task-detail'),

@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from .models import Project, Task, Role, Issue
-from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer, RoleSerializer, IssueSerializer
+from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer, RoleSerializer, IssueSerializer, ProjectMemberSerializer
 from .permissons import IsProjectHostOrReadOnly, IsHostOrAssignee
 
 User = get_user_model()    
@@ -230,3 +230,10 @@ class IssueRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         context = super().get_serializer_context()
         context['project'] = get_object_or_404(Project, id=self.kwargs['project_id'])
         return context
+    
+    
+class ProjectMemberRetrieveView(generics.RetrieveAPIView):
+    serializer_class = ProjectMemberSerializer
+    
+    def get_queryset(self):
+        return Project.objects.filter(members=self.request.user).select_related('host').prefetch_related('members')
