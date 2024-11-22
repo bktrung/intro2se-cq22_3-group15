@@ -60,7 +60,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
+import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
 import com.example.youmanage.data.remote.authentication.Email
+import com.example.youmanage.data.remote.authentication.ResetToken
 import com.example.youmanage.data.remote.authentication.VerifyRequest
 import com.example.youmanage.screens.ErrorDialog
 import com.example.youmanage.screens.components.KeyboardStatus
@@ -186,11 +188,16 @@ fun OTPVerificationScreen(
     expiredTime: Int,
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
     email: String = "",
+    from: String,
     onNavigateBack: () -> Unit,
     onVerifySuccess: (String) -> Unit
 ) {
 
-    val verifyOTPResponse = authenticationViewModel.verifyOTPResponse.observeAsState().value
+    val verifyOTPResponse = when (from) {
+        "1" -> authenticationViewModel.verifyOTPResponse.observeAsState().value
+        "2" -> authenticationViewModel.verifyResetPasswordOTP.observeAsState().value
+        else -> null
+    }
 
     var timeInSeconds by remember { mutableIntStateOf(expiredTime) }
     var isRunning by remember { mutableStateOf(true) }
@@ -205,17 +212,37 @@ fun OTPVerificationScreen(
     val context = LocalContext.current
 
     LaunchedEffect(verifyOTPResponse) {
-        if (verifyOTPResponse is Resource.Success) {
-            Log.d(
-                "Message",
-                verifyOTPResponse.data.toString()
-            )
-            Toast.makeText(context, "Verification completed successfully!", Toast.LENGTH_SHORT)
-                .show()
-            onVerifySuccess(otp)
-        } else if (verifyOTPResponse is Resource.Error) {
-            openErrorDialog = true
+        when (from) {
+            "1" -> {
+                if (verifyOTPResponse is Resource.Success) {
+                    Toast.makeText(
+                        context,
+                        "Verification completed successfully!",
+                        Toast.LENGTH_SHORT
+                    )
+                        .show()
+                    onVerifySuccess(otp)
+                } else if (verifyOTPResponse is Resource.Error) {
+                    openErrorDialog = true
+                }
+            }
+
+            "2" -> {
+                if (verifyOTPResponse is Resource.Success) {
+                    Toast.makeText(
+                        context,
+                        "Verification completed successfully!",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    val resetToken = verifyOTPResponse.data as? ResetToken
+                    onVerifySuccess(resetToken?.resetToken.toString())
+                } else if (verifyOTPResponse is Resource.Error) {
+                    openErrorDialog = true
+                }
+            }
         }
+
     }
 
     LaunchedEffect(isRunning) {
@@ -320,16 +347,26 @@ fun OTPVerificationScreen(
             Button(
                 onClick = {
                     if (email.isNotEmpty()) {
-                        Log.d(
-                            "Email",
-                            "$email $otp"
-                        )
-                        authenticationViewModel.verifyOTP(
-                            VerifyRequest(
-                                otp = otp,
-                                email = email
-                            )
-                        )
+                        when (from) {
+                            "1" -> {
+                                authenticationViewModel.verifyOTP(
+                                    VerifyRequest(
+                                        otp = otp,
+                                        email = email
+                                    )
+                                )
+                            }
+
+                            "2" -> {
+                                authenticationViewModel.verifyResetPasswordOTP(
+                                    VerifyRequest(
+                                        otp = otp,
+                                        email = email
+                                    )
+                                )
+                            }
+                        }
+
                     } else {
                         openErrorDialog = true
                     }

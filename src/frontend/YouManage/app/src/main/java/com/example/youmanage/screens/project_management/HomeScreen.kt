@@ -1,9 +1,5 @@
 package com.example.youmanage.screens.project_management
 
-import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -24,8 +20,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -54,16 +48,15 @@ import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.randomColor
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
-import kotlinx.coroutines.delay
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
     paddingValues: PaddingValues,
-    onAddNewProject: () -> Unit
+    onAddNewProject: () -> Unit,
+    onViewProject: (Int) -> Unit
 ) {
     val textFieldColor = Color(0xFFF5F5F5)
     var searchQuery by remember { mutableStateOf("") }
@@ -158,7 +151,6 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-
             when(projects){
                 is Resource.Success ->{
                     val projectList = (projects as Resource.Success<Projects>).data!!
@@ -170,69 +162,31 @@ fun HomeScreen(
                             ProjectItem(
                                 title = projectList[item].name,
                                 team = "",
-                                backgroundColor = Color(randomColor(item))
+                                backgroundColor = Color(randomColor(item)),
+                                onViewProject = {
+                                    onViewProject(projectList[item].id)
+                                }
                             )
                         }
                     }
                 }
-//                is Resource.Loading -> {
-//                    Box (
-//                        modifier = Modifier.fillMaxWidth(),
-//                        contentAlignment = Alignment.Center
-//                    ){
-//                        CircularProgressIndicator()
-//                    }
-//                }
 
                 is Resource.Error -> {}
                 null -> {}
                 is Resource.Loading ->{}
             }
-//            AnimatedVisibility(
-//                visible = projects is Resource.Success,
-//                enter = fadeIn(),
-//                exit = fadeOut()
-//            ) {
-//                if (projects is Resource.Success) {
-//
-//                    val projectList = (projects as Resource.Success<Projects>).data!!
-//
-//                    LazyColumn(
-//                        verticalArrangement = Arrangement.spacedBy(16.dp)
-//                    ) {
-//                        items(projectList.size) { item ->
-//                            ProjectItem(
-//                                title = projectList[item].name,
-//                                team = "",
-//                                backgroundColor = Color(randomColor(item))
-//                            )
-//                        }
-//                    }
-//                }
-//            }
-//
-//
-//            AnimatedVisibility(
-//                visible = projects is Resource.Loading,
-//                enter = fadeIn(),
-//                exit = fadeOut()
-//            ) {
-//                if (projects is Resource.Loading) {
-//
-//                    Box (
-//                        modifier = Modifier.fillMaxWidth(),
-//                        contentAlignment = Alignment.Center
-//                    ){
-//                        CircularProgressIndicator()
-//                    }
-//                }
-//            }
+
         }
     }
 }
 
 @Composable
-fun ProjectItem(title: String, team: String, backgroundColor: Color) {
+fun ProjectItem(
+    title: String,
+    team: String,
+    backgroundColor: Color,
+    onViewProject: (Int) -> Unit = {}
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -269,7 +223,7 @@ fun ProjectItem(title: String, team: String, backgroundColor: Color) {
         }
 
         Button(
-            onClick = { /* Thêm hành động cho nút View Project */ },
+            onClick = { onViewProject(-1) },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(vertical = 16.dp)
@@ -290,8 +244,8 @@ fun ProjectItem(title: String, team: String, backgroundColor: Color) {
                         .background(
                             Color.Gray,
                             shape = CircleShape
-                        ) // Màu nền và hình dạng tròn
-                        .padding(4.dp), // Khoảng cách giữa mũi tên và viền tròn
+                        )
+                        .padding(4.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(text = "➜", modifier = Modifier)

@@ -1,6 +1,7 @@
 package com.example.youmanage.repository
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -10,6 +11,7 @@ import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
 import com.example.youmanage.data.remote.authentication.RefreshToken
 import com.example.youmanage.data.remote.authentication.Message
 import com.example.youmanage.data.remote.authentication.Email
+import com.example.youmanage.data.remote.authentication.ResetToken
 import com.example.youmanage.data.remote.authentication.UserGoogleLogIn
 import com.example.youmanage.data.remote.authentication.UserLogIn
 import com.example.youmanage.data.remote.authentication.UserLogInResponse
@@ -129,20 +131,37 @@ class AuthenticationRepository @Inject constructor(
         return response
     }
 
+    suspend fun verifyResetPasswordOTP(request: VerifyRequest): Resource<ResetToken> {
+        val response = try {
+            Resource.Success(api.verifyResetPasswordOTP(request))
+        } catch (e: HttpException) {
+            if (e.code() == 400) {
+                Resource.Error("Invalid OTP")
+            } else if (e.code() == 404) {
+                Resource.Error("User not found")
+            } else {
+                Resource.Error("HTTP Error: ${e.code()}")
+
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Resource.Error(e.message.toString())
+        }
+        return response
+    }
+
     suspend fun checkEmail(email: Email): Resource<Message> {
         val response = try {
             Resource.Success(api.checkEmail(email))
-        }
-        catch (a: HttpException){
-            if(a.code() == 400){
+        } catch (e: HttpException) {
+            if (e.code() == 400) {
                 Resource.Error("Email not found or not yet verified.")
-            } else if(a.code() == 404){
+            } else if (e.code() == 404) {
                 Resource.Error("User not found in the system.")
+            } else {
+                Resource.Error("HTTP Error: ${e.code()}")
             }
-            else{
-                Resource.Error("HTTP Error: ${a.code()}")
-            }
-        } catch (e: Exception){
+        } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message.toString())
         }
@@ -153,13 +172,13 @@ class AuthenticationRepository @Inject constructor(
     suspend fun sendOPT(email: Email): Resource<Message> {
         val response = try {
             Resource.Success(api.sendOTP(email))
-        } catch (e:HttpException){
-            if(e.code() == 400){
+        } catch (e: HttpException) {
+            if (e.code() == 400) {
                 Resource.Error("${e.response()?.errorBody()?.string()}")
-            }else{
+            } else {
                 Resource.Error("HTTP Error: ${e.code()}")
             }
-        } catch (e : Exception){
+        } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message.toString())
 
@@ -187,6 +206,7 @@ class AuthenticationRepository @Inject constructor(
 
     suspend fun changePassword(request: ChangePasswordRequest): Resource<Message> {
         val response = try {
+            Log.d("changePassword", "changePassword: $request")
             Resource.Success(api.changePassword(request))
         } catch (e: HttpException) {
             if (e.code() == 400) {

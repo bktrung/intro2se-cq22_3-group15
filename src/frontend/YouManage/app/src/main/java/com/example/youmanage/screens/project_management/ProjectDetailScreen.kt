@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
@@ -26,90 +25,114 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
 import com.example.youmanage.screens.components.PieChart
 import com.example.youmanage.screens.components.pieChartInput
+import com.example.youmanage.utils.Resource
+import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.ProjectManagementViewModel
 
-@Preview
 @Composable
 fun ProjectDetailScreen(
     backgroundColor: Color = Color(0xffBAE5F5),
-    modifier: Modifier = Modifier) {
-    Scaffold(
-        topBar = {
-            TopBar()
-        },
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundColor)
-            .padding(top = 24.dp)
+    id: Int,
+    authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
+    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel()
+) {
 
-    ) { paddingValues ->
-        val scrollState = rememberScrollState()
+    val project by projectManagementViewModel.project.observeAsState()
+    val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
 
-        Box(
+    LaunchedEffect(accessToken.value) {
+        accessToken.value?.let { token ->
+            projectManagementViewModel.getProject(
+                id = id.toString(),
+                authorization = "Bearer $token"
+            )
+        }
+    }
+    if(project is Resource.Success) {
+        Scaffold(
+            topBar = {
+                TopBar()
+            },
             modifier = Modifier
-                .fillMaxSize() // Đảm bảo Box chiếm toàn bộ diện tích
-                .padding(paddingValues)
-                .background(backgroundColor)// Thêm padding từ Scaffold
+                .fillMaxSize()
+                .background(backgroundColor)
+                .padding(top = 24.dp)
 
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
+        ) { paddingValues ->
+
+            val scrollState = rememberScrollState()
+
+            Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                   /// .verticalScroll(scrollState)
+                    .fillMaxSize() // Đảm bảo Box chiếm toàn bộ diện tích
+                    .padding(paddingValues)
+                    .background(backgroundColor)// Thêm padding từ Scaffold
+
             ) {
-                PieChart(
-                    input = pieChartInput,
-                    modifier = Modifier.padding(36.dp)
-                )
-
-                DescriptionSection()
-
-                Button(
-                    onClick = { /* Thêm hành động cho nút View Project */ },
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
-                        .padding(vertical = 16.dp)
-                        .padding(horizontal = 36.dp)
-                        .fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF251034))
+                        .fillMaxSize()
+                    /// .verticalScroll(scrollState)
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(vertical = 2.dp)
+                    PieChart(
+                        input = pieChartInput,
+                        modifier = Modifier.padding(36.dp)
+                    )
+
+                    DescriptionSection(description = project?.data?.description.toString())
+
+                    Button(
+                        onClick = { /* Thêm hành động cho nút View Project */ },
+                        modifier = Modifier
+                            .padding(vertical = 16.dp)
+                            .padding(horizontal = 36.dp)
+                            .fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF251034))
                     ) {
-                        Text(text = "Task List", color = Color.White)
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .background(
-                                    Color.Gray,
-                                    shape = CircleShape
-                                ) // Màu nền và hình dạng tròn
-                                .padding(4.dp), // Khoảng cách giữa mũi tên và viền tròn
-                            contentAlignment = Alignment.Center
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(vertical = 2.dp)
                         ) {
-                            Text(text = "➜", modifier = Modifier)
+                            Text(text = "Task List", color = Color.White)
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .background(
+                                        Color.Gray,
+                                        shape = CircleShape
+                                    ) // Màu nền và hình dạng tròn
+                                    .padding(4.dp), // Khoảng cách giữa mũi tên và viền tròn
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(text = "➜", modifier = Modifier)
+                            }
+
                         }
 
                     }
 
+                    //MembersSection()
+
                 }
-
-                //MembersSection()
-
             }
         }
     }
@@ -148,7 +171,9 @@ fun TopBar(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun DescriptionSection(modifier: Modifier = Modifier) {
+fun DescriptionSection(
+    description: String,
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -163,8 +188,7 @@ fun DescriptionSection(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "  This project has a task management, gantt chart, have five members, " +
-                    "use kotlin and jetpack compose to develop UI... Read more",
+            text = description,
             fontWeight = FontWeight.Medium,
             fontSize = 15.sp,
             color = Color.Black.copy(alpha = 0.6f)

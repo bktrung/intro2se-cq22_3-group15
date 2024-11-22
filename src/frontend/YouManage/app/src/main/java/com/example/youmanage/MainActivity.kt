@@ -5,11 +5,16 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
+import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
+import com.example.youmanage.data.remote.authentication.VerifyRequest
 import com.example.youmanage.navigation.RootNavGraph
 import com.example.youmanage.screens.project_management.ProjectDetailScreen
+import com.example.youmanage.screens.task_management.CreateTaskScreen
 import com.example.youmanage.screens.task_management.TaskListScreen
 import com.example.youmanage.ui.theme.YouManageTheme
+import com.example.youmanage.viewmodel.AuthenticationViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -22,7 +27,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
 
-//        val viewModel: ProjectManagementViewModel by viewModels()
+        //val viewModel: AuthenticationViewModel by viewModels()
 //
 //        val project = ProjectCreate(
 //            "My Project Update 1",
@@ -41,18 +46,30 @@ class MainActivity : ComponentActivity() {
 //        }
 
 
+//        viewModel.verifyResetPasswordOTP(
+//            VerifyRequest(
+//                "duonghuutuong0712@gmail.com",
+//                "320760"
+//            )
+//        )
 
-       // viewModel.getProjectList(authorization = authorization)
+//        viewModel.changePassword(
+//            ChangePasswordRequest(
+//                "string",
+//                "string",
+//                "40782c00-09ce-4e07-8315-fa8e3891a572"
+//            )
+//        )
 
         setContent {
             YouManageTheme {
 
-                TaskListScreen()
+              //  CreateTaskScreen()
+              //  TaskListScreen()
             //ProjectDetailScreen()
                 //FindUserScreen()
-               // RootNavGraph()
+               RootNavGraph()
                 //TestPieChart()
-
 
 
                 //viewModel.sendOTP(SendOTPRequest("duonghuutuong0712@gmail.com"))

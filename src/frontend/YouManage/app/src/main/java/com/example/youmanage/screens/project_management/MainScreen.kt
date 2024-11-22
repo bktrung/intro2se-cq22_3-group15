@@ -51,7 +51,7 @@ val bottomNavigationItems = listOf(
         icon = R.drawable.task_icon,
         selectedColor = Color.Black,
         unselectedColor = Color.Gray,
-        route = ProjectManagementRouteScreen.TaskList.route
+        route = ""
     ),
     BottomNavigationItem(
         title = "Calendar",

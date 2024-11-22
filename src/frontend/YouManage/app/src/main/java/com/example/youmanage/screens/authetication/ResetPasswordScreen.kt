@@ -1,5 +1,7 @@
 package com.example.youmanage.screens.authetication
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -28,13 +30,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
 import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
-import com.example.youmanage.data.remote.authentication.Email
+import com.example.youmanage.data.remote.authentication.ResetToken
 import com.example.youmanage.screens.ErrorDialog
 import com.example.youmanage.screens.PasswordTextField
 import com.example.youmanage.utils.Resource
@@ -44,8 +45,7 @@ import com.example.youmanage.viewmodel.AuthenticationViewModel
 fun ResetPasswordScreen(
     onNavigateBack: () -> Unit,
     onChangePasswordSuccess: () -> Unit,
-    email: String,
-    otp: String,
+    resetToken: String,
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
 ) {
     var openErrorDialog by remember { mutableStateOf(false) }
@@ -53,16 +53,18 @@ fun ResetPasswordScreen(
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
 
-    val response = authenticationViewModel.forgotPasswordResponse.observeAsState().value
+    val response = authenticationViewModel.message.observeAsState().value
 
     LaunchedEffect(response) {
         if (response is Resource.Success) {
             onChangePasswordSuccess()
         } else if(response is Resource.Error){
             errorMessage = response.message.toString()
+            Log.d("Reset Password", response.message.toString())
             openErrorDialog =  true
         }
     }
+    Log.d("Reset", resetToken)
 
     Box(
         modifier = Modifier
@@ -136,9 +138,9 @@ fun ResetPasswordScreen(
                     } else {
                         authenticationViewModel.changePassword(
                             ChangePasswordRequest(
-                                email = email,
                                 newPassword = newPassword,
-                                otp = otp
+                                confirmPassword = confirmPassword,
+                                resetToken = resetToken
                             )
                         )
                     }

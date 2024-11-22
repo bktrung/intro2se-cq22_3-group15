@@ -56,6 +56,7 @@ fun NavGraphBuilder.authenticationNavGraph(
 
             OTPVerificationScreen(
                 expiredTime = 300,
+                from = from.toString(),
                 onNavigateBack = {
                     val route = when (from) {
                         "1" -> AuthRouteScreen.CreateAccount.route
@@ -63,10 +64,10 @@ fun NavGraphBuilder.authenticationNavGraph(
                     }
                     rootNavController.navigate(route)
                 },
-                onVerifySuccess = { otp ->
+                onVerifySuccess = { string ->
                     val route = when (from) {
                         "1" -> AuthRouteScreen.Login.route
-                        else -> "reset_password/$email/$otp"
+                        else -> "reset_password/$string"
                     }
                     rootNavController.navigate(route)
                 },
@@ -100,15 +101,13 @@ fun NavGraphBuilder.authenticationNavGraph(
         }
 
         composable(AuthRouteScreen.ResetPassword.route) {
-            val email = it.arguments?.getString("email")
-            val otp = it.arguments?.getString("otp")
+            val resetToken = it.arguments?.getString("token")
 
             ResetPasswordScreen(
                 onNavigateBack = {
-                    rootNavController.navigateUp()
+                    rootNavController.navigate(AuthRouteScreen.Login.route)
                 },
-                email = email.toString(),
-                otp = otp.toString(),
+                resetToken = resetToken.toString(),
                 onChangePasswordSuccess = {
                     rootNavController.navigate(AuthRouteScreen.Login.route)
                 }

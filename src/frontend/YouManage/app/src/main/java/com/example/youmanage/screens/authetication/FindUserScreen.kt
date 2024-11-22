@@ -47,7 +47,7 @@ fun FindUserScreen(
 
     var openErrorDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-    val response = authenticationViewModel.forgotPasswordResponse.observeAsState().value
+    val response = authenticationViewModel.message.observeAsState().value
     var user by remember { mutableStateOf("") }
 
     LaunchedEffect(response) {
@@ -121,7 +121,6 @@ fun FindUserScreen(
             )
 
             Spacer(modifier = Modifier.height(20.dp))
-
 
             Button(
                 onClick = {

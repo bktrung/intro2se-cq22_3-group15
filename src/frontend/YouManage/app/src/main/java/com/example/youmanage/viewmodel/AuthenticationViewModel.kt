@@ -1,5 +1,7 @@
 package com.example.youmanage.viewmodel
 
+import android.util.Log
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -9,6 +11,7 @@ import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
 import com.example.youmanage.data.remote.authentication.Message
 import com.example.youmanage.data.remote.authentication.RefreshToken
 import com.example.youmanage.data.remote.authentication.Email
+import com.example.youmanage.data.remote.authentication.ResetToken
 import com.example.youmanage.data.remote.authentication.UserGoogleLogIn
 import com.example.youmanage.data.remote.authentication.UserLogIn
 import com.example.youmanage.data.remote.authentication.UserLogInResponse
@@ -40,8 +43,11 @@ class AuthenticationViewModel @Inject constructor(
     private val _verifyOTPResponse = MutableLiveData<Resource<Message>>()
     val verifyOTPResponse: LiveData<Resource<Message>> get() = _verifyOTPResponse
 
-    private val _forgotPasswordResponse = MutableLiveData<Resource<Message>>()
-    val forgotPasswordResponse: LiveData<Resource<Message>> get() = _forgotPasswordResponse
+    private val _verifyResetPasswordOTP = MutableLiveData<Resource<ResetToken>>()
+    val verifyResetPasswordOTP: LiveData<Resource<ResetToken>> get() = _verifyResetPasswordOTP
+
+    private val _message = MutableLiveData<Resource<Message>>()
+    val message: LiveData<Resource<Message>> get() = _message
 
     val accessToken: Flow<String?> = repository.accessToken
     val refreshToken: Flow<String?> = repository.refreshToken
@@ -71,6 +77,11 @@ class AuthenticationViewModel @Inject constructor(
         }
     }
 
+    fun verifyResetPasswordOTP(request: VerifyRequest){
+        viewModelScope.launch {
+            _verifyResetPasswordOTP.value = repository.verifyResetPasswordOTP(request)
+        }
+    }
     fun sendOTP(email: Email){
         viewModelScope.launch {
             repository.sendOPT(email)
@@ -79,7 +90,7 @@ class AuthenticationViewModel @Inject constructor(
 
     fun checkEmail(email: Email){
         viewModelScope.launch {
-            _forgotPasswordResponse.value = repository.checkEmail(email)
+            _message.value = repository.checkEmail(email)
         }
     }
 
@@ -98,7 +109,8 @@ class AuthenticationViewModel @Inject constructor(
 
     fun changePassword(request: ChangePasswordRequest){
         viewModelScope.launch {
-            _forgotPasswordResponse.value = repository.changePassword(request)
+            Log.d("changePassword", "changePassword: 1")
+            _message.value = repository.changePassword(request)
         }
     }
 

@@ -98,17 +98,17 @@ dependencies {
     implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")
     implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
 
-
+    // Google Login
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
-    //implementation ("com.google.android.libraries.identity.googleid:1.3.0")
-
-
     implementation ("com.google.android.gms:play-services-auth:21.2.0")
 
     // Data Store
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
+    // Material Design
     implementation("androidx.compose.material3:material3:1.3.1")
+
+    implementation ("com.squareup.okhttp3:logging-interceptor:4.11.0")
 
 }
