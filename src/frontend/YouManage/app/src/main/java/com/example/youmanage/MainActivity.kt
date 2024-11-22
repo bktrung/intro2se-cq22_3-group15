@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
+import com.example.youmanage.chat.ChatScreenWithViewModel
 import com.example.youmanage.navigation.RootNavGraph
 import com.example.youmanage.screens.project_management.ProjectDetailScreen
 import com.example.youmanage.screens.task_management.TaskListScreen
@@ -47,14 +48,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             YouManageTheme {
 
-                TaskListScreen()
+
             //ProjectDetailScreen()
                 //FindUserScreen()
                // RootNavGraph()
                 //TestPieChart()
 
 
-
+                ChatScreenWithViewModel()
                 //viewModel.sendOTP(SendOTPRequest("duonghuutuong0712@gmail.com"))
 
             }
