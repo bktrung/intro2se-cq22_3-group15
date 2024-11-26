@@ -20,6 +20,4 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('auth/', include('custom_auth.urls')),
-    path('', include('project_manager.urls')),
-    path('api/chat/', include('chat.urls')),  # Prefix all chat routes with /api/chat/
 ]

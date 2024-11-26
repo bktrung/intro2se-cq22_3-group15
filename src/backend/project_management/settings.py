@@ -26,12 +26,11 @@ SECRET_KEY = 'django-insecure-a(1c$9dux0hhj$^wa4_if6^&9_iz16=d&#-___l_tm9qgicbt%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = []
 
 # Application definition
 
 INSTALLED_APPS = [
-    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -42,9 +41,6 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'custom_auth',
-    'project_manager',
-    'notification',
-    'chat',
 ]
 
 AUTH_USER_MODEL = 'custom_auth.CustomUser'
@@ -59,7 +55,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=2),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
@@ -93,18 +89,8 @@ TEMPLATES = [
     },
 ]
 
-# WSGI_APPLICATION = 'project_management.wsgi.application'
+WSGI_APPLICATION = 'project_management.wsgi.application'
 
-ASGI_APPLICATION = 'project_management.asgi.application'
-
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
-        },
-    },
-}
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -157,11 +143,3 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-# If the Outlook account cant be used, contact C0smic for the email and password
-EMAIL_HOST_USER = 'vvtung2004@gmail.com'
-EMAIL_HOST_PASSWORD = 'irqa vavd buzv brlc'
