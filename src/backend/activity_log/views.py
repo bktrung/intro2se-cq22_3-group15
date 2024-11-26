@@ -24,4 +24,4 @@ class ProjectActivityLogListView(generics.ListAPIView):
         if not project.members.filter(id=user.id).exists() and project.host != user:
             raise PermissionDenied(detail="You do not have permission to view this project's activity logs.")
 
-        return ActivityLog.objects.filter(project=project).select_related('project', 'user').order_by('-timestamp')
+        return ActivityLog.objects.filter(project=project).order_by('-timestamp')

@@ -85,13 +85,31 @@ class TaskListCreateView(generics.ListCreateAPIView):
         context = super().get_serializer_context()
         context['project'] = get_object_or_404(Project, id=self.kwargs['project_id'])
         return context
-
+        
     def perform_create(self, serializer):
-        serializer.save(project=self.get_serializer_context()['project'])
+        # Get project from context
+        project = self.get_serializer_context()['project']
+        
+        # Create validated data with _current_user
+        validated_data = serializer.validated_data
+        validated_data['project'] = project
+        
+        # Create instance manually without saving
+        task = Task(**validated_data)
+        task._current_user = self.request.user
+        
+        # Now save to DB
+        task.save()
+        
+        # Update serializer instance
+        serializer.instance = task
+        
+        return task
         
 
 class TaskRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TaskSerializer
+    permission_classes = [IsHostOrAssignee]
 
     def get_queryset(self):
         project_id = self.kwargs['project_id']
@@ -101,6 +119,15 @@ class TaskRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         context = super().get_serializer_context()
         context['project'] = get_object_or_404(Project, id=self.kwargs['project_id'])
         return context
+    
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        instance._current_user = self.request.user
+        task = serializer.save()
+
+    def perform_destroy(self, instance):
+        instance._current_user = self.request.user
+        instance.delete()
     
 
 class CommentListCreateView(generics.ListCreateAPIView):
