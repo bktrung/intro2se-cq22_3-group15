@@ -10,6 +10,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('username', 'email', 'password1', 'password2')
+        ref_name = 'CustomAuthUser'
 
     def validate(self, data):
         if data['password1'] != data['password2']:
@@ -23,3 +24,4 @@ class UserSerializer(serializers.ModelSerializer):
             password=validated_data['password1']
         )
         return user
+    
