@@ -22,4 +22,5 @@ urlpatterns = [
     path('auth/', include('custom_auth.urls')),
     path('', include('project_manager.urls')),
     path('', include('chat.urls')),
+    path('', include('activity_log.urls')),
 ]
