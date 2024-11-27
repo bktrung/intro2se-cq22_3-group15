@@ -3,6 +3,6 @@ import com.google.gson.annotations.SerializedName
 
 data class TaskUpdateStatus(
     @SerializedName("assignee_id")
-    val assigneeId: Int,
+    val assigneeId: Int? = null,
     val status: String
 )

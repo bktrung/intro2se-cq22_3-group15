@@ -6,7 +6,7 @@ import com.google.gson.annotations.SerializedName
 data class Comment(
     val author: User,
     val content: String,
-    @SerializedName("create_at")
+    @SerializedName("created_at")
     val createdAt: String,
     val id: Int,
     @SerializedName("updated_at")

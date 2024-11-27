@@ -17,11 +17,14 @@ import com.example.youmanage.data.remote.projectmanagement.Id
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
 import com.example.youmanage.data.remote.projectmanagement.Projects
 import com.example.youmanage.data.remote.projectmanagement.Project
+import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.taskmanagement.Content
 import com.example.youmanage.data.remote.taskmanagement.Task
 import com.example.youmanage.data.remote.taskmanagement.TaskCreate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdate
+import com.example.youmanage.data.remote.taskmanagement.TaskUpdateStatus
 import com.example.youmanage.data.remote.taskmanagement.Username
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -140,21 +143,27 @@ interface ApiInterface {
     suspend fun addMember(
         @Path("projectId") id: String,
         @Body member: Username,
-        @Header("Authentication") authentication: String
-    )
+        @Header("Authorization") authentication: String
+    ): Detail
 
     @POST("/projects/{projectId}/members/remove/")
     suspend fun removeMember(
         @Path("projectId") id: String,
         @Body memberId: Id,
-        @Header("Authentication") authentication: String
-    )
+        @Header("Authorization") authentication: String
+    ): Detail
+
+    @GET("/projects/{projectId}/members/")
+    suspend fun getMembers(
+        @Path("projectId") id: String,
+        @Header("Authorization") authentication: String
+    ): List<User>
 
     @GET("/projects/{projectId}/tasks/")
     suspend fun getTasks(
         @Path("projectId") id: String,
         @Header("Authorization") authorization: String,
-    ): ArrayList<Task>
+    ): List<Task>
 
     @POST("/projects/{projectId}/tasks/")
     suspend fun createTask(
@@ -179,8 +188,9 @@ interface ApiInterface {
     ): Task
 
     @PATCH("/projects/{projectId}/tasks/{taskId}/")
-    suspend fun updateTaskStatus(
+    suspend fun updateTaskStatusAndAssignee(
         @Path("projectId") projectId: String,
+        @Body task: TaskUpdateStatus,
         @Path("taskId") taskId: String,
         @Header("Authorization") authorization: String
     ): Task
@@ -190,20 +200,20 @@ interface ApiInterface {
         @Path("projectId") projectId: String,
         @Path("taskId") taskId: String,
         @Header("Authorization") authorization: String
-    )
+    ): Response<Unit>
 
     @GET("/projects/{projectId}/tasks/{taskId}/comments/")
     suspend fun getComments(
         @Path("projectId") projectId: String,
         @Path("taskId") taskId: String,
         @Header("Authorization") authorization: String
-    ): ArrayList<Comment>
+    ): List<Comment>
 
     @POST("/projects/{projectId}/tasks/{taskId}/comments/")
     suspend fun postComment(
         @Path("projectId") projectId: String,
         @Path("taskId") taskId: String,
-        @Body comment: String,
+        @Body comment: Content,
         @Header("Authorization") authorization: String
     ): Comment
 
@@ -220,7 +230,8 @@ interface ApiInterface {
         @Path("projectId") projectId: String,
         @Path("taskId") taskId: String,
         @Path("commentId") commentId: String,
-        @Body comment: Content
+        @Body comment: Content,
+        @Header("Authorization") authorization: String
     ): Comment
 
     @DELETE("/projects/{projectId}/tasks/{taskId}/comments/{commentId}/")
@@ -229,6 +240,6 @@ interface ApiInterface {
         @Path("taskId") taskId: String,
         @Path("commentId") commentId: String,
         @Header("Authorization") authorization: String
-    )
+    ): Response<Unit>
 
 }

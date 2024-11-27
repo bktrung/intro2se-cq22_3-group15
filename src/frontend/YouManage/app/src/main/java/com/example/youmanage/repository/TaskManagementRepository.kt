@@ -1,13 +1,16 @@
 package com.example.youmanage.repository
 
+import android.util.Log
 import com.example.youmanage.data.remote.ApiInterface
 import com.example.youmanage.data.remote.taskmanagement.Comment
 import com.example.youmanage.data.remote.taskmanagement.Content
 import com.example.youmanage.data.remote.taskmanagement.Task
 import com.example.youmanage.data.remote.taskmanagement.TaskCreate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdate
+import com.example.youmanage.data.remote.taskmanagement.TaskUpdateStatus
 import com.example.youmanage.utils.Resource
 import dagger.hilt.android.scopes.ActivityScoped
+import retrofit2.HttpException
 import javax.inject.Inject
 
 @ActivityScoped
@@ -15,7 +18,8 @@ class TaskManagementRepository @Inject constructor(
     private val api: ApiInterface
 ) {
 
-    suspend fun getTasks(projectId: String, authorization: String): Resource<ArrayList<Task>> {
+
+    suspend fun getTasks(projectId: String, authorization: String): Resource<List<Task>> {
         val response = try {
             Resource.Success(api.getTasks(projectId, authorization))
         } catch (e: Exception) {
@@ -68,13 +72,21 @@ class TaskManagementRepository @Inject constructor(
         return response
     }
 
-    suspend fun updateTaskStatus(
+    suspend fun updateTaskStatusAndAssignee(
         projectId: String,
         taskId: String,
+        task: TaskUpdateStatus,
         authorization: String
     ): Resource<Task> {
         val response = try {
-            Resource.Success(api.updateTaskStatus(projectId, taskId, authorization))
+            Resource.Success(
+                api.updateTaskStatusAndAssignee(
+                    projectId = projectId,
+                    taskId = taskId,
+                    task = task,
+                    authorization = authorization
+                )
+            )
         } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message.toString())
@@ -91,6 +103,8 @@ class TaskManagementRepository @Inject constructor(
         val response = try {
             api.deleteTask(projectId, taskId, authorization)
             Resource.Success("Task has been deleted successfully.")
+        } catch (e: HttpException) {
+            Resource.Error("Task not found")
         } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message.toString())
@@ -103,25 +117,28 @@ class TaskManagementRepository @Inject constructor(
         projectId: String,
         taskId: String,
         authorization: String
-    ): Resource<ArrayList<Comment>> {
+    ): Resource<List<Comment>> {
         val response = try {
             Resource.Success(api.getComments(projectId, taskId, authorization))
         } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message.toString())
         }
-
         return response
     }
 
     suspend fun postComment(
         projectId: String,
         taskId: String,
-        comment: String,
+        comment: Content,
         authorization: String
     ): Resource<Comment> {
         val response = try {
-            Resource.Success(api.postComment(projectId, taskId, comment, authorization))
+            Resource.Success(api.postComment(
+                projectId,
+                taskId,
+                comment,
+                authorization))
         } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message.toString())
@@ -150,10 +167,11 @@ class TaskManagementRepository @Inject constructor(
         projectId: String,
         taskId: String,
         commentId: String,
-        comment: Content
+        comment: Content,
+        authorization: String
     ): Resource<Comment> {
         val response = try {
-            Resource.Success(api.updateComment(projectId, taskId, commentId, comment))
+            Resource.Success(api.updateComment(projectId, taskId, commentId, comment, authorization))
         } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message.toString())
@@ -167,16 +185,9 @@ class TaskManagementRepository @Inject constructor(
         taskId: String,
         commentId: String,
         authorization: String
-    ): Resource<String> {
-        val response = try {
-            api.deleteComment(projectId, taskId, commentId, authorization)
-            Resource.Success("Comment has been deleted successfully.")
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Resource.Error(e.message.toString())
-        }
-
-        return response
+    ) {
+        api.deleteComment(projectId, taskId, commentId, authorization)
     }
+
 
 }

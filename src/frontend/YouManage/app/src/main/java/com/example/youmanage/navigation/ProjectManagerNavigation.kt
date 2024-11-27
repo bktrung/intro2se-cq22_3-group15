@@ -1,6 +1,13 @@
 package com.example.youmanage.navigation
 
 
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavGraphBuilder
@@ -18,6 +25,7 @@ import com.example.youmanage.screens.project_management.AddProjectScreen
 import com.example.youmanage.screens.project_management.HomeScreen
 import com.example.youmanage.screens.project_management.MainScreen
 import com.example.youmanage.screens.project_management.ProjectDetailScreen
+import com.example.youmanage.screens.project_management.ProjectMenuScreen
 import com.example.youmanage.screens.project_management.UserProfileScreen
 
 @Composable
@@ -63,6 +71,7 @@ fun ProjectManagementNavGraph(
 
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 fun NavGraphBuilder.projectManagementNavGraph(
     rootNavController: NavHostController
 ) {
@@ -79,25 +88,55 @@ fun NavGraphBuilder.projectManagementNavGraph(
                 })
         }
 
-        composable(ProjectManagementRouteScreen.ProjectDetail.route) {
-                backStackEntry ->
-            val id = backStackEntry.arguments?.getString("id")
+        composable(ProjectManagementRouteScreen.AddProject.route) {
+            AddProjectScreen(
+                onNavigateBack = {
+                    rootNavController.navigateUp()
+                }
+            )
+        }
+
+        composable(
+            route = ProjectManagementRouteScreen.ProjectDetail.route
+        ) {
+            val id = it.arguments?.getString("id")
             ProjectDetailScreen(
+                onNavigateBack = {
+                    rootNavController.navigateUp()
+                },
+                onClickMenu = {
+                    rootNavController.navigate("project_menu/${id}")
+                },
                 id = id!!.toInt()
             )
         }
 
-        composable(ProjectManagementRouteScreen.AddProject.route) {
-            AddProjectScreen(navHostController = rootNavController)
-        }
+        composable(
+            route = ProjectManagementRouteScreen.ProjectMenu.route,
+            enterTransition = {
+                slideInHorizontally(
+                    initialOffsetX = { 1000 },
+                    animationSpec = tween(300)
+                ) + fadeIn()
 
-        composable(route = ProjectManagementRouteScreen.ProjectDetail.route) {
+
+            },
+            exitTransition = {
+                slideOutHorizontally(
+                    targetOffsetX = { 1000 },
+                    animationSpec = tween(300)
+                )
+            }
+        ) {
             val id = it.arguments?.getString("id")
-            ProjectDetailScreen(id = id!!.toInt())
-        }
-
-        composable(route = ProjectManagementRouteScreen.AddProject.route) {
-            AddProjectScreen(navHostController = rootNavController)
+            ProjectMenuScreen(
+                onNavigateBack = {
+                    rootNavController.navigateUp()
+                },
+                onTaskList = {
+                    rootNavController.navigate("task_list/${id}")
+                }
+            )
         }
 
     }

@@ -1,5 +1,7 @@
 package com.example.youmanage.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -43,15 +45,18 @@ sealed class ProjectManagementRouteScreen(
     data object Calender: ProjectManagementRouteScreen("calender")
     data object AddProject : ProjectManagementRouteScreen("add_project")
     data object ProjectDetail : ProjectManagementRouteScreen("project_detail/{id}")
+    data object ProjectMenu: ProjectManagementRouteScreen("project_menu/{id}")
 }
 
 sealed class TaskManagementRouteScreen(
     val route: String
 ) {
-    data object CreateTask: TaskManagementRouteScreen("add_task")
-    data object TaskList : TaskManagementRouteScreen("task_list")
+    data object CreateTask: TaskManagementRouteScreen("add_task/{projectId}")
+    data object TaskList : TaskManagementRouteScreen("task_list/{projectId}")
+    data object TaskDetail : TaskManagementRouteScreen("task_detail/{projectId}/{taskId}")
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RootNavGraph(
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
@@ -85,6 +90,7 @@ fun RootNavGraph(
         ) {
             authenticationNavGraph(rootNavController = navController)
             projectManagementNavGraph(rootNavController = navController)
+            taskManagementNavGraph(rootNavController = navController)
         }
     }
 }

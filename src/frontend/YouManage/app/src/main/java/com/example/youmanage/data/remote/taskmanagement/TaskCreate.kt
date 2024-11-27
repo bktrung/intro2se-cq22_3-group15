@@ -7,7 +7,7 @@ data class TaskCreate(
     val assigneeId: Int,
     @SerializedName("end_date")
     val endDate: String,
-    val description: String,
+    val description: String? = null,
     @SerializedName("start_date")
     val startDate: String,
     val title: String

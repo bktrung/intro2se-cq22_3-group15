@@ -7,10 +7,13 @@ import com.example.youmanage.data.remote.projectmanagement.Project
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
 import com.example.youmanage.data.remote.projectmanagement.Projects
 import com.example.youmanage.data.remote.projectmanagement.Role
+import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.taskmanagement.Detail
 import com.example.youmanage.data.remote.taskmanagement.Username
 import com.example.youmanage.utils.Resource
 import dagger.hilt.android.scopes.ActivityScoped
+import org.json.JSONObject
+import retrofit2.HttpException
 import javax.inject.Inject
 
 @ActivityScoped
@@ -88,11 +91,22 @@ class ProjectManagementRepository @Inject constructor(
         }
     }
 
-    suspend fun addMember(id: String, member: Username, authorization: String): Resource<String> {
+    suspend fun addMember(id: String, member: Username, authorization: String): Resource<Detail> {
         val response = try {
-            api.addMember(id, member, authorization)
-            Resource.Success("Member has been added successfully.")
-        } catch (e: Exception) {
+            Resource.Success( api.addMember(id, member, authorization))
+        }
+        catch (e: HttpException) {
+            if (e.code() == 400) {
+                val errorBody = e.response()?.errorBody()?.string()
+                val errorMessage = errorBody?.let { JSONObject(it).getString("detail") }
+                Resource.Error("$errorMessage")
+            } else if (e.code() == 404) {
+                Resource.Error("User not found")
+            }else {
+                Resource.Error("HTTP Error: ${e.code()}")
+            }
+        }
+        catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message.toString())
         }
@@ -100,10 +114,31 @@ class ProjectManagementRepository @Inject constructor(
         return response
     }
 
-    suspend fun removeMember(id: String, memberId: Id, authorization: String): Resource<String> {
+    suspend fun removeMember(id: String, memberId: Id, authorization: String): Resource<Detail> {
         val response = try {
             api.removeMember(id, memberId, authorization)
-            Resource.Success("Member has been removed successfully.")
+            Resource.Success(api.removeMember(id, memberId, authorization))
+        } catch (e: HttpException) {
+            if (e.code() == 400) {
+                val errorBody = e.response()?.errorBody()?.string()
+                val errorMessage = errorBody?.let { JSONObject(it).getString("detail") }
+                Resource.Error("$errorMessage")
+            } else if (e.code() == 404) {
+                Resource.Error("User not found")
+            }else {
+                Resource.Error("HTTP Error: ${e.code()}")
+            }
+        }
+        return response
+    }
+
+
+    suspend fun getMembers(
+        id: String,
+        authorization: String
+    ): Resource<List<User>> {
+        val response = try {
+            Resource.Success(api.getProject(id, authorization).members)
         } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message.toString())

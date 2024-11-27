@@ -64,7 +64,6 @@ dependencies {
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.googleid)
     implementation(libs.firebase.auth.ktx)
-    //implementation(libs.androidx.datastore.core.jvm)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -109,6 +108,10 @@ dependencies {
     // Material Design
     implementation("androidx.compose.material3:material3:1.3.1")
 
+    // Okhttp3
     implementation ("com.squareup.okhttp3:logging-interceptor:4.11.0")
+
+    // Navigation Animation
+    implementation ("com.google.accompanist:accompanist-navigation-animation:0.33.1-alpha")
 
 }

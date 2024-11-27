@@ -1,11 +1,9 @@
 package com.example.youmanage.screens.task_management
 
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,25 +16,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,42 +40,53 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.youmanage.R
-import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
+import com.example.youmanage.data.remote.projectmanagement.User
+import com.example.youmanage.data.remote.taskmanagement.TaskCreate
+import com.example.youmanage.screens.ChooseItemDialog
 import com.example.youmanage.screens.DatePickerModal
 import com.example.youmanage.screens.LeadingTextFieldComponent
-import com.example.youmanage.ui.theme.fontFamily
-import com.example.youmanage.utils.randomVibrantLightColor
+import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
-
-data class MemberItem(
-    val username: String,
-    val backgroundColor: Color,
-    val avatar: Int
-)
+import com.example.youmanage.viewmodel.TaskManagementViewModel
 
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CreateTaskScreen(
-//    navHostController: NavHostController,
-//    authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-//    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel()
+    navHostController: NavHostController,
+    projectId: String,
+    onCreateTask: () -> Unit,
+    taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
+    authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
+    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel()
 ) {
+
+    val members by projectManagementViewModel.members.observeAsState()
+
+    val task by taskManagementViewModel.task.observeAsState()
+
+    val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
+
+    LaunchedEffect(task) {
+        if (task is Resource.Success) {
+            onCreateTask()
+        }
+    }
+
+    LaunchedEffect(accessToken.value) {
+        accessToken.value?.let { token ->
+            projectManagementViewModel.getMembers(projectId, "Bearer $token")
+        }
+    }
 
     var showDatePicker by remember { mutableStateOf(false) }
     val textFieldColor = Color(0xFFF5F5F5)
@@ -96,8 +102,11 @@ fun CreateTaskScreen(
     var startDate by rememberSaveable { mutableStateOf("") }
     var endDate by rememberSaveable { mutableStateOf("") }
 
+    var assignedMemberId by remember {
+        mutableIntStateOf(-1)
+    }
     var assignedMember by remember {
-        mutableStateOf("Unassign")
+        mutableStateOf("Unassigned")
     }
 
     Box(
@@ -367,7 +376,7 @@ fun CreateTaskScreen(
                             horizontalArrangement = Arrangement.spacedBy(5.dp),
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(Color.LightGray)
+                                .background(textFieldColor)
                                 .padding(horizontal = 10.dp, vertical = 5.dp)
                         ) {
                             Image(
@@ -390,12 +399,24 @@ fun CreateTaskScreen(
 
                 Button(
                     onClick = {
+                        taskManagementViewModel.createTask(
+                            projectId = projectId,
+                            TaskCreate(
+                                title = title,
+                                description = description,
+                                startDate = startDate,
+                                endDate = endDate,
+                                assigneeId = 1
+                            ),
+                            authorization = "Bearer ${accessToken.value}"
+                        )
 
                     },
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
                     modifier = Modifier
                         .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
 
                 ) {
                     Text(
@@ -428,133 +449,18 @@ fun CreateTaskScreen(
             })
     }
 
-    if(showChooseMember){
-        ChooseMemberDialog(
-            onDismiss = {
-                showChooseMember = false
-            },
-            onConfirm = {
-                assignedMember = it
-                showChooseMember = false
-            }
-        )
-    }
-}
-
-@Preview
-@Composable
-fun ChooseMemberDialog(
-    title: String = "Choose member",
-    content: String = "",
-    showDialog: Boolean = true,
-    onDismiss: () -> Unit = {},
-    onConfirm: (String) -> Unit = {}
-) {
-    var isChosenMember by remember {
-        mutableIntStateOf(-1)
-    }
-
-    var listName = listOf(
-        "Nguyen Van A",
-        "Nguyen Van B",
-        "Nguyen Van C",
-        "Nguyen Van D",
-        "Nguyen Van E"
+    ChooseItemDialog(
+        title = "Choose Member",
+        showDialog = showChooseMember,
+        items = if (members is Resource.Success) members?.data!! else emptyList(),
+        displayText = { it.username },
+        onDismiss = { showChooseMember = false },
+        onConfirm = { user ->
+            assignedMemberId = user.id
+            assignedMember = user.username
+            showChooseMember = false
+        }
     )
 
-    if (showDialog) {
-        Dialog(
-            onDismissRequest = onDismiss,
-            properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true)
-        ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .shadow(
-                        elevation = 8.dp,
-                        shape = RoundedCornerShape(10.dp)
-                    ),
-                shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = title,
-                        fontFamily = fontFamily,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-
-                    ) {
-                        items(listName.size) {
-                            index->
-                            Box {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(5.dp),
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(
-                                            if (index != isChosenMember) Color.LightGray
-                                            else Color.Cyan
-                                        )
-                                        .padding(horizontal = 20.dp, vertical = 5.dp)
-                                        .clickable {
-                                            isChosenMember = index
-                                        }
-                                ) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.avatar),
-                                        contentDescription = null,
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .clip(CircleShape)
-                                    )
-                                    Text(
-                                        listName[index],
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = 15.sp
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        TextButton(
-                            onClick = onDismiss,
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
-                        ) {
-                            Text("Cancel", fontFamily = fontFamily)
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(
-                            onClick = {onConfirm(listName[isChosenMember])},
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Text("OK", color = Color.White, fontFamily = fontFamily)
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
 

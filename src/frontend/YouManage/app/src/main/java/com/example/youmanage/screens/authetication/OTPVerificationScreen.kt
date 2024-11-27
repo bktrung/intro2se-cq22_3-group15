@@ -333,10 +333,17 @@ fun OTPVerificationScreen(
                     color = Color.Black.copy(alpha = 0.5f)
                 )
                 TextButton(onClick = {
-
-                    authenticationViewModel.sendOTP(
+                    authenticationViewModel.forgotPasswordSendOTP(
                         Email(email)
                     )
+
+                    Toast.makeText(
+                        context,
+                        "Check your email to receive a new OTP!",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    timeInSeconds = expiredTime
+
                 }) {
                     Text(text = "Resend")
                 }

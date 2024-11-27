@@ -72,9 +72,9 @@ data class MemberItem(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AddProjectScreen(
-    navHostController: NavHostController,
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel()
+    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
+    onNavigateBack: () -> Unit
 ) {
 
     var showDatePicker by remember { mutableStateOf(false) }
@@ -112,7 +112,7 @@ fun AddProjectScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = {
-                    navHostController.navigateUp()
+                    onNavigateBack()
                 }) {
                     Icon(
                         painter = painterResource(id = R.drawable.back_arrow_icon),
@@ -136,8 +136,7 @@ fun AddProjectScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
-                    .verticalScroll(scrollState)
-                ,
+                    .verticalScroll(scrollState),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -282,54 +281,54 @@ fun AddProjectScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
 
-                    Text(
-                        "Members",
-                        color = Color.Black,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-
-                        Button(
-                            onClick = { showAddMemberDialog = true },
-                            colors = ButtonDefaults.buttonColors(
-                                contentColor = Color.Black,
-                                containerColor = Color(0xFFF5F5F5)
-                            ),
-                            modifier = Modifier.size(50.dp),
-                            shape = RoundedCornerShape(10.dp)
-
-                        ) {
-                            Text(
-                                "+",
-                                fontSize = 20.sp,
-                                textAlign = TextAlign.Center,
-                                fontWeight = FontWeight.Bold,
-
-                                )
-                        }
-
-                        LazyRow(
-                            modifier = Modifier.weight(1f),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-
-                            items(members.size) { index ->
-                                MemberItem(
-                                    members[index],
-                                    onDelete = {
-                                        members = members.filter { i -> i.username != it }
-                                    }
-                                )
-                            }
-                        }
-
-                    }
+//                    Text(
+//                        "Members",
+//                        color = Color.Black,
+//                        fontWeight = FontWeight.Bold,
+//                        fontSize = 20.sp
+//                    )
+//
+//                    Row(
+//                        modifier = Modifier.fillMaxWidth(),
+//                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+//                        verticalAlignment = Alignment.CenterVertically
+//                    ) {
+//
+//                        Button(
+//                            onClick = { showAddMemberDialog = true },
+//                            colors = ButtonDefaults.buttonColors(
+//                                contentColor = Color.Black,
+//                                containerColor = Color(0xFFF5F5F5)
+//                            ),
+//                            modifier = Modifier.size(50.dp),
+//                            shape = RoundedCornerShape(10.dp)
+//
+//                        ) {
+//                            Text(
+//                                "+",
+//                                fontSize = 20.sp,
+//                                textAlign = TextAlign.Center,
+//                                fontWeight = FontWeight.Bold,
+//
+//                                )
+//                        }
+//
+//                        LazyRow(
+//                            modifier = Modifier.weight(1f),
+//                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+//                        ) {
+//
+//                            items(members.size) { index ->
+//                                MemberItem(
+//                                    members[index],
+//                                    onDelete = {
+//                                        members = members.filter { i -> i.username != it }
+//                                    }
+//                                )
+//                            }
+//                        }
+//
+//                    }
 
                     Spacer(modifier = Modifier.height(32.dp))
 
@@ -344,7 +343,7 @@ fun AddProjectScreen(
                                 ),
                                 authorization = "Bearer ${access.value}"
                             )
-                            navHostController.navigateUp()
+                            onNavigateBack()
                         },
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
@@ -387,7 +386,7 @@ fun AddProjectScreen(
                 showAddMemberDialog = false
             },
             onConfirm = {
-                if(it.username != "") members = members + it
+                if (it.username != "") members = members + it
                 showAddMemberDialog = false
             }
         )
@@ -505,7 +504,6 @@ fun MemberItem(
     member: MemberItem,
     onDelete: (String) -> Unit,
     modifier: Modifier = Modifier
-
 ) {
 
     Box(

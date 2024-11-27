@@ -1,6 +1,8 @@
 package com.example.youmanage.screens.project_management
 
+import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
@@ -29,6 +32,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,6 +44,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
+import com.example.youmanage.data.remote.projectmanagement.Id
+import com.example.youmanage.data.remote.projectmanagement.User
+import com.example.youmanage.data.remote.taskmanagement.Username
+import com.example.youmanage.screens.AlertDialog
 import com.example.youmanage.screens.components.PieChart
 import com.example.youmanage.screens.components.pieChartInput
 import com.example.youmanage.utils.Resource
@@ -49,24 +59,74 @@ fun ProjectDetailScreen(
     backgroundColor: Color = Color(0xffBAE5F5),
     id: Int,
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel()
+    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
+    onNavigateBack: () -> Unit,
+    onClickMenu: () -> Unit
 ) {
-
     val project by projectManagementViewModel.project.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
+    val addMemberResponse by projectManagementViewModel.addMemberResponse.observeAsState()
+    val removeMemberResponse by projectManagementViewModel.deleteMemberResponse.observeAsState()
 
-    LaunchedEffect(accessToken.value) {
+    var showAddMemberDialog by remember {
+        mutableStateOf(false)
+    }
+
+    var showRemoveAlertDialog by remember {
+        mutableStateOf(false)
+    }
+
+    var showAddAlertDialog by remember {
+        mutableStateOf(false)
+    }
+
+    var showDeleteDialog by remember {
+        mutableStateOf(false)
+    }
+
+    LaunchedEffect(
+        key1 = accessToken.value,
+        key2 = addMemberResponse,
+        key3 = removeMemberResponse
+    ) {
         accessToken.value?.let { token ->
+
             projectManagementViewModel.getProject(
                 id = id.toString(),
                 authorization = "Bearer $token"
             )
         }
     }
-    if(project is Resource.Success) {
+
+    Log.d("Access Token", "${accessToken.value}")
+
+
+    Log.d(
+        "Project ID",
+        "Project ID: $id"
+    )
+
+    if (project is Resource.Success) {
+
+        var memberId by remember {
+            mutableStateOf("")
+        }
+
         Scaffold(
             topBar = {
-                TopBar()
+                TopBar(
+                    "Project Detail",
+                    trailing = {
+                        IconButton(onClick = { onClickMenu() }) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Menu"
+                            )
+                        }
+                    },
+                    color = Color(0xffBAE5F5),
+                    onNavigateBack = { onNavigateBack() }
+                )
             },
             modifier = Modifier
                 .fillMaxSize()
@@ -79,16 +139,16 @@ fun ProjectDetailScreen(
 
             Box(
                 modifier = Modifier
-                    .fillMaxSize() // Đảm bảo Box chiếm toàn bộ diện tích
+                    .fillMaxSize()
                     .padding(paddingValues)
-                    .background(backgroundColor)// Thêm padding từ Scaffold
+                    .background(backgroundColor)
 
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .fillMaxSize()
-                    /// .verticalScroll(scrollState)
+                        .verticalScroll(scrollState)
                 ) {
                     PieChart(
                         input = pieChartInput,
@@ -119,8 +179,8 @@ fun ProjectDetailScreen(
                                     .background(
                                         Color.Gray,
                                         shape = CircleShape
-                                    ) // Màu nền và hình dạng tròn
-                                    .padding(4.dp), // Khoảng cách giữa mũi tên và viền tròn
+                                    )
+                                    .padding(4.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(text = "➜", modifier = Modifier)
@@ -130,43 +190,125 @@ fun ProjectDetailScreen(
 
                     }
 
-                    //MembersSection()
+                    MembersSection(
+                        onAddNewMember = {
+                            showAddMemberDialog = true
+                        },
+
+                        onDeleteMember = {
+                            memberId = it
+                            showDeleteDialog = true
+                        },
+                        members = project?.data?.members ?: emptyList()
+                    )
 
                 }
             }
         }
+
+        AddMemberDialog(
+            title = "Choose Member",
+            showDialog = showAddMemberDialog,
+            onDismiss = {
+                showAddMemberDialog = false
+            },
+            onConfirm = {
+                accessToken.value?.let { token ->
+                    projectManagementViewModel.addMember(
+                        id = id.toString(),
+                        username = Username(it.username),
+                        authorization = "Bearer $token"
+                    )
+                }
+
+
+                if (addMemberResponse is Resource.Error) {
+                    showAddAlertDialog = true
+                }
+
+
+
+                showAddMemberDialog = false
+            },
+        )
+
+        AlertDialog(title = "Something wrong",
+            content = addMemberResponse?.message.toString(),
+            showDialog = showAddAlertDialog,
+            onDismiss = {
+                showAddAlertDialog = false
+            },
+            onConfirm = {
+                showAddAlertDialog = false
+            })
+
+        AlertDialog(title = "Something wrong",
+            content = removeMemberResponse?.message.toString(),
+            showDialog = showRemoveAlertDialog,
+            onDismiss = {
+                showRemoveAlertDialog = false
+            },
+            onConfirm = {
+                showRemoveAlertDialog = false
+            })
+
+        AlertDialog(title = "Remove Member?",
+            content = "Are you sure you want to remove this member?",
+            showDialog = showDeleteDialog,
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
+                accessToken.value?.let { token ->
+                    projectManagementViewModel.removeMember(
+                        id = id.toString(),
+                        memberId = Id(memberId),
+                        authorization = "Bearer $token"
+                    )
+                }
+
+                if (removeMemberResponse is Resource.Error) {
+                    showRemoveAlertDialog = true
+                }
+
+                showDeleteDialog = false
+            }
+        )
+
     }
 }
 
 
 @Composable
-fun TopBar(modifier: Modifier = Modifier) {
+fun TopBar(
+    title: String,
+    color: Color,
+    leading: @Composable (() -> Unit)? = null,
+    trailing: @Composable (() -> Unit)? = null,
+    onNavigateBack: () -> Unit = {}
+
+) {
     Row(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xffBAE5F5))
+            .background(color)
             .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = { /*TODO*/ }) {
+        IconButton(onClick = { onNavigateBack() }) {
             Icon(
                 painter = painterResource(id = R.drawable.back_arrow_icon),
                 contentDescription = "Back"
             )
         }
         Text(
-            text = "Project Detail",
+            text = title,
             fontSize = 30.sp,
             fontWeight = FontWeight.Bold
         )
 
-        IconButton(onClick = { /*TODO*/ }) {
-            Icon(
-                imageVector = Icons.Default.Menu,
-                contentDescription = "Back"
-            )
-        }
+        trailing?.invoke()
+
+
     }
 }
 
@@ -197,40 +339,71 @@ fun DescriptionSection(
 }
 
 @Composable
-fun MembersSection(modifier: Modifier = Modifier) {
+fun MembersSection(
+    members: List<User> = emptyList(),
+    onAddNewMember: () -> Unit = {},
+    onDeleteMember: (String) -> Unit = {}
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 16.dp)
             .padding(horizontal = 36.dp)
     ) {
-        Text(
-            text = "Members",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
+
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Members",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Button(
+                onClick = { onAddNewMember() },
+                shape = RoundedCornerShape(30.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = Color.Black
+                ),
+                modifier = Modifier.border(
+                    2.dp,
+                    Color.Black,
+                    RoundedCornerShape(10.dp)
+                )
+            ) {
+                Text(text = "+ Add", fontSize = 16.sp, color = Color.Black)
+            }
+
+        }
+
 
         Spacer(modifier = Modifier.height(8.dp))
 
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 10.dp)
-            ,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ){
-            items(5){
+                .height(200.dp)
+                .padding(top = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            items(members.size) { index ->
                 MemberItem(
                     MemberItem(
-                        username = "Derat",
-                        backgroundColor = Color.Yellow,
+                        username = members[index].username,
+                        backgroundColor = Color.Transparent,
                         avatar = R.drawable.avatar
                     ),
                     onDelete = {
-                        //members = members.filter { i -> i.username != it }
+                        onDeleteMember(members[index].id.toString())
                     },
-                    modifier = Modifier.fillMaxWidth(0.7f)
+                    modifier = Modifier
+                        .fillMaxWidth(0.7f)
+                        .border(1.dp, Color.Black, RoundedCornerShape(10.dp))
                 )
             }
         }
