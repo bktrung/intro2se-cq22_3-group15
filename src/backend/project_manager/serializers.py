@@ -67,6 +67,7 @@ class TaskSerializer(serializers.ModelSerializer):
     assignee = UserSerializer(read_only=True)
     assignee_id = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), source='assignee', write_only=True, required=False)
     issues = IssueTaskSerializer(many=True, read_only=True, source='task_issues')
+    comments_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -83,6 +84,7 @@ class TaskSerializer(serializers.ModelSerializer):
             'project', 
             'assignee',
             'assignee_id',
+            'comments_count',
             'created_at',
             'updated_at',
             'issues'
@@ -95,6 +97,8 @@ class TaskSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Assignee must be a member of the project.")
         return value
     
+    def get_comments_count(self, obj):
+        return obj.comments.count()
 
 class CommentSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
