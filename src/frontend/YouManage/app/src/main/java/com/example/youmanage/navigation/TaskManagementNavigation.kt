@@ -50,7 +50,6 @@ fun NavGraphBuilder.taskManagementNavGraph(
         composable(TaskManagementRouteScreen.CreateTask.route) {
             val id = it.arguments?.getString("projectId")
             CreateTaskScreen(
-                navHostController = rootNavController,
                 projectId = id ?: "",
                 onCreateTask = {
                     rootNavController.navigateUp()

@@ -47,7 +47,7 @@ import com.example.youmanage.R
 import com.example.youmanage.data.remote.projectmanagement.Id
 import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.taskmanagement.Username
-import com.example.youmanage.screens.AlertDialog
+import com.example.youmanage.screens.components.AlertDialog
 import com.example.youmanage.screens.components.PieChart
 import com.example.youmanage.screens.components.pieChartInput
 import com.example.youmanage.utils.Resource
@@ -95,6 +95,19 @@ fun ProjectDetailScreen(
                 id = id.toString(),
                 authorization = "Bearer $token"
             )
+        }
+    }
+
+    LaunchedEffect(addMemberResponse) {
+        if (addMemberResponse is Resource.Error) {
+            showAddAlertDialog = true
+        }
+    }
+
+    LaunchedEffect(removeMemberResponse) {
+        if (removeMemberResponse is Resource.Error) {
+            showRemoveAlertDialog = true
+            Log.d("Remove Error", removeMemberResponse?.message.toString())
         }
     }
 
@@ -221,13 +234,6 @@ fun ProjectDetailScreen(
                     )
                 }
 
-
-                if (addMemberResponse is Resource.Error) {
-                    showAddAlertDialog = true
-                }
-
-
-
                 showAddMemberDialog = false
             },
         )
@@ -263,10 +269,6 @@ fun ProjectDetailScreen(
                         memberId = Id(memberId),
                         authorization = "Bearer $token"
                     )
-                }
-
-                if (removeMemberResponse is Resource.Error) {
-                    showRemoveAlertDialog = true
                 }
 
                 showDeleteDialog = false
@@ -370,9 +372,9 @@ fun MembersSection(
                     contentColor = Color.Black
                 ),
                 modifier = Modifier.border(
-                    2.dp,
+                    1.dp,
                     Color.Black,
-                    RoundedCornerShape(10.dp)
+                    RoundedCornerShape(30.dp)
                 )
             ) {
                 Text(text = "+ Add", fontSize = 16.sp, color = Color.Black)
@@ -401,9 +403,7 @@ fun MembersSection(
                     onDelete = {
                         onDeleteMember(members[index].id.toString())
                     },
-                    modifier = Modifier
-                        .fillMaxWidth(0.7f)
-                        .border(1.dp, Color.Black, RoundedCornerShape(10.dp))
+                    modifier = Modifier.fillMaxWidth(0.7f)
                 )
             }
         }

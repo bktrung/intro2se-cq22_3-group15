@@ -43,9 +43,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
 import com.example.youmanage.data.remote.authentication.UserSignUp
-import com.example.youmanage.screens.AlertDialog
-import com.example.youmanage.screens.PasswordTextField
-import com.example.youmanage.screens.TextFieldComponent
+import com.example.youmanage.screens.components.AlertDialog
+import com.example.youmanage.screens.components.PasswordTextField
+import com.example.youmanage.screens.components.TextFieldComponent
 import com.example.youmanage.ui.theme.fontFamily
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.extractMessages
@@ -72,13 +72,21 @@ fun CreateAccountScreen(
     var errorMessage by remember { mutableStateOf("") }
 
     LaunchedEffect(key1 = signUpResponse) {
-        if (signUpResponse is Resource.Success) {
-            onCreateSuccess(signUpResponse.data?.email.toString())
-        } else if (signUpResponse is Resource.Error) {
-            errorMessage = extractMessages(signUpResponse.message.toString())
-            openAlertDialog = true
-        } else if (signUpResponse is Resource.Loading){
-            isLoading = true
+        when (signUpResponse) {
+            is Resource.Success -> {
+                onCreateSuccess(signUpResponse.data?.email.toString())
+            }
+
+            is Resource.Error -> {
+                errorMessage = extractMessages(signUpResponse.message.toString())
+                openAlertDialog = true
+            }
+
+            is Resource.Loading -> {
+                isLoading = true
+            }
+
+            null -> TODO()
         }
     }
 

@@ -2,9 +2,7 @@ package com.example.youmanage.screens.task_management
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,12 +10,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -39,46 +34,51 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
 import com.example.youmanage.R
-import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.taskmanagement.TaskCreate
-import com.example.youmanage.screens.ChooseItemDialog
-import com.example.youmanage.screens.DatePickerModal
-import com.example.youmanage.screens.LeadingTextFieldComponent
+import com.example.youmanage.screens.components.AssigneeSelector
+import com.example.youmanage.screens.components.ChooseItemDialog
+import com.example.youmanage.screens.components.DatePickerField
+import com.example.youmanage.screens.components.DatePickerModal
+import com.example.youmanage.screens.components.ErrorDialog
+import com.example.youmanage.screens.components.LeadingTextFieldComponent
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
 
 
+@Preview
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CreateTaskScreen(
-    navHostController: NavHostController,
-    projectId: String,
-    onCreateTask: () -> Unit,
+    projectId: String = "",
+    onCreateTask: () -> Unit = {},
+    onNavigateBack: () -> Unit = {},
     taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel()
 ) {
-
-    val members by projectManagementViewModel.members.observeAsState()
-
-    val task by taskManagementViewModel.task.observeAsState()
-
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
+    val members by projectManagementViewModel.members.observeAsState()
+    val task by taskManagementViewModel.task.observeAsState()
+    var openErrorDialog by remember { mutableStateOf(false) }
+
+
 
     LaunchedEffect(task) {
         if (task is Resource.Success) {
             onCreateTask()
+        }
+        if (task is Resource.Error) {
+            openErrorDialog = true
         }
     }
 
@@ -113,7 +113,6 @@ fun CreateTaskScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-
     ) {
 
         Column(
@@ -121,8 +120,10 @@ fun CreateTaskScreen(
                 .fillMaxWidth()
                 .padding(24.dp)
                 .padding(top = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -135,7 +136,7 @@ fun CreateTaskScreen(
                 }) {
                     Icon(
                         painter = painterResource(id = R.drawable.back_arrow_icon),
-                        contentDescription = "",
+                        contentDescription = "Back",
                         tint = Color.Black
                     )
                 }
@@ -147,12 +148,10 @@ fun CreateTaskScreen(
                     fontWeight = FontWeight.Bold
                 )
 
-                Spacer(modifier = Modifier.width(30.dp))
-
+                Spacer(modifier = Modifier.size(30.dp))
 
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
 
             val scrollState = rememberScrollState()
 
@@ -161,14 +160,13 @@ fun CreateTaskScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
                     .verticalScroll(scrollState),
-                verticalArrangement = Arrangement.Center,
+                verticalArrangement = Arrangement.spacedBy(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
+                        .fillMaxWidth(),
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -190,12 +188,10 @@ fun CreateTaskScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
 
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
+                        .fillMaxWidth(),
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -236,166 +232,38 @@ fun CreateTaskScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                DatePickerField(
+                    label = "Start date",
+                    date = startDate,
+                    onDateClick = {
+                        isTime = 1
+                        showDatePicker = true
+                    },
+                    iconResource = R.drawable.calendar_icon,
+                    placeholder = "Enter start date",
+                    containerColor = textFieldColor
+                )
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                DatePickerField(
+                    label = "End date",
+                    date = endDate,
+                    onDateClick = {
+                        isTime = 2
+                        showDatePicker = true
+                    },
+                    iconResource = R.drawable.calendar_icon,
+                    placeholder = "Enter end date",
+                    containerColor = textFieldColor
+                )
 
-                    Text(
-                        "Start date",
-                        color = Color.Black,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-
-                    Box(
-                        modifier = Modifier.clickable {
-                            showDatePicker = true
-                        }
-                    ) {
-                        TextField(
-                            value = startDate,
-                            onValueChange = { },
-                            readOnly = true,
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = R.drawable.calendar_icon
-                                    ),
-                                    contentDescription = "",
-                                    modifier = Modifier.clickable {
-                                        isTime = 1
-                                        showDatePicker = true
-                                    }
-                                )
-                            },
-                            placeholder = {
-                                Text(
-                                    text = "Enter start date",
-                                    color = Color.Gray
-                                )
-                            },
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = textFieldColor,
-                                unfocusedContainerColor = textFieldColor,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent
-                            )
-                        )
+                AssigneeSelector(
+                    label = "Assign to",
+                    avatarRes = R.drawable.avatar,
+                    username = assignedMember,
+                    onClick = {
+                        showChooseMember = true
                     }
-
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-
-                    Text(
-                        "End date",
-                        color = Color.Black,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-
-                    Box(
-                        modifier = Modifier.clickable {
-                            showDatePicker = true
-                        }
-                    ) {
-                        TextField(
-                            value = endDate,
-                            onValueChange = { },
-                            readOnly = true,
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = R.drawable.calendar_icon
-                                    ),
-                                    contentDescription = "",
-                                    modifier = Modifier.clickable {
-                                        isTime = 2
-                                        showDatePicker = true
-                                    }
-                                )
-                            },
-                            placeholder = {
-                                Text(
-                                    text = "Enter end date",
-                                    color = Color.Gray
-                                )
-                            },
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = textFieldColor,
-                                unfocusedContainerColor = textFieldColor,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent
-                            )
-                        )
-                    }
-
-                }
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-
-                    Text(
-                        "Assign to",
-                        color = Color.Black,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-
-                    Box(
-                        modifier = Modifier.clickable {
-                            showChooseMember = true
-                        }
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(5.dp),
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(textFieldColor)
-                                .padding(horizontal = 10.dp, vertical = 5.dp)
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.avatar),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                            )
-                            Text(
-                                assignedMember,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 18.sp
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
+                )
 
                 Button(
                     onClick = {
@@ -406,7 +274,7 @@ fun CreateTaskScreen(
                                 description = description,
                                 startDate = startDate,
                                 endDate = endDate,
-                                assigneeId = 1
+                                assigneeId = assignedMemberId
                             ),
                             authorization = "Bearer ${accessToken.value}"
                         )
@@ -460,6 +328,15 @@ fun CreateTaskScreen(
             assignedMember = user.username
             showChooseMember = false
         }
+    )
+
+    ErrorDialog(
+        title = "Something wrong?",
+        content = "Something went wrong. Try again!",
+        showDialog = openErrorDialog,
+        onDismiss = { openErrorDialog = false },
+        onConfirm = { openErrorDialog = false }
+
     )
 
 }

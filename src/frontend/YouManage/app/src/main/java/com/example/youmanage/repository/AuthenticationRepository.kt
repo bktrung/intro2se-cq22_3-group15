@@ -36,190 +36,72 @@ class AuthenticationRepository @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
 
-    suspend fun signUp(user: UserSignUp): Resource<UserSignUpResponse> {
-        val response = try {
-            Resource.Success(api.signUp(user))
+    private suspend fun <T> safeApiCall(apiCall: suspend () -> T): Resource<T> {
+        return try {
+            Resource.Success(apiCall())
         } catch (e: HttpException) {
-            if (e.code() == 400) {
-                Resource.Error("${e.response()?.errorBody()?.string()}")
-            } else {
-                Resource.Error("HTTP Error: ${e.code()}")
-            }
+            handleHttpException(e)
         } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message.toString())
         }
+    }
 
-        return response
+    private fun <T> handleHttpException(e: HttpException): Resource.Error<T> {
+        return when (e.code()) {
+            400 -> {
+                Resource.Error("${e.response()?.errorBody()?.string()}")
+            }
+            401 -> {
+                Resource.Error("Unauthorized - ${e.response()?.errorBody()?.string()}")
+            }
+            404 -> {
+                Resource.Error("Not Found - ${e.response()?.errorBody()?.string()}")
+            }
+            else -> {
+                Resource.Error("HTTP Error: ${e.code()}")
+            }
+        }
+    }
+
+    suspend fun signUp(user: UserSignUp): Resource<UserSignUpResponse> {
+        return safeApiCall { api.signUp(user) }
     }
 
     suspend fun logIn(user: UserLogIn): Resource<UserLogInResponse> {
-        val response = try {
-            Resource.Success(api.logIn(user))
-        } catch (e: HttpException) {
-            if (e.code() == 400) {
-                Resource.Error("${e.response()?.errorBody()?.string()}")
-            } else if (e.code() == 401) {
-                Resource.Error("${e.response()?.errorBody()?.string()}")
-            } else {
-                Resource.Error("HTTP Error: ${e.code()}")
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Resource.Error(e.message.toString())
-        }
-
-        return response
+        return safeApiCall { api.logIn(user) }
     }
 
     suspend fun logInWithGoogle(user: UserGoogleLogIn): Resource<UserLogInResponse> {
-
-        val response = try {
-            Resource.Success(api.logInWithGoogle(user))
-        } catch (e: HttpException) {
-            if (e.code() == 400) {
-                Resource.Error("${e.response()?.errorBody()?.string()}")
-            } else {
-                Resource.Error("HTTP Error: ${e.code()}")
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Resource.Error(e.message.toString())
-        }
-        return response
+        return safeApiCall { api.logInWithGoogle(user) }
     }
 
-    suspend fun logOut(
-        logoutRequest: RefreshToken,
-        authorization: String
-    ): Resource<Message> {
-        val response = try {
-            Resource.Success(
-                api.logOut(
-                    logoutRequest = logoutRequest,
-                    authorization = authorization
-                )
-            )
-        } catch (e: HttpException) {
-            if (e.code() == 400) {
-                Resource.Error("${e.response()?.errorBody()?.string()}")
-            } else {
-                Resource.Error("HTTP Error: ${e.code()}")
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Resource.Error(e.message.toString())
-        }
-
-        return response
+    suspend fun logOut(logoutRequest: RefreshToken, authorization: String): Resource<Message> {
+        return safeApiCall { api.logOut(logoutRequest, authorization = authorization) }
     }
 
     suspend fun verifyOTP(request: VerifyRequest): Resource<Message> {
-        val response = try {
-            Resource.Success(api.verifyOTP(request))
-        } catch (e: HttpException) {
-            if (e.code() == 400) {
-                Resource.Error("${e.response()?.errorBody()?.string()}")
-            } else {
-                Resource.Error("HTTP Error: ${e.code()}")
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Resource.Error(e.message.toString())
-        }
-
-        return response
+        return safeApiCall { api.verifyOTP(request) }
     }
 
     suspend fun verifyResetPasswordOTP(request: VerifyRequest): Resource<ResetToken> {
-        val response = try {
-            Resource.Success(api.verifyResetPasswordOTP(request))
-        } catch (e: HttpException) {
-            if (e.code() == 400) {
-                Resource.Error("Invalid OTP")
-            } else if (e.code() == 404) {
-                Resource.Error("User not found")
-            } else {
-                Resource.Error("HTTP Error: ${e.code()}")
-
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Resource.Error(e.message.toString())
-        }
-        return response
+        return safeApiCall { api.verifyResetPasswordOTP(request) }
     }
 
     suspend fun checkEmail(email: Email): Resource<Message> {
-        val response = try {
-            Resource.Success(api.checkEmail(email))
-        } catch (e: HttpException) {
-            if (e.code() == 400) {
-                Resource.Error("Email not found or not yet verified.")
-            } else if (e.code() == 404) {
-                Resource.Error("User not found in the system.")
-            } else {
-                Resource.Error("HTTP Error: ${e.code()}")
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Resource.Error(e.message.toString())
-        }
-
-        return response
+        return safeApiCall { api.checkEmail(email) }
     }
 
     suspend fun sendOPT(email: Email): Resource<Message> {
-        val response = try {
-            Resource.Success(api.sendOTP(email))
-        } catch (e: HttpException) {
-            if (e.code() == 400) {
-                Resource.Error("${e.response()?.errorBody()?.string()}")
-            } else {
-                Resource.Error("HTTP Error: ${e.code()}")
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Resource.Error(e.message.toString())
-
-        }
-
-        return response
+        return safeApiCall { api.sendOTP(email) }
     }
 
     suspend fun forgotPasswordSendOTP(email: Email): Resource<Message> {
-        val response = try {
-            Resource.Success(api.forgotPasswordSendOTP(email))
-        } catch (e: HttpException) {
-            if (e.code() == 400) {
-                Resource.Error("${e.response()?.errorBody()?.string()}")
-            } else {
-                Resource.Error("HTTP Error: ${e.code()}")
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Resource.Error(e.message.toString())
-        }
-
-        return response
+        return safeApiCall { api.forgotPasswordSendOTP(email) }
     }
 
     suspend fun changePassword(request: ChangePasswordRequest): Resource<Message> {
-        val response = try {
-            Log.d("changePassword", "changePassword: $request")
-            Resource.Success(api.changePassword(request))
-        } catch (e: HttpException) {
-            if (e.code() == 400) {
-                Resource.Error("${e.response()?.errorBody()?.string()}")
-            } else {
-                Resource.Error("HTTP Error: ${e.code()}")
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Resource.Error(e.message.toString())
-        }
-
-        return response
+        return safeApiCall { api.changePassword(request) }
     }
 
     suspend fun saveToken(
@@ -249,5 +131,4 @@ class AuthenticationRepository @Inject constructor(
             preferences.remove(key)
         }
     }
-
 }

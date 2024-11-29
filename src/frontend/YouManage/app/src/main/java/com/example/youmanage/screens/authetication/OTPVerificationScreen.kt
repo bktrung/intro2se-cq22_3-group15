@@ -1,7 +1,6 @@
 package com.example.youmanage.screens.authetication
 
 import android.annotation.SuppressLint
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.scaleIn
@@ -60,11 +59,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
-import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
 import com.example.youmanage.data.remote.authentication.Email
 import com.example.youmanage.data.remote.authentication.ResetToken
 import com.example.youmanage.data.remote.authentication.VerifyRequest
-import com.example.youmanage.screens.ErrorDialog
+import com.example.youmanage.screens.components.ErrorDialog
 import com.example.youmanage.screens.components.KeyboardStatus
 import com.example.youmanage.screens.components.keyboardAsState
 import com.example.youmanage.utils.Resource
@@ -79,9 +77,7 @@ fun OTPTextField(
     modifier: Modifier
 ) {
 
-    var otp by remember {
-        mutableStateOf("")
-    }
+    var otp by remember { mutableStateOf("") }
 
     val keyboardController = LocalSoftwareKeyboardController.current
     val keyboardState = keyboardAsState(KeyboardStatus.Closed)

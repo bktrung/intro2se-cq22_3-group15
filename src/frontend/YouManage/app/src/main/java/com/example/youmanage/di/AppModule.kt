@@ -2,6 +2,7 @@ package com.example.youmanage.di
 
 import android.content.Context
 import com.example.youmanage.data.remote.ApiInterface
+import com.example.youmanage.factory.WebSocketFactory
 import com.example.youmanage.repository.AuthenticationRepository
 import com.example.youmanage.repository.ProjectManagementRepository
 import com.example.youmanage.repository.TaskManagementRepository
@@ -15,6 +16,9 @@ import okhttp3.Cookie
 import okhttp3.CookieJar
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
+import okhttp3.Response
+import okhttp3.WebSocket
+import okhttp3.WebSocketListener
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
@@ -22,7 +26,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
-
 
     @Provides
     @Singleton
@@ -44,7 +47,7 @@ object AppModule {
     @Singleton
     fun provideOkHttpClient(cookieJar: CookieJar): OkHttpClient {
         return OkHttpClient.Builder()
-            .cookieJar(cookieJar) // Tự động quản lý cookie
+            .cookieJar(cookieJar)
             .addInterceptor { chain ->
                 val request = chain.request()
                 println("Request: ${request.headers}")
@@ -66,6 +69,7 @@ object AppModule {
             .create(ApiInterface::class.java)
     }
 
+
     @Provides
     @Singleton
     fun provideAuthenticationRepository(api: ApiInterface, @ApplicationContext context: Context) = AuthenticationRepository(api, context)
@@ -76,5 +80,12 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideTaskManagementRepository(api: ApiInterface) = TaskManagementRepository(api)
+    fun provideTaskManagementRepository(api: ApiInterface, webSocket: WebSocketFactory) = TaskManagementRepository(api, webSocket)
+
+    @Provides
+    @Singleton
+    fun provideWebSocket(okHttpClient: OkHttpClient): WebSocketFactory {
+        return WebSocketFactory(okHttpClient)
+    }
+
 }

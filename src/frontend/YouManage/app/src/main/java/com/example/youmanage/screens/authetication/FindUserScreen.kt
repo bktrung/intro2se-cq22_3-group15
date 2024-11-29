@@ -33,8 +33,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
 import com.example.youmanage.data.remote.authentication.Email
-import com.example.youmanage.screens.ErrorDialog
-import com.example.youmanage.screens.TextFieldComponent
+import com.example.youmanage.screens.components.ErrorDialog
+import com.example.youmanage.screens.components.TextFieldComponent
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 

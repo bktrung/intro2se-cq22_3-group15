@@ -8,20 +8,20 @@ data class Task(
     val actualEndDate: String? = null,
     @SerializedName("actual_start_date")
     val actualStartDate: String? = null,
-    val assignee: User,
+    val assignee: User = User(),
     @SerializedName("create_at")
-    val createdAt: String,
+    val createdAt: String = "",
     val description: String? = null,
     @SerializedName("end_date")
-    val endDate: String,
-    val id: Int,
+    val endDate: String = "",
+    val id: Int = 0,
     val issues: List<String> = emptyList(),
     val priority: Int? = null,
-    val project: Int,
+    val project: Int = 0,
     @SerializedName("start_date")
-    val startDate: String,
-    val status: String,
-    val title: String,
+    val startDate: String = "",
+    val status: String = "",
+    val title: String = "",
     @SerializedName("updated_at")
-    val updatedAt: String
+    val updatedAt: String = ""
 )

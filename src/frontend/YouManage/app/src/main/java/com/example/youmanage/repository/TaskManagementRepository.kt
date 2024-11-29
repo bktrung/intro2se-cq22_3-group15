@@ -1,23 +1,101 @@
 package com.example.youmanage.repository
 
 import android.util.Log
+import androidx.lifecycle.MutableLiveData
 import com.example.youmanage.data.remote.ApiInterface
+import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.taskmanagement.Comment
 import com.example.youmanage.data.remote.taskmanagement.Content
 import com.example.youmanage.data.remote.taskmanagement.Task
 import com.example.youmanage.data.remote.taskmanagement.TaskCreate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdateStatus
+import com.example.youmanage.data.remote.taskmanagement.TaskWebSocket
+import com.example.youmanage.factory.WebSocketFactory
 import com.example.youmanage.utils.Resource
+import com.google.gson.Gson
 import dagger.hilt.android.scopes.ActivityScoped
+import okhttp3.Response
+import okhttp3.WebSocket
+import okhttp3.WebSocketListener
 import retrofit2.HttpException
 import javax.inject.Inject
 
 @ActivityScoped
 class TaskManagementRepository @Inject constructor(
-    private val api: ApiInterface
+    private val api: ApiInterface,
+    private val webSocketFactory: WebSocketFactory
 ) {
 
+    private var webSocket: WebSocket? = null
+
+
+    suspend fun connectToSocket(url: String, liveData: MutableLiveData<Resource<List<Task>>>): Resource<TaskWebSocket> {
+        return try {
+            val webSocket = webSocketFactory.createWebSocket(url, object : WebSocketListener() {
+
+                override fun onOpen(webSocket: WebSocket, response: Response) {
+                    super.onOpen(webSocket, response)
+                    println("WebSocket opened: ${response.message}")
+                }
+
+                override fun onMessage(webSocket: WebSocket, text: String) {
+                    super.onMessage(webSocket, text)
+                    try {
+                        val taskResponse = Gson().fromJson(text, TaskWebSocket::class.java)
+
+                        if(taskResponse.type == "task_updated"){
+                            val updatedTask = taskResponse.task
+                            val currentTasks = liveData.value?.data.orEmpty()
+
+                            val updatedTasks = currentTasks.map { task ->
+                                if (task.id == updatedTask.id) {
+                                    updatedTask
+                                } else {
+                                    task
+                                }
+                            }
+
+                            liveData.postValue(Resource.Success(updatedTasks))
+                        }
+                        else if (taskResponse.type == "task_created") {
+                            val createdTask = taskResponse.task
+                            val currentTasks = liveData.value?.data.orEmpty()
+                            val updatedTasks = currentTasks + createdTask
+
+                            liveData.postValue(Resource.Success(updatedTasks))
+                        }
+                        Resource.Success(taskResponse)
+                    } catch (e: Exception) {
+                        Resource.Error("Error parsing response")
+                    }
+                }
+
+                override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                    super.onFailure(webSocket, t, response)
+                   // Resource.Error("")
+                }
+            })
+
+            Resource.Success(TaskWebSocket(
+                task = Task(
+                    assignee = User("", 0, ""), // Giả sử bạn cần khởi tạo đối tượng User, bạn có thể để trống nếu User có giá trị mặc định.
+                    createdAt = "",
+                    endDate = "",
+                    id = 0,
+                    project = 0,
+                    startDate = "",
+                    status = "",
+                    title = "",
+                    updatedAt = ""
+                ),
+                type = ""
+            ))
+        } catch (e: Exception) {
+            // Xử lý lỗi WebSocket
+            Resource.Error("Error with WebSocket: ${e.localizedMessage}")
+        }
+    }
 
     suspend fun getTasks(projectId: String, authorization: String): Resource<List<Task>> {
         val response = try {
@@ -37,7 +115,12 @@ class TaskManagementRepository @Inject constructor(
     ): Resource<Task> {
         val response = try {
             Resource.Success(api.createTask(projectId, task, authorization))
-        } catch (e: Exception) {
+        }
+        catch (e: HttpException) {
+            e.printStackTrace()
+            Resource.Error(e.message.toString())
+        }
+        catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message.toString())
         }
@@ -134,11 +217,14 @@ class TaskManagementRepository @Inject constructor(
         authorization: String
     ): Resource<Comment> {
         val response = try {
-            Resource.Success(api.postComment(
-                projectId,
-                taskId,
-                comment,
-                authorization))
+            Resource.Success(
+                api.postComment(
+                    projectId,
+                    taskId,
+                    comment,
+                    authorization
+                )
+            )
         } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message.toString())
@@ -171,7 +257,15 @@ class TaskManagementRepository @Inject constructor(
         authorization: String
     ): Resource<Comment> {
         val response = try {
-            Resource.Success(api.updateComment(projectId, taskId, commentId, comment, authorization))
+            Resource.Success(
+                api.updateComment(
+                    projectId,
+                    taskId,
+                    commentId,
+                    comment,
+                    authorization
+                )
+            )
         } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message.toString())

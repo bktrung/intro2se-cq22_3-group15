@@ -6,7 +6,6 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,18 +45,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
 import com.example.youmanage.R
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
-import com.example.youmanage.screens.DatePickerModal
-import com.example.youmanage.screens.LeadingTextFieldComponent
+import com.example.youmanage.screens.components.DatePickerModal
+import com.example.youmanage.screens.components.LeadingTextFieldComponent
 import com.example.youmanage.utils.randomVibrantLightColor
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
@@ -530,11 +525,16 @@ fun MemberItem(
                     .clip(CircleShape)
             )
 
-            Spacer(modifier = Modifier.width(20.dp))
+            Spacer(modifier = Modifier.width(10.dp))
 
-            Text(text = member.username, color = Color.Black, fontWeight = FontWeight.Medium)
+            Text(
+                text = member.username,
+                color = Color.Black,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 18.sp
+            )
 
-            Spacer(modifier = Modifier.width(20.dp))
+            Spacer(modifier = Modifier.width(10.dp))
 
             Icon(
                 painter = painterResource(id = R.drawable.delete_icon),

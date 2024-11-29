@@ -1,7 +1,6 @@
 package com.example.youmanage.screens.authetication
 
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -35,9 +34,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
 import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
-import com.example.youmanage.data.remote.authentication.ResetToken
-import com.example.youmanage.screens.ErrorDialog
-import com.example.youmanage.screens.PasswordTextField
+import com.example.youmanage.screens.components.ErrorDialog
+import com.example.youmanage.screens.components.PasswordTextField
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 

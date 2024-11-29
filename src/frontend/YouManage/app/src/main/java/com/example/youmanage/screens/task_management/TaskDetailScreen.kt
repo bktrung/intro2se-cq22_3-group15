@@ -1,7 +1,6 @@
 package com.example.youmanage.screens.task_management
 
 import android.os.Build
-import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
@@ -71,16 +70,19 @@ import com.example.youmanage.data.remote.taskmanagement.Comment
 import com.example.youmanage.data.remote.taskmanagement.Content
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdateStatus
-import com.example.youmanage.screens.AlertDialog
-import com.example.youmanage.screens.ChooseItemDialog
-import com.example.youmanage.screens.DatePickerModal
-import com.example.youmanage.screens.LeadingTextFieldComponent
+import com.example.youmanage.screens.components.AlertDialog
+import com.example.youmanage.screens.components.AssigneeSelector
+import com.example.youmanage.screens.components.ChooseItemDialog
+import com.example.youmanage.screens.components.DatePickerField
+import com.example.youmanage.screens.components.DatePickerModal
 import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.ui.theme.fontFamily
 import com.example.youmanage.utils.Resource
+import com.example.youmanage.utils.formatToRelativeTime
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
+import kotlinx.coroutines.delay
 
 val primaryColor = Color.Black.copy(alpha = 0.1f)
 
@@ -126,7 +128,7 @@ fun TaskDetailScreen(
     var showCommentEditor by remember { mutableStateOf(false) }
 
     var status by rememberSaveable { mutableStateOf("") }
-    var title by rememberSaveable { mutableStateOf("My Task") }
+    var title by rememberSaveable { mutableStateOf("") }
     var editTitle by rememberSaveable { mutableStateOf(title) }
     var username by rememberSaveable { mutableStateOf("") }
     var memberId by rememberSaveable { mutableIntStateOf(-1) }
@@ -134,6 +136,7 @@ fun TaskDetailScreen(
     var endDate by rememberSaveable { mutableStateOf("") }
     var isTime by rememberSaveable { mutableIntStateOf(0) }
     var description by rememberSaveable { mutableStateOf("Your Description") }
+
     var currentComment by remember {
         mutableStateOf(
             Comment(
@@ -224,7 +227,7 @@ fun TaskDetailScreen(
                 AnimatedVisibility(visible = showTitleEditor) {
                     TextField(
                         value = editTitle,
-                        textStyle = TextStyle(fontFamily = fontFamily),
+                        textStyle = TextStyle(fontSize = 20.sp, fontFamily = fontFamily),
                         leadingIcon = {
                             Icon(
                                 painter = painterResource(id = R.drawable.project_title_icon),
@@ -541,105 +544,8 @@ fun LabeledTextField(
     }
 }
 
-@Composable
-fun AssigneeSelector(
-    label: String,
-    avatarRes: Int,
-    username: String,
-    onClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = label,
-            fontWeight = FontWeight.Medium,
-            fontSize = 18.sp
-        )
 
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.clickable { onClick() }
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Image(
-                    painter = painterResource(id = avatarRes),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                )
-
-                Text(
-                    text = username,
-                    color = Color.Black,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 18.sp
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun DatePickerField(
-    label: String,
-    date: String,
-    onDateClick: () -> Unit,
-    iconResource: Int,
-    placeholder: String,
-    containerColor: Color
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = label,
-            color = Color.Black,
-            fontWeight = FontWeight.Bold,
-            fontSize = 20.sp
-        )
-
-        Box(
-            modifier = Modifier.clickable { onDateClick() }
-        ) {
-            TextField(
-                value = date,
-                onValueChange = { },
-                readOnly = true,
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = {
-                    Icon(
-                        painter = painterResource(id = iconResource),
-                        contentDescription = null,
-                        modifier = Modifier.clickable { onDateClick() }
-                    )
-                },
-                placeholder = {
-                    Text(
-                        text = placeholder,
-                        color = Color.Gray
-                    )
-                },
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = containerColor,
-                    unfocusedContainerColor = containerColor,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                )
-            )
-        }
-    }
-}
-
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CommentSection(
     comments: List<Comment>,
@@ -647,18 +553,15 @@ fun CommentSection(
     onClick: (Comment) -> Unit
 
 ) {
-
-    var content by remember {
-        mutableStateOf("")
-    }
+    var content by remember { mutableStateOf("") }
 
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text(
             text = "Comments",
-            fontWeight = FontWeight.Medium,
-            fontSize = 18.sp
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp
         )
 
         LazyColumn(
@@ -701,27 +604,40 @@ fun CommentSection(
                     },
                     tint = Color.Black
                 )
-            }
+            },
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }
 
+@Preview(showBackground = true)
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CommentItem(
-    username: String,
-    comment: String,
-    createAt: String,
+    username: String = "Tuong",
+    comment: String = "Hello",
+    createAt: String = "2024-10-09T15:08:57.555682Z",
     onClick: () -> Unit = {}
 ) {
+
+    var relativeTime by remember {
+        mutableStateOf(formatToRelativeTime(createAt))
+    }
+    LaunchedEffect(createAt) {
+        while (true) {
+            relativeTime = formatToRelativeTime(createAt)
+            delay(60000L)
+        }
+    }
+
     Box(
         modifier = Modifier
-            .wrapContentSize()
-            .fillMaxWidth(0.6f)
+            .fillMaxWidth()
             .clickable { onClick() }
     ) {
         Column(horizontalAlignment = Alignment.Start) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Image(
@@ -735,21 +651,35 @@ fun CommentItem(
                         .clip(CircleShape)
                 )
 
-                Text(
-                    text = username,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 16.sp
-                )
+                Box(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 5.dp, horizontal = 10.dp)
+                    ) {
+                        Text(
+                            text = username,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                        Text(
+                            text = comment,
+                            fontSize = 18.sp
+                        )
+
+                        Text(
+                            relativeTime,
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
+                    }
+                }
+
             }
 
-            Text(
-                text = comment,
-            )
-            Spacer(modifier = Modifier.height(5.dp))
-            Text(
-                createAt,
-                color = Color.Gray
-            )
+
         }
     }
 

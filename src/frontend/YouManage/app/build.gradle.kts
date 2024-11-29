@@ -110,6 +110,7 @@ dependencies {
 
     // Okhttp3
     implementation ("com.squareup.okhttp3:logging-interceptor:4.11.0")
+    implementation ("com.squareup.okhttp3:okhttp:4.11.0")
 
     // Navigation Animation
     implementation ("com.google.accompanist:accompanist-navigation-animation:0.33.1-alpha")

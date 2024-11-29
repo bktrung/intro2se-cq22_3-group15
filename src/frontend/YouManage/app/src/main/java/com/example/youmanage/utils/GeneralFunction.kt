@@ -1,15 +1,13 @@
 package com.example.youmanage.utils
 
-import android.app.DatePickerDialog
-import android.content.Context
 import android.os.Build
 import android.util.Base64
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.Color
 import org.json.JSONObject
-import java.time.LocalDate
-import java.util.Locale
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.math.absoluteValue
 import kotlin.random.Random
@@ -56,7 +54,6 @@ fun randomVibrantLightColor(): Color {
 }
 
 // Process Access Token
-@OptIn(ExperimentalEncodingApi::class)
 fun decodeJWT(token: String): JSONObject? {
     return try {
         val payload = token.split(".")[1]
@@ -80,19 +77,23 @@ fun isTokenExpired(token: String): Boolean {
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-fun openDatePicker(
-    context: Context,
-    onDateSetListener: DatePickerDialog.OnDateSetListener,
-    date: LocalDate
-    ){
-    Locale.setDefault(Locale.ENGLISH)
-    val datePickerDialog = DatePickerDialog(
-        context,
-        onDateSetListener,
-        date.year,
-        date.monthValue,
-        date.dayOfMonth
-    )
+fun formatToRelativeTime(isoString: String): String {
+    val parsedTime = Instant.parse(isoString)
+    val now = Instant.now()
+    val seconds = ChronoUnit.SECONDS.between(parsedTime, now)
+    val minutes = ChronoUnit.MINUTES.between(parsedTime, now)
+    val hours = ChronoUnit.HOURS.between(parsedTime, now)
+    val days = ChronoUnit.DAYS.between(parsedTime, now)
 
-    datePickerDialog.show()
+    return when {
+        seconds <= 1L -> "Just now"
+        seconds < 60 -> "$seconds seconds ago"
+        minutes == 1L -> "1 minute ago"
+        minutes < 60 -> "$minutes minutes ago"
+        hours == 1L -> "1 hour ago"
+        hours < 24 -> "$hours hours ago"
+        days == 1L -> "Yesterday"
+        else -> "$days days ago"
+    }
 }
+

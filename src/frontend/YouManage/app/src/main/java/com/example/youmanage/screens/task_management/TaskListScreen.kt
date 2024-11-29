@@ -1,11 +1,11 @@
 package com.example.youmanage.screens.task_management
 
-import android.util.Log
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.rememberScrollableState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -36,6 +37,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,22 +46,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
 import com.example.youmanage.data.remote.taskmanagement.Task
+import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Resource
+import com.example.youmanage.utils.randomVibrantLightColor
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
 
 
-var status = listOf(
-    "Pending",
-    "In_Progress",
-    "Completed",
-)
 
 @Composable
 fun TaskListScreen(
@@ -71,9 +69,13 @@ fun TaskListScreen(
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
 ) {
 
+    val backgroundColor = Color(0xffBAE5F5)
+
     val tasks by taskManagementViewModel.tasks.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     var filterTasks by remember { mutableStateOf(emptyList<Task>()) }
+
+    val webSocketUrl = "$WEB_SOCKET$projectId/"
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
@@ -84,20 +86,18 @@ fun TaskListScreen(
         }
     }
 
-    var isSelectedButton by remember {
-        mutableIntStateOf(0)
+    var isSelectedButton by rememberSaveable { mutableIntStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        taskManagementViewModel.connectToWebSocket(webSocketUrl)
     }
 
     LaunchedEffect(key1 = isSelectedButton, key2 = tasks) {
         if (tasks is Resource.Success) {
             filterTasks = tasks?.data?.filter {
-                it.status == status[isSelectedButton].uppercase()
+                it.status == statusMapping[isSelectedButton].second
             } ?: emptyList()
-            Log.d("SUCCESS", filterTasks.toString())
-        } else {
-            Log.d("FAIL", "get fail")
         }
-
     }
 
     Scaffold(
@@ -111,7 +111,8 @@ fun TaskListScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xffF26A6A))
+                .background(backgroundColor)
+                //.background(Color(0xffF26A6A))
                 .padding(paddingValues)
                 .padding(top = 24.dp)
         ) {
@@ -121,8 +122,7 @@ fun TaskListScreen(
                     onClick = {
                         isSelectedButton = it
                     },
-                    status
-                )
+                    status = statusMapping)
 
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -171,13 +171,10 @@ fun TaskListScreen(
                             modifier = Modifier.padding(vertical = 10.dp)
                         )
                     }
-
                 }
-
             }
         }
     }
-
 }
 
 @Composable
@@ -288,7 +285,7 @@ fun TopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xffF26A6A))
+            .background(Color.Transparent)
             .padding(24.dp)
             .padding(top = 24.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -314,8 +311,9 @@ fun TopBar(
 fun ButtonSection(
     isSelectedButton: Int,
     onClick: (Int) -> Unit,
-    status: List<String>
+    status: List<Pair<String, String>>
 ) {
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -326,8 +324,8 @@ fun ButtonSection(
     ) {
         status.forEachIndexed { index, name ->
             TaskListButton(
-                name = name,
-                contentColor = if (index == isSelectedButton) Color(0xffF26A6A) else Color.Black,
+                name = name.first,
+                contentColor = if (index == isSelectedButton) Color(0xffBAE5F5)else Color.Black,
                 containerColor = if (index == isSelectedButton) Color.Black else Color.Transparent,
                 onClick = { onClick(index) }
             )
@@ -341,7 +339,7 @@ fun TaskListButton(
     name: String,
     contentColor: Color,
     containerColor: Color,
-    onClick: () -> Unit,
+    onClick: () -> Unit
 ) {
     Button(
         onClick = onClick,
@@ -350,15 +348,18 @@ fun TaskListButton(
             containerColor = containerColor,
             contentColor = contentColor
         ),
-        modifier = Modifier.border(
+        modifier = Modifier
+            .border(
             2.dp,
-            contentColor,
+                Color(0xffBAE5F5),
             RoundedCornerShape(30.dp)
         )
 
     ) {
         Text(
-            name, fontWeight = FontWeight.Bold, fontSize = 16.sp,
+            name,
+            fontWeight = FontWeight.Bold,
+            fontSize = 15.sp,
             modifier = Modifier.padding(vertical = 10.dp)
         )
     }

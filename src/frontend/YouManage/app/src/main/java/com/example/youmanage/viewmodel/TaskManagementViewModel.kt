@@ -6,7 +6,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.youmanage.data.remote.taskmanagement.Comment
 import com.example.youmanage.data.remote.taskmanagement.Content
-import com.example.youmanage.data.remote.taskmanagement.Detail
 import com.example.youmanage.data.remote.taskmanagement.Task
 import com.example.youmanage.data.remote.taskmanagement.TaskCreate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdate
@@ -43,6 +42,12 @@ class TaskManagementViewModel @Inject constructor(
     private val _deleteCommentResponse = MutableLiveData<Resource<String>>()
     val deleteCommentResponse: LiveData<Resource<String>>
         get() = _deleteCommentResponse
+
+    fun connectToWebSocket(url: String) {
+        viewModelScope.launch {
+            repository.connectToSocket(url, _tasks)
+        }
+    }
 
     fun getTasks(
         projectId: String,

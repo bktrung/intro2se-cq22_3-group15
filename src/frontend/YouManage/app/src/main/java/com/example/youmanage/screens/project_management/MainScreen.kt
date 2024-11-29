@@ -53,6 +53,15 @@ val bottomNavigationItems = listOf(
         unselectedColor = Color.Gray,
         route = ""
     ),
+
+    BottomNavigationItem(
+        title = "Bug",
+        icon = R.drawable.bug_icon,
+        selectedColor = Color.Black,
+        unselectedColor = Color.Gray,
+        route = ""
+    ),
+
     BottomNavigationItem(
         title = "Calendar",
         icon = R.drawable.calendar_icon,
@@ -71,7 +80,6 @@ val bottomNavigationItems = listOf(
 
 @Composable
 fun MainScreen(
-    onAddNewProject: () -> Unit,
     rootNavController: NavHostController
 ) {
     val navController = rememberNavController()
@@ -106,11 +114,7 @@ fun BottomNavigationBar(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        bottomNavigationItems.forEachIndexed { index, item ->
-
-            if (index == 2) {
-                Spacer(modifier = Modifier.width(50.dp))
-            }
+        bottomNavigationItems.forEachIndexed { _, item ->
 
             IconButton(
                 onClick = {
@@ -119,7 +123,7 @@ fun BottomNavigationBar(
                         launchSingleTop = true
                     }
                 },
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(10.dp)
             ) {
                 Icon(
                     painter = painterResource(id = item.icon),
