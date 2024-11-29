@@ -25,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -58,79 +57,9 @@ data class Message(
 )
 
 // ViewModel quản lý danh sách tin nhắn
-//class ChatViewModel : ViewModel() {
-//    private val _messages = MutableStateFlow<List<Message>>(emptyList())
-//    val messages: StateFlow<List<Message>> = _messages
-//    fun sendMessage(content: String, isAudio: Boolean = false) {
-//        val newMessage = Message(
-//            content = content,
-//            senderId = "currentUser",
-//            isSentByUser = true,
-//            isAudioMessage = isAudio,
-//            username = "You",
-//            avatarUrl = ""
-//        )
-//        _messages.value = _messages.value + newMessage
-//    }
-//    fun receiveMessage(content: String, isAudio: Boolean = false) {
-//        val newMessage = Message(
-//            content = content,
-//            senderId = "otherUser",
-//            isSentByUser = false,
-//            isAudioMessage = isAudio,
-//            username = "Other User",
-//            avatarUrl = ""
-//        )
-//        _messages.value = _messages.value + newMessage
-//    }
-//}
-
 class ChatViewModel : ViewModel() {
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
     val messages: StateFlow<List<Message>> = _messages
-
-    init {
-        loadSampleMessages()
-    }
-
-    private fun loadSampleMessages() {
-        val sampleMessages = listOf(
-            Message(
-                content = "Hello, how are you?",
-                senderId = "currentUser",
-                isSentByUser = true,
-                isAudioMessage = false,
-                username = "You",
-                avatarUrl = ""
-            ),
-            Message(
-                content = "I'm good, thank you! How about you?",
-                senderId = "otherUser",
-                isSentByUser = false,
-                isAudioMessage = false,
-                username = "Other User",
-                avatarUrl = ""
-            ),
-            Message(
-                content = "Here's an audio message!",
-                senderId = "currentUser",
-                isSentByUser = true,
-                isAudioMessage = true,
-                username = "You",
-                avatarUrl = ""
-            ),
-            Message(
-                content = "Got it, listening now.",
-                senderId = "otherUser",
-                isSentByUser = false,
-                isAudioMessage = true,
-                username = "Other User",
-                avatarUrl = ""
-            )
-        )
-        _messages.value = sampleMessages
-    }
-
     fun sendMessage(content: String, isAudio: Boolean = false) {
         val newMessage = Message(
             content = content,
@@ -142,7 +71,6 @@ class ChatViewModel : ViewModel() {
         )
         _messages.value = _messages.value + newMessage
     }
-
     fun receiveMessage(content: String, isAudio: Boolean = false) {
         val newMessage = Message(
             content = content,
@@ -155,6 +83,77 @@ class ChatViewModel : ViewModel() {
         _messages.value = _messages.value + newMessage
     }
 }
+
+//class ChatViewModel : ViewModel() {
+//    private val _messages = MutableStateFlow<List<Message>>(emptyList())
+//    val messages: StateFlow<List<Message>> = _messages
+//
+//    init {
+//        loadSampleMessages()
+//    }
+//
+//    private fun loadSampleMessages() {
+//        val sampleMessages = listOf(
+//            Message(
+//                content = "Hello, how are you?",
+//                senderId = "currentUser",
+//                isSentByUser = true,
+//                isAudioMessage = false,
+//                username = "You",
+//                avatarUrl = ""
+//            ),
+//            Message(
+//                content = "I'm good, thank you! How about you?",
+//                senderId = "otherUser",
+//                isSentByUser = false,
+//                isAudioMessage = false,
+//                username = "Other User",
+//                avatarUrl = ""
+//            ),
+//            Message(
+//                content = "Here's an audio message!",
+//                senderId = "currentUser",
+//                isSentByUser = true,
+//                isAudioMessage = true,
+//                username = "You",
+//                avatarUrl = ""
+//            ),
+//            Message(
+//                content = "Got it, listening now.",
+//                senderId = "otherUser",
+//                isSentByUser = false,
+//                isAudioMessage = true,
+//                username = "Other User",
+//                avatarUrl = ""
+//            )
+//        )
+//        _messages.value = sampleMessages
+//    }
+//
+//    fun sendMessage(content: String, isAudio: Boolean = false) {
+//        val newMessage = Message(
+//            content = content,
+//            senderId = "currentUser",
+//            isSentByUser = true,
+//            isAudioMessage = isAudio,
+//            username = "You",
+//            avatarUrl = ""
+//        )
+//        _messages.value = _messages.value + newMessage
+//    }
+//
+//    fun receiveMessage(content: String, isAudio: Boolean = false) {
+//        val newMessage = Message(
+//            content = content,
+//            senderId = "otherUser",
+//            isSentByUser = false,
+//            isAudioMessage = isAudio,
+//            username = "Other User",
+//            avatarUrl = ""
+//        )
+//        _messages.value = _messages.value + newMessage
+//    }
+//}
 
 
 @Composable
