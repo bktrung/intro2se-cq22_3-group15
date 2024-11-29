@@ -218,8 +218,8 @@ fun ChatScreen(
                         MessageBubble(
                             message = message,
                             isSentByUser = message.isSentByUser,
-                            username = message.username,  // Assuming `username` is part of your message object
-                            avatarUrl = message.avatarUrl // Assuming `avatarUrl` is part of your message object
+                            username = message.username,  
+                            avatarUrl = message.avatarUrl 
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                     }
@@ -256,7 +256,7 @@ fun MessageBubble(message: Message, isSentByUser: Boolean, username: String, ava
         ) {
             // Avatar for received messages
             if (!isSentByUser) {
-                Avatar(icon = Icons.Default.Person, contentDescription = "Your Avatar") // Replace with appropriate icon or image
+                Avatar(icon = Icons.Default.Person, contentDescription = "Your Avatar") 
             }
 
             // Message content
@@ -288,7 +288,7 @@ fun MessageBubble(message: Message, isSentByUser: Boolean, username: String, ava
 
             // Avatar for sent messages (You can also add an icon or image here)
             if (isSentByUser) {
-                Avatar(icon = Icons.Default.Person, contentDescription = "Your Avatar") // Replace with appropriate icon or image
+                Avatar(icon = Icons.Default.Person, contentDescription = "Your Avatar") 
             }
         }
     }
