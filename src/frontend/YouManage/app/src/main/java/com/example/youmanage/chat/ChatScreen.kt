@@ -1,38 +1,40 @@
 package com.example.youmanage.chat
 
 import android.Manifest
-import android.content.Context
 import android.media.MediaPlayer
 import android.media.MediaRecorder
-import android.os.Bundle
-import android.speech.RecognitionListener
-import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.youmanage.R
@@ -45,92 +47,374 @@ import java.util.UUID
 // Model dữ liệu tin nhắn
 data class Message(
     val id: String = UUID.randomUUID().toString(),
-    val content: String,  // Nội dung tin nhắn (hoặc văn bản, hoặc đường dẫn file âm thanh)
+    val content: String,
     val senderId: String,
     val timestamp: Long = System.currentTimeMillis(),
     val isSentByUser: Boolean,
-    val isAudioMessage: Boolean = false  // Cờ để xác định đây là tin nhắn âm thanh hay không
+    val isAudioMessage: Boolean = false,
+    val username: String = "User",
+    val avatarUrl: String = ""
+
 )
 
 // ViewModel quản lý danh sách tin nhắn
+//class ChatViewModel : ViewModel() {
+//    private val _messages = MutableStateFlow<List<Message>>(emptyList())
+//    val messages: StateFlow<List<Message>> = _messages
+//    fun sendMessage(content: String, isAudio: Boolean = false) {
+//        val newMessage = Message(
+//            content = content,
+//            senderId = "currentUser",
+//            isSentByUser = true,
+//            isAudioMessage = isAudio,
+//            username = "You",
+//            avatarUrl = ""
+//        )
+//        _messages.value = _messages.value + newMessage
+//    }
+//    fun receiveMessage(content: String, isAudio: Boolean = false) {
+//        val newMessage = Message(
+//            content = content,
+//            senderId = "otherUser",
+//            isSentByUser = false,
+//            isAudioMessage = isAudio,
+//            username = "Other User",
+//            avatarUrl = ""
+//        )
+//        _messages.value = _messages.value + newMessage
+//    }
+//}
+
 class ChatViewModel : ViewModel() {
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
     val messages: StateFlow<List<Message>> = _messages
 
-    // Gửi tin nhắn
-    fun sendMessage(content: String, isAudio: Boolean = false) {
-        val newMessage = Message(content = content, senderId = "currentUser", isSentByUser = true, isAudioMessage = isAudio)
-        _messages.value = _messages.value + newMessage  // Thêm tin nhắn vào danh sách
+    init {
+        loadSampleMessages()
     }
 
-    // Nhận tin nhắn từ người khác (giả lập)
+    private fun loadSampleMessages() {
+        val sampleMessages = listOf(
+            Message(
+                content = "Hello, how are you?",
+                senderId = "currentUser",
+                isSentByUser = true,
+                isAudioMessage = false,
+                username = "You",
+                avatarUrl = ""
+            ),
+            Message(
+                content = "I'm good, thank you! How about you?",
+                senderId = "otherUser",
+                isSentByUser = false,
+                isAudioMessage = false,
+                username = "Other User",
+                avatarUrl = ""
+            ),
+            Message(
+                content = "Here's an audio message!",
+                senderId = "currentUser",
+                isSentByUser = true,
+                isAudioMessage = true,
+                username = "You",
+                avatarUrl = ""
+            ),
+            Message(
+                content = "Got it, listening now.",
+                senderId = "otherUser",
+                isSentByUser = false,
+                isAudioMessage = true,
+                username = "Other User",
+                avatarUrl = ""
+            )
+        )
+        _messages.value = sampleMessages
+    }
+
+    fun sendMessage(content: String, isAudio: Boolean = false) {
+        val newMessage = Message(
+            content = content,
+            senderId = "currentUser",
+            isSentByUser = true,
+            isAudioMessage = isAudio,
+            username = "You",
+            avatarUrl = ""
+        )
+        _messages.value = _messages.value + newMessage
+    }
+
     fun receiveMessage(content: String, isAudio: Boolean = false) {
-        val newMessage = Message(content = content, senderId = "otherUser", isSentByUser = false, isAudioMessage = isAudio)
-        _messages.value = _messages.value + newMessage  // Thêm tin nhắn vào danh sách
+        val newMessage = Message(
+            content = content,
+            senderId = "otherUser",
+            isSentByUser = false,
+            isAudioMessage = isAudio,
+            username = "Other User",
+            avatarUrl = ""
+        )
+        _messages.value = _messages.value + newMessage
     }
 }
 
-// Giao diện chính của màn hình chat
+
 @Composable
 fun ChatScreen(
     messages: List<Message>,
-    onMessageSent: (String, Boolean) -> Unit  // Cập nhật đối số để truyền loại tin nhắn (văn bản hay âm thanh)
+    onMessageSent: (String, Boolean) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        Text(
-            text = "Project Chat",
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            color = MaterialTheme.colorScheme.primary
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    AppColors.LightBlue,
+                    AppColors.LighterBlue
+                )
+            )
         )
 
-        LazyColumn(
+    ) {
+        Column(
             modifier = Modifier
-                .weight(1f)
-                .padding(8.dp)
+                .fillMaxSize()
         ) {
-            items(messages) { message ->
-                MessageBubble(message = message, isSentByUser = message.isSentByUser)
+            // Header Box with title and back button
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .padding(16.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    IconButton(onClick = { /* Handle back action */ }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_back),
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Project Chat",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
-        }
+            // Messages list
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                items(messages) { message ->
+                    Column {
+                        MessageBubble(
+                            message = message,
+                            isSentByUser = message.isSentByUser,
+                            username = message.username,  // Assuming `username` is part of your message object
+                            avatarUrl = message.avatarUrl // Assuming `avatarUrl` is part of your message object
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+                }
+            }
 
-        ChatInputBar(
-            onMessageSent = onMessageSent,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-        )
+            // Input bar
+            ChatInputBar(
+                onMessageSent = onMessageSent,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 12.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = MaterialTheme.shapes.medium
+                    )
+                    .padding(8.dp)
+            )
+        }
     }
 }
 
-// Giao diện bong bóng tin nhắn
 @Composable
-fun MessageBubble(message: Message, isSentByUser: Boolean) {
+fun MessageBubble(message: Message, isSentByUser: Boolean, username: String, avatarUrl: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         contentAlignment = if (isSentByUser) Alignment.CenterEnd else Alignment.CenterStart
     ) {
-        if (message.isAudioMessage) {
-            // Hiển thị nút "Phát" cho tin nhắn âm thanh
-            IconButton(onClick = { playAudio(message.content) }) {
-                Icon(Icons.Default.PlayArrow, contentDescription = "Play Audio")
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = if (isSentByUser) Arrangement.End else Arrangement.Start
+        ) {
+            // Avatar for received messages
+            if (!isSentByUser) {
+                Avatar(icon = Icons.Default.Person, contentDescription = "Your Avatar") // Replace with appropriate icon or image
             }
-        } else {
-            // Hiển thị tin nhắn văn bản
-            Text(
-                text = message.content,
-                modifier = Modifier
-                    .background(
-                        if (isSentByUser) Color(0xFFF3A583) else Color(0xFF75FB6B),
-                        shape = MaterialTheme.shapes.medium
+
+            // Message content
+            Column(
+                horizontalAlignment = if (isSentByUser) Alignment.End else Alignment.Start
+            ) {
+                // Username for received messages
+                if (!isSentByUser) {
+                    Text(
+                        text = username,
+                        style = TextStyle(fontSize = 12.sp, color = Color.Gray),
+                        modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
                     )
-                    .padding(8.dp),
-                color = Color.Black,
-                style = TextStyle(fontSize = 16.sp)
+                }
+
+                // Message content (Audio or Text)
+                if (message.isAudioMessage) {
+                    AudioMessageBubble(
+                        audioPath = message.content,
+                        isSentByUser = isSentByUser
+                    )
+                } else {
+                    TextMessageBubble(
+                        content = message.content,
+                        isSentByUser = isSentByUser
+                    )
+                }
+            }
+
+            // Avatar for sent messages (You can also add an icon or image here)
+            if (isSentByUser) {
+                Avatar(icon = Icons.Default.Person, contentDescription = "Your Avatar") // Replace with appropriate icon or image
+            }
+        }
+    }
+}
+
+@Composable
+fun Avatar(icon: ImageVector, contentDescription: String) {
+    Box(
+        modifier = Modifier
+            .size(40.dp) // Size of the avatar
+            .clip(CircleShape) // Makes the avatar circular
+            .background(AppColors.BackgroundColor) // Background color inside the circle
+            .border(2.dp, AppColors.BackgroundColor, CircleShape) // Border color and shape
+            .padding(8.dp) // Padding around the icon
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+
+@Composable
+fun TextMessageBubble(content: String, isSentByUser: Boolean) {
+    Text(
+        text = content,
+        modifier = Modifier
+            .background(
+                color = if (isSentByUser) AppColors.SentMessageColor else AppColors.ReceivedMessageColor,
+                shape = RoundedCornerShape(
+                    topStart = 16.dp,
+                    topEnd = 16.dp,
+                    bottomStart = if (isSentByUser) 16.dp else 0.dp,
+                    bottomEnd = if (isSentByUser) 0.dp else 16.dp
+                )
+            )
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        color = AppColors.TextColor,
+        style = TextStyle(
+            fontSize = 15.sp,
+            lineHeight = 20.sp,
+            fontFamily = FontFamily.SansSerif
+        )
+    )
+}
+
+
+@Composable
+fun AudioMessageBubble(audioPath: String, isSentByUser: Boolean) {
+    val context = LocalContext.current
+    val mediaPlayer = remember { MediaPlayer() }
+    var isPlaying by remember { mutableStateOf(false) }
+    var duration by remember { mutableIntStateOf(0) }
+    var progress by remember { mutableFloatStateOf(0f) }
+
+    // Initialize media player and load audio file
+    LaunchedEffect(audioPath) {
+        try {
+            mediaPlayer.reset()
+            mediaPlayer.setDataSource(audioPath)
+            mediaPlayer.prepare()
+            duration = mediaPlayer.duration
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    // Cleanup MediaPlayer resources
+    DisposableEffect(Unit) {
+        onDispose {
+            mediaPlayer.release()
+        }
+    }
+    // Update progress while playing
+    LaunchedEffect(isPlaying) {
+        if (isPlaying) {
+            while (mediaPlayer.isPlaying) {
+                progress = mediaPlayer.currentPosition / duration.toFloat()
+                delay(100)
+            }
+        }
+    }
+    // Audio message UI
+    Row(
+        modifier = Modifier
+            .background(
+                color = if (isSentByUser) Color(0xFF007AFF) else Color(0xFFF1F0F0),
+                shape = MaterialTheme.shapes.medium
+            )
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = {
+                if (mediaPlayer.isPlaying) {
+                    mediaPlayer.pause()
+                    isPlaying = false
+                } else {
+                    mediaPlayer.start()
+                    isPlaying = true
+                }
+            },
+            modifier = Modifier.size(40.dp)
+        ) {
+            Icon(
+                imageVector = if (isPlaying) Icons.Default.PlayArrow else Icons.Default.PlayArrow,
+                contentDescription = if (isPlaying) "Pause Audio" else "Play Audio"
+            )
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            LinearProgressIndicator(
+                progress = progress,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                color = Color.Gray
+            )
+
+            Text(
+                text = "${(progress * duration / 1000).toInt()}s / ${duration / 1000}s",
+                style = TextStyle(fontSize = 12.sp),
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
             )
         }
     }
@@ -267,13 +551,37 @@ fun ChatInputBar(
 fun ChatScreenWithViewModel(viewModel: ChatViewModel = viewModel()) {
     val messages by viewModel.messages.collectAsState()
 
-    ChatScreen(
-        messages = messages,
-        onMessageSent = { content, isAudio ->
-            viewModel.sendMessage(content, isAudio)
-        }
-    )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(brush = Brush.verticalGradient(
+                colors = listOf(
+                    Color(0xFFB2EBF2), // Light blue
+                    Color(0xFF80DEEA)  // Deeper blue
+                )
+            ))
+    ) {
+        ChatScreen(
+            messages = messages,
+            onMessageSent = { content, isAudio ->
+                viewModel.sendMessage(content, isAudio)
+            },
+            modifier = Modifier.fillMaxSize()
+        )
+    }
 }
+
+object AppColors {
+    val LightBlue = Color(0xFFCCF1F5)  // Lighter light blue
+    val LighterBlue = Color(0xFFBEEFF4)
+    val SentMessageColor = Color(0xFFDCF8C6)  // Sent by user
+    val ReceivedMessageColor = Color(0xFFE5E7EB)  // Received by other user
+    val PlayButtonColor = Color(0xFF007AFF)  // Color for play button
+    val BackgroundColor = Color(0xFFF1F0F0)  // Background color for audio message
+    val TextColor = Color(0xFF202124)  // Text color for messages
+}
+
+
 
 @Preview(showBackground = true)
 @Composable
