@@ -9,6 +9,12 @@ class ActivityLog(models.Model):
         ('TASK_ADD', 'Task Add'),
         ('TASK_UPDATE', 'Task Update'),
         ('TASK_REMOVE', 'Task Remove'),
+        ('COMMENT_ADD', 'Comment Add'),
+        ('COMMENT_UPDATE', 'Comment Update'),
+        ('COMMENT_REMOVE', 'Comment Remove'),
+        ('ISSUE_ADD', 'Issue Add'),
+        ('ISSUE_UPDATE', 'Issue Update'),
+        ('ISSUE_REMOVE', 'Issue Remove'),
     )
     
     project = models.ForeignKey('project_manager.Project', on_delete=models.CASCADE, related_name='activities')

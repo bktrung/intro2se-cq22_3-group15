@@ -3,9 +3,9 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from .models import Project, Task, Role, Issue
+from .models import Project, Task, Role, Issue, Comment
 from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer, RoleSerializer, IssueSerializer, ProjectMemberSerializer
-from .permissons import IsProjectHostOrReadOnly, IsHostOrAssignee
+from .permissons import IsProjectHostOrReadOnly, IsHostOrAssignee, IsHostOrAssigneeOrReporter
 
 User = get_user_model()    
 
@@ -87,7 +87,6 @@ class TaskListCreateView(generics.ListCreateAPIView):
         return context
         
     def perform_create(self, serializer):
-        # Get project from context
         project = self.get_serializer_context()['project']
         
         # Create validated data with _current_user
@@ -103,8 +102,6 @@ class TaskListCreateView(generics.ListCreateAPIView):
         
         # Update serializer instance
         serializer.instance = task
-        
-        return task
         
 
 class TaskRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
@@ -123,7 +120,7 @@ class TaskRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     def perform_update(self, serializer):
         instance = serializer.instance
         instance._current_user = self.request.user
-        task = serializer.save()
+        serializer.save()
 
     def perform_destroy(self, instance):
         instance._current_user = self.request.user
@@ -141,7 +138,22 @@ class CommentListCreateView(generics.ListCreateAPIView):
         task = get_object_or_404(Task, id=self.kwargs['task_id'], project_id=self.kwargs['project_id'])
         if self.request.user not in task.project.members.all():
             raise PermissionDenied("You must be a project member to comment.")
-        serializer.save(author=self.request.user, task=task)
+        
+        validated_data = serializer.validated_data
+        validated_data.update({
+            'author': self.request.user,
+            'task': task
+        })
+        
+        # Create instance with tracking
+        instance = Comment(**validated_data)
+        instance._current_user = self.request.user
+        
+        # Save to DB
+        instance.save()
+        
+        # Update serializer instance
+        serializer.instance = instance
         
 
 class CommentRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
@@ -154,11 +166,14 @@ class CommentRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     def perform_update(self, serializer):
         if serializer.instance.author != self.request.user:
             raise PermissionDenied("You can only update your own comments.")
+        instance = serializer.instance
+        instance._current_user = self.request.user
         serializer.save()
 
     def perform_destroy(self, instance):
         if instance.author != self.request.user and not instance.task.project.host == self.request.user:
             raise PermissionDenied("You can only delete your own comments or as the project host.")
+        instance._current_user = self.request.user
         instance.delete()
         
         
@@ -243,12 +258,23 @@ class IssueListCreateView(generics.ListCreateAPIView):
         project = self.get_serializer_context()['project']
         if self.request.user not in project.members.all():
             raise PermissionDenied("You must be a project member to report an issue.")
-        serializer.save(reporter=self.request.user, project=project)
+        
+        validated_data = serializer.validated_data
+        validated_data.update({
+            'project': project,
+            'reporter': self.request.user,
+        })
+        
+        instance = Issue(**validated_data)
+        instance._current_user = self.request.user
+        instance.save()
+        
+        serializer.instance = instance
 
 
 class IssueRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = IssueSerializer
-    permission_classes = [IsHostOrAssignee]
+    permission_classes = [IsHostOrAssigneeOrReporter]
 
     def get_queryset(self):
         return Issue.objects.filter(project_id=self.kwargs['project_id'])
@@ -258,6 +284,14 @@ class IssueRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         context['project'] = get_object_or_404(Project, id=self.kwargs['project_id'])
         return context
     
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        instance._current_user = self.request.user
+        serializer.save()
+    
+    def perform_destroy(self, instance):
+        instance._current_user = self.request.user
+        instance.delete()
     
 class ProjectMemberRetrieveView(generics.RetrieveAPIView):
     serializer_class = ProjectMemberSerializer
