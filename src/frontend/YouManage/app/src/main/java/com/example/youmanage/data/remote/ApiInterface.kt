@@ -10,10 +10,13 @@ import com.example.youmanage.data.remote.authentication.UserLogInResponse
 import com.example.youmanage.data.remote.authentication.UserSignUp
 import com.example.youmanage.data.remote.authentication.UserSignUpResponse
 import com.example.youmanage.data.remote.authentication.VerifyRequest
+import com.example.youmanage.data.remote.chat.MessageRequest
+import com.example.youmanage.data.remote.chat.MessageResponse
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
 import com.example.youmanage.data.remote.projectmanagement.Projects
 import com.example.youmanage.data.remote.projectmanagement.Project
 import com.example.youmanage.data.remote.projectmanagement.Role
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -127,5 +130,16 @@ interface ApiInterface {
     suspend fun changePassword(
         @Body request: ChangePasswordRequest
     ): Message
+
+    @POST("ws/chat/{roomId}/")
+    suspend fun sendMessage(
+        @Path("roomId") roomId: Int,
+        @Body message: MessageRequest
+    ): Response<MessageResponse>
+
+    @GET("ws/chat/{roomId}/")
+    suspend fun getMessages(
+        @Path("roomId") roomId: Int
+    ): Response<List<MessageResponse>>
 
 }

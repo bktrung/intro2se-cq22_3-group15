@@ -192,7 +192,7 @@ fun ChatScreen(
                 ) {
                     IconButton(onClick = { /* Handle back action */ }) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_back),
+                            painter = painterResource(id = R.drawable.back_arrow_icon),
                             contentDescription = "Back",
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
