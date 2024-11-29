@@ -2,7 +2,7 @@ from django.db.models.signals import pre_save, post_save, m2m_changed, post_dele
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
 import json
-from project_manager.models import Project, Task, Comment, Issue
+from project_manager.models import Project, Task, Comment, Issue, Role
 from .serializers import ActivityLogSerializer
 from .utils import track_field_changes
 
@@ -68,33 +68,6 @@ def log_member_changes(sender, instance, action, pk_set, **kwargs):
             serializer.save()
         else:
             print(serializer.errors)
-
-# @receiver(m2m_changed, sender=Role.users.through)
-# def log_role_user_changes(sender, instance, action, pk_set, **kwargs):
-#     """Log role assignments and removals"""
-#     if action in ["post_add", "post_remove"]:
-#         users = User.objects.filter(pk__in=pk_set)
-#         action_type = 'ROLE_ASSIGN' if action == "post_add" else 'ROLE_UNASSIGN'
-#         description = (
-#             f'Users {", ".join(users.values_list("username", flat=True))} were '
-#             f'{"assigned to" if action == "post_add" else "removed from"} '
-#             f'role "{instance.role_name}" in project "{instance.project.name}"'
-#         )
-        
-#         serializer = ActivityLogSerializer(data={
-#             'project': instance.project.id,
-#             'user': instance.project.host.id,
-#             'action': action_type,
-#             'changes': {
-#                 'role': instance.role_name,
-#                 'users': list(users.values_list('username', flat=True))
-#             },
-#             'description': description
-#         })
-#         if serializer.is_valid():
-#             serializer.save()
-#         else:
-#             print(serializer.errors)
 
 @receiver(pre_save, sender=Task)
 def store_previous_task_state(sender, instance, **kwargs):
@@ -338,3 +311,106 @@ def log_issue_delete(sender, instance, **kwargs):
         serializer.save()
     else:
         print(serializer.errors)
+        
+        
+@receiver(pre_save, sender=Role)
+def store_previous_role_state(sender, instance, **kwargs):
+    """
+    Stores the previous state of a Role instance before saving.
+    """
+    if instance.pk:
+        try:
+            instance._previous_state = Role.objects.get(pk=instance.pk)
+        except Role.DoesNotExist:
+            instance._previous_state = None
+            
+@receiver(post_save, sender=Role)
+def log_role_save(sender, instance, created, **kwargs):
+    """
+    Logs creation and updates of Role instances.
+    """
+    changes = {}
+
+    if created:
+        action_type = 'ROLE_ADD'
+        description = f'Role "{instance.role_name}" was created.'
+    else:
+        action_type = 'ROLE_UPDATE'
+        prev_state = getattr(instance, '_previous_state', None)
+        changes = track_field_changes(instance, prev_state, ['role_name', 'description'])
+        description = f'Role "{instance.role_name}" was updated.'
+        
+    if created or changes:
+        serializer = ActivityLogSerializer(data={
+            'project': instance.project.id,
+            'user': instance.project.host.username,
+            'action': action_type,
+            'changes': changes,
+            'description': description
+        })
+        
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            print(serializer.errors)
+            
+@receiver(post_delete, sender=Role)
+def log_role_delete(sender, instance, **kwargs):
+    """
+    Logs deletion of Role instances.
+    """
+    action_type = 'ROLE_REMOVE'
+    description = f'Role "{instance.role_name}" was deleted.'
+    changes = {
+        'role_name': instance.role_name,
+        'description': instance.description
+    }
+    
+    try:
+        json.dumps(changes)
+    except (TypeError, ValueError) as e:
+        print(f"Non-serializable data in changes: {changes} | Error: {e}")
+        changes = {}
+        
+    serializer = ActivityLogSerializer(data={
+        'project': instance.project.id,
+        'user': instance.project.host.username,
+        'action': action_type,
+        'changes': changes,
+        'description': description
+    })
+    
+    if serializer.is_valid():
+        serializer.save()
+    else:
+        print(serializer.errors)
+        
+@receiver(m2m_changed, sender=Role.users.through)
+def log_role_member_changes(sender, instance, action, pk_set, **kwargs):
+    """Log role member additions and removals"""
+    if action in ["post_add", "post_remove"]:
+        users = User.objects.filter(pk__in=pk_set)
+        action_type = 'ROLE_ASSIGN' if action == "post_add" else 'ROLE_UNASSIGN'
+        description = (
+            f'Users {", ".join(users.values_list("username", flat=True))} were '
+            f'{"assigned to" if action == "post_add" else "unassigned from"} role "{instance.role_name}"'
+        )
+        
+        changes = {
+            'role_name': instance.role_name,
+            'action': "assigned" if action == "post_add" else "unassigned",
+            'users': list(users.values_list('username', flat=True))
+        }
+        
+        serializer = ActivityLogSerializer(data={
+            'project': instance.project.id,
+            'user': instance.project.host.username,
+            'action': action_type,
+            'changes': changes,
+            'description': description
+        })
+        
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            print(serializer.errors)

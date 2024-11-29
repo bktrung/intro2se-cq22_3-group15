@@ -41,7 +41,7 @@ class Task(TimeStampedModel):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     priority = models.CharField(max_length=20, choices=Priority.choices, blank=True, null=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks')
-    assignee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='assigned_tasks', blank=True, null=True)
+    assignee = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='assigned_tasks', blank=True, null=True)
     
 
 class Comment(TimeStampedModel):
@@ -65,6 +65,6 @@ class Issue(TimeStampedModel):
     description = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='issues')
-    reporter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reported_issues')
-    assignee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='assigned_issues', blank=True, null=True)
+    reporter = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='reported_issues', null=True)
+    assignee = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='assigned_issues', blank=True, null=True)
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='task_issues', blank=True, null=True)
