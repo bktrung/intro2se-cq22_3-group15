@@ -1,11 +1,11 @@
 from rest_framework import generics, permissions, status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from .models import Project, Task, Role, Issue
-from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer, RoleSerializer, IssueSerializer, ProjectMemberSerializer
-from .permissons import IsProjectHostOrReadOnly, IsHostOrAssignee
+from .models import Project, Task, Role, Issue, ChangeRequest
+from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer, RoleSerializer, IssueSerializer, ProjectMemberSerializer, ChangeRequestSerializer
+from .permissons import IsProjectHostOrReadOnly, IsHostOrAssignee, IsProjectHostOrProjectMember
 
 User = get_user_model()    
 
@@ -237,3 +237,58 @@ class ProjectMemberRetrieveView(generics.RetrieveAPIView):
     
     def get_queryset(self):
         return Project.objects.filter(members=self.request.user).select_related('host').prefetch_related('members')
+    
+class ChangeRequestListCreateView(generics.ListCreateAPIView):
+    queryset = ChangeRequest.objects.all()
+    serializer_class = ChangeRequestSerializer
+    permission_classes = [IsProjectHostOrProjectMember]
+
+    def get_queryset(self):
+        return ChangeRequest.objects.filter(project_id=self.kwargs['project_id'])
+
+    def get_serializer_context(self):
+        user = self.request.user
+        return ChangeRequest.objects.filter(project__members=user)
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        project_id = self.request.data.get('project')
+        project = get_object_or_404(Project, id=project_id)
+        
+        # save method does not automatically call the clean method, so we need to call it manually using full_clean
+        change_request = ChangeRequest(
+            project=project,
+            requester=user,
+            request_type=serializer.validated_data.get('request_type'),
+            target_table=serializer.validated_data.get('target_table'),
+            target_table_id=serializer.validated_data.get('target_table_id'),
+            description=serializer.validated_data.get('description'),
+            new_data=serializer.validated_data.get('new_data'),
+        )
+
+        try:
+            change_request.full_clean()  
+        except ValidationError as e:
+            raise ValidationError(e.message_dict)
+
+        change_request.save()
+        
+        
+class ChangeRequestApprovalView(generics.GenericAPIView):
+    permission_classes = [IsProjectHostOrReadOnly]
+    def post(self, request, pk):
+        change_request = get_object_or_404(ChangeRequest, pk=pk)
+        self.check_object_permissions(request, change_request)
+        
+        if change_request.request_type == 'update':
+            return self.update_request(request, change_request)
+        elif change_request.request_type == 'delete':
+            return self.delete_request(request, change_request)
+        else:
+            return Response({"detail": "Invalid request type."}, status=status.HTTP_400_BAD_REQUEST)
+        
+    def put():
+        ...
+        
+    def delete():
+        ...
