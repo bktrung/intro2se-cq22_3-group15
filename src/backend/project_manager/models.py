@@ -73,9 +73,9 @@ class Issue(TimeStampedModel):
     
    
 class RequestStatus(models.TextChoices):
-        PENDING = 'PENDING', 'Pending'
-        APPROVED = 'APPROVED', 'Approved'
-        REJECTED = 'REJECTED', 'Rejected'
+    PENDING = 'PENDING', 'Pending'
+    APPROVED = 'APPROVED', 'Approved'
+    REJECTED = 'REJECTED', 'Rejected'
 
 
 class RequestType(models.TextChoices):
@@ -104,17 +104,15 @@ class ChangeRequest(models.Model):
     declined_reason = models.TextField(blank=True, null=True)
 
     def clean(self):
-        if self.status == 'REJECTED' and not self.declined_reason:
-            raise ValidationError("Declined reason is required when the request is rejected.")
         if self.status != 'REJECTED' and self.declined_reason:
             self.declined_reason = None
         if self.request_type == 'DELETE' and self.new_data:
             raise ValidationError("Deletion requests should not include new data.")
         
         if self.target_table == 'TASK':
-            allowed_fields = ['title', 'description', 'status', 'priority', 'start_date', 'end_date']
+            allowed_fields = ['title', 'description', 'start_date', 'end_date', 'status', 'priority']
         elif self.target_table == 'ROLE':
-            allowed_fields = ['role_name', 'description']
+            allowed_fields = ['role_name', 'description', 'users']
         else:
             raise ValidationError(f"Invalid target_table: {self.target_table}")
 
@@ -122,10 +120,3 @@ class ChangeRequest(models.Model):
             for key in self.new_data.keys():
                 if key not in allowed_fields:
                     raise ValidationError(f"Field '{key}' is not allowed for {self.target_table}.")
-
-    def save(self, *args, **kwargs):
-        if self.status == 'APPROVED' and not self.reviewed_at:
-            if not self.reviewed_by:
-                raise ValidationError("A request must be reviewed by a user before it can be approved.")
-            self.reviewed_at = timezone.now()
-        super().save(*args, **kwargs)

@@ -3,7 +3,8 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from .models import Project, Task, Role, Issue, ChangeRequest
+from django.utils import timezone
+from .models import Project, Task, Role, Issue, ChangeRequest, RequestStatus, RequestType, TargetTable
 from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer, RoleSerializer, IssueSerializer, ProjectMemberSerializer, ChangeRequestSerializer
 from .permissons import IsProjectHostOrReadOnly, IsHostOrAssignee, IsProjectHostOrProjectMember
 
@@ -272,23 +273,111 @@ class ChangeRequestListCreateView(generics.ListCreateAPIView):
             raise ValidationError(e.message_dict)
 
         change_request.save()
+        return Response({"message": "Change request created."}, status=status.HTTP_201_CREATED)
         
         
-class ChangeRequestApprovalView(generics.GenericAPIView):
+class ChangeRequestActionView(generics.GenericAPIView):
     permission_classes = [IsProjectHostOrReadOnly]
-    def post(self, request, pk):
+
+    def post(self, request, project_id, pk):
         change_request = get_object_or_404(ChangeRequest, pk=pk)
-        self.check_object_permissions(request, change_request)
+        if change_request.status != RequestStatus.PENDING:
+            return Response({"error": "Request has already been reviewed."}, status=status.HTTP_400_BAD_REQUEST)
         
-        if change_request.request_type == 'update':
-            return self.update_request(request, change_request)
-        elif change_request.request_type == 'delete':
-            return self.delete_request(request, change_request)
+        action = request.data.get('action')
+        if action == "approve":
+            return self.approve_request(request, change_request)
+        elif action == "reject":
+            return self.reject_request(request, change_request)
         else:
-            return Response({"detail": "Invalid request type."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
         
-    def put():
-        ...
+    def approve_request(self, request, change_request):
+        model_map = {
+            TargetTable.TASK: Task,
+            TargetTable.ROLE: Role
+        }
+        model_class = model_map.get(change_request.target_table)
         
-    def delete():
-        ...
+        action_map = {
+            RequestType.CREATE: self.generic_create,
+            RequestType.UPDATE: self.generic_update,
+            RequestType.DELETE: self.generic_delete
+        }
+        action = action_map.get(change_request.request_type)
+        
+        return action(request, change_request, model_class)
+        
+    def reject_request(self, request, change_request):
+        declined_reason = request.data.get('declined_reason')
+        if not declined_reason:
+            return Response({"error": "Declined reason is required when declining a request."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        change_request.status = RequestStatus.REJECTED
+        change_request.declined_reason = declined_reason
+        change_request.reviewed_by = request.user
+        change_request.reviewed_at = timezone.now()
+        change_request.save()
+        return Response({"message": "Request has been declined."}, status=status.HTTP_200_OK)
+    
+    def generic_create(self, request, change_request, model_class):
+        try:
+            data = change_request.new_data.copy()
+            data['project'] = change_request.project
+
+            # Create the object
+            obj = model_class.objects.create(**data)
+            
+            change_request.status = RequestStatus.APPROVED
+            change_request.reviewed_by = request.user
+            change_request.reviewed_at = timezone.now()
+            change_request.save()
+            
+            return Response({"message": f"{model_class.__name__} created successfully.", "id": obj.id}, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def generic_update(self, request, change_request, model_class):
+        try:
+            obj = model_class.objects.get(
+                id=change_request.target_table_id, 
+                project=change_request.project
+            )
+    
+            update_data = change_request.new_data.copy()
+            
+            # Update object fields
+            for key, value in update_data.items():
+                setattr(obj, key, value)
+            obj.save()
+            
+            change_request.status = RequestStatus.APPROVED
+            change_request.reviewed_by = request.user
+            change_request.reviewed_at = timezone.now()
+            change_request.save()
+            
+            return Response({"message": f"{model_class.__name__} updated successfully."}, status=status.HTTP_200_OK)
+        
+        except model_class.DoesNotExist:
+            return Response({"error": f"{model_class.__name__} not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def generic_delete(self, request, change_request, model_class):
+        try:
+            obj = model_class.objects.get(id=change_request.target_table_id, project=change_request.project)
+
+            obj.delete()
+
+            change_request.status = RequestStatus.APPROVED
+            change_request.reviewed_by = request.user
+            change_request.reviewed_at = timezone.now()
+            change_request.save()
+            
+            return Response({"message": f"{model_class.__name__} deleted successfully."}, status=status.HTTP_200_OK)
+        
+        except model_class.DoesNotExist:
+            return Response({"error": f"{model_class.__name__} not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
