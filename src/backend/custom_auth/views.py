@@ -221,7 +221,6 @@ class ForgotPasswordView(APIView):
         session['reset_timestamp'] = str(timezone.now())
         session.create()
         
-        # Store the session key as our reset token
         request.session[f'pwd_reset_{reset_token}'] = session.session_key
         
         return Response({
@@ -239,7 +238,7 @@ class ForgotPasswordView(APIView):
 
         session_key = request.session.get(f'pwd_reset_{reset_token}')
         if not session_key:
-            return Response({'error': 'Invalid or expired reset token'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Invalid reset token'}, status=status.HTTP_400_BAD_REQUEST)
         
         session = SessionStore(session_key=session_key)
         

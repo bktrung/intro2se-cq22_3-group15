@@ -1,10 +1,11 @@
 from rest_framework import generics, permissions, status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from .models import Project, Task, Role, Issue, Comment
-from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer, RoleSerializer, IssueSerializer, ProjectMemberSerializer
+from django.utils import timezone
+from .models import Project, Task, Role, Issue, Comment, ChangeRequest, RequestStatus, RequestType, TargetTable
+from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer, RoleSerializer, IssueSerializer, ProjectMemberSerializer, ChangeRequestSerializer
 from .permissons import IsProjectHostOrReadOnly, IsHostOrAssignee, IsHostOrAssigneeOrReporter
 
 User = get_user_model()    
@@ -298,3 +299,170 @@ class ProjectMemberRetrieveView(generics.RetrieveAPIView):
     
     def get_queryset(self):
         return Project.objects.filter(members=self.request.user).select_related('host').prefetch_related('members')
+    
+class ChangeRequestListCreateView(generics.ListCreateAPIView):
+    queryset = ChangeRequest.objects.all()
+    serializer_class = ChangeRequestSerializer
+
+    def get_queryset(self):
+        project_id = self.kwargs['project_id']
+        project = get_object_or_404(Project, id=project_id)
+
+        if self.request.user not in project.members.all():
+            raise PermissionDenied("You must be a project member to view change requests.")
+
+        return ChangeRequest.objects.filter(project=project)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['project'] = get_object_or_404(Project, id=self.kwargs['project_id'])
+        return context
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        project_id = self.kwargs['project_id']
+        project = get_object_or_404(Project, id=project_id)
+        
+        if user not in project.members.all():
+            raise PermissionDenied("You must be a project member to create a change request.")
+        
+        # save method does not automatically call the clean method, so we need to call it manually using full_clean
+        change_request = ChangeRequest(
+            project=project,
+            requester=user,
+            request_type=serializer.validated_data.get('request_type'),
+            target_table=serializer.validated_data.get('target_table'),
+            target_table_id=serializer.validated_data.get('target_table_id'),
+            description=serializer.validated_data.get('description'),
+            new_data=serializer.validated_data.get('new_data'),
+        )
+
+        try:
+            change_request.full_clean()  
+        except ValidationError as e:
+            raise ValidationError(e.message_dict)
+
+        change_request.save()
+        return Response({"message": "Change request created."}, status=status.HTTP_201_CREATED)
+        
+        
+class ChangeRequestActionView(generics.GenericAPIView):
+    def post(self, request, project_id, pk):
+        change_request = get_object_or_404(ChangeRequest, pk=pk)
+        project = get_object_or_404(Project, id=project_id)
+        if request.user != project.host:
+            raise PermissionDenied("Only the project host can approve or reject change requests.")
+        if change_request.status != RequestStatus.PENDING:
+            return Response({"error": "Request has already been reviewed."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        action = request.data.get('action')
+        if action == "approve":
+            return self.approve_request(request, change_request)
+        elif action == "reject":
+            return self.reject_request(request, change_request)
+        else:
+            return Response({"error": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
+        
+    def approve_request(self, request, change_request):
+        model_map = {
+            TargetTable.TASK: Task,
+            TargetTable.ROLE: Role
+        }
+        model_class = model_map.get(change_request.target_table)
+        
+        action_map = {
+            RequestType.CREATE: self.generic_create,
+            RequestType.UPDATE: self.generic_update,
+            RequestType.DELETE: self.generic_delete
+        }
+        action = action_map.get(change_request.request_type)
+        
+        return action(request, change_request, model_class)
+        
+    def reject_request(self, request, change_request):
+        declined_reason = request.data.get('declined_reason')
+        if not declined_reason:
+            return Response({"error": "Declined reason is required when declining a request."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        change_request.status = RequestStatus.REJECTED
+        change_request.declined_reason = declined_reason
+        change_request.reviewed_by = request.user
+        change_request.reviewed_at = timezone.now()
+        change_request.save()
+        return Response({"message": "Request has been declined."}, status=status.HTTP_200_OK)
+    
+    def generic_create(self, request, change_request, model_class):
+        try:
+            data = change_request.new_data.copy()
+            data['project'] = change_request.project
+
+            # Create the object
+            obj = model_class.objects.create(**data)
+            serializer_class = TaskSerializer if model_class == Task else RoleSerializer
+            serializer = serializer_class(obj)
+            
+            change_request.status = RequestStatus.APPROVED
+            change_request.reviewed_by = request.user
+            change_request.reviewed_at = timezone.now()
+            change_request.save()
+            
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            # Auto reject the request if there is an error
+            change_request.reviewed_by = request.user
+            change_request.reviewed_at = timezone.now()
+            change_request.status = RequestStatus.REJECTED
+            change_request.declined_reason = str(e)
+            change_request.save()
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def generic_update(self, request, change_request, model_class):
+        try:
+            obj = model_class.objects.get(
+                id=change_request.target_table_id, 
+                project=change_request.project
+            )
+    
+            update_data = change_request.new_data.copy()
+            
+            # Update object fields
+            for key, value in update_data.items():
+                setattr(obj, key, value)
+            obj.save()
+            
+            change_request.status = RequestStatus.APPROVED
+            change_request.reviewed_by = request.user
+            change_request.reviewed_at = timezone.now()
+            change_request.save()
+            
+            return Response({"message": f"{model_class.__name__} updated successfully."}, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            change_request.reviewed_by = request.user
+            change_request.reviewed_at = timezone.now()
+            change_request.status = RequestStatus.REJECTED
+            change_request.declined_reason = str(e)
+            change_request.save()
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def generic_delete(self, request, change_request, model_class):
+        try:
+            obj = model_class.objects.get(id=change_request.target_table_id, project=change_request.project)
+            
+            obj.delete()
+
+            change_request.status = RequestStatus.APPROVED
+            change_request.reviewed_by = request.user
+            change_request.reviewed_at = timezone.now()
+            change_request.save()
+            
+            return Response({"message": f"{model_class.__name__} deleted successfully."}, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            change_request.reviewed_by = request.user
+            change_request.reviewed_at = timezone.now()
+            change_request.status = RequestStatus.REJECTED
+            change_request.declined_reason = str(e)
+            change_request.save()
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

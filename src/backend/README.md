@@ -71,3 +71,7 @@
 
    ```bash
     docker compose up --build
+
+- If encounter this error: "Error response from daemon: driver failed programming external connectivity on endpoint redis-db (05130a1f5d33c5c31644d42bf654df467a321bdddd418a9d30a0a1a7b406147b): failed to bind port 0.0.0.0:6379/tcp: Error starting userland proxy: listen tcp4 0.0.0.0:6379: bind: address already in use", run the following command (only work for Linux):
+    ```bash
+    sudo systemctl stop redis

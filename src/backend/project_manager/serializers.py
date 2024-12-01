@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Project, Task, Comment, Role, Issue
+from .models import Project, Task, Comment, Role, Issue, ChangeRequest
 
 User = get_user_model()
 
@@ -122,3 +122,10 @@ class ProjectMemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = ['members']
+        
+        
+class ChangeRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChangeRequest
+        fields = ['id', 'project', 'requester', 'request_type', 'target_table', 'target_table_id', 'description', 'new_data', 'created_at', 'reviewed_by', 'reviewed_at', 'declined_reason', 'status']
+        read_only_fields = ['project', 'requester', 'status', 'created_at', 'reviewed_by', 'reviewed_at']
