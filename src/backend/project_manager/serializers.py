@@ -90,6 +90,29 @@ class TaskSerializer(serializers.ModelSerializer):
             'issues'
             ]
         read_only_fields = ['project', 'created_at', 'updated_at']
+        
+    def validate(self, data):
+        """Validate date relationships"""
+        # Check planned dates
+        if data.get('start_date') and data.get('end_date'):
+            if data['start_date'] > data['end_date']:
+                raise serializers.ValidationError({
+                    "end_date": "End date must be after start date"
+                })
+
+        # Validate against project dates if creating new task
+        project = data.get('project')
+        if project:
+            if data.get('start_date') and data['start_date'] < project.duedate:
+                raise serializers.ValidationError({
+                    "start_date": "Task start date cannot be after project due date"
+                })
+            if data.get('end_date') and data['end_date'] > project.duedate:
+                raise serializers.ValidationError({
+                    "end_date": "Task end date cannot be after project due date"
+                })
+
+        return data
 
     def validate_assignee_id(self, value):
         project = self.context['project']
@@ -99,6 +122,7 @@ class TaskSerializer(serializers.ModelSerializer):
     
     def get_comments_count(self, obj):
         return obj.comments.count()
+    
 
 class CommentSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)

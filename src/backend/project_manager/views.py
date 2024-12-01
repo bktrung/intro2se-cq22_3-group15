@@ -4,9 +4,9 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from .models import Project, Task, Role, Issue, Comment, ChangeRequest, RequestStatus, RequestType, TargetTable
-from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer, RoleSerializer, IssueSerializer, ProjectMemberSerializer, ChangeRequestSerializer
-from .permissons import IsProjectHostOrReadOnly, IsHostOrAssignee, IsHostOrAssigneeOrReporter
+from .models import *
+from .serializers import *
+from .permissons import *
 
 User = get_user_model()    
 
