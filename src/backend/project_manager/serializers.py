@@ -108,6 +108,15 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = ['id', 'content', 'author', 'created_at', 'updated_at']
         read_only_fields = ['author', 'created_at', 'updated_at']
         
+
+class CommentDetailSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'content', 'author', 'created_at', 'updated_at', 'task']
+        read_only_fields = ['author', 'created_at', 'updated_at', 'task']
+
         
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
