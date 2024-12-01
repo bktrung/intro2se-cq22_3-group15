@@ -33,7 +33,7 @@ def send_object_notification(event_type, instance, serializer=None):
     
     data = {
         "type": event_type,
-        "model_type": instance.__class__.__name__.lower(),  # e.g. 'task' or 'project'
+        "model_type": instance.__class__.__name__.lower(),
         "object": serializer(instance).data
     }
     
