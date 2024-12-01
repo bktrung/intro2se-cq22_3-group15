@@ -21,11 +21,18 @@ class ProjectSerializer(serializers.ModelSerializer):
         read_only_fields = ['host', 'created_at', 'updated_at']
         
         
+class TaskIssueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ['id', 'title', 'description', 'status']
+        
+        
 class IssueSerializer(serializers.ModelSerializer):
     reporter = UserSerializer(read_only=True)
     assignee = UserSerializer(read_only=True)
     assignee_id = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), source='assignee', write_only=True, required=False)
-    task_id = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all(), required=False, allow_null=True)
+    task = TaskIssueSerializer(read_only=True)
+    task_id = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all(), source='task', write_only=True, required=False)
 
     class Meta:
         model = Issue
@@ -37,7 +44,8 @@ class IssueSerializer(serializers.ModelSerializer):
             'project', 
             'reporter', 
             'assignee', 
-            'assignee_id', 
+            'assignee_id',
+            'task',
             'task_id',
         ]
         read_only_fields = ['reporter', 'project']
@@ -48,11 +56,18 @@ class IssueSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Assignee must be a member of the project.")
         return value
     
+    
+class IssueTaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Issue
+        fields = ['id', 'title', 'description', 'status']
+
         
 class TaskSerializer(serializers.ModelSerializer):
     assignee = UserSerializer(read_only=True)
     assignee_id = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), source='assignee', write_only=True, required=False)
-    issues = IssueSerializer(many=True, read_only=True, source='task_issues')
+    issues = IssueTaskSerializer(many=True, read_only=True, source='task_issues')
+    comments_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -69,6 +84,7 @@ class TaskSerializer(serializers.ModelSerializer):
             'project', 
             'assignee',
             'assignee_id',
+            'comments_count',
             'created_at',
             'updated_at',
             'issues'
@@ -81,6 +97,8 @@ class TaskSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Assignee must be a member of the project.")
         return value
     
+    def get_comments_count(self, obj):
+        return obj.comments.count()
 
 class CommentSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
