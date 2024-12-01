@@ -45,7 +45,6 @@ class ProjectMemberManagementView(generics.GenericAPIView):
 
     def add_member(self, request, project):
         username = request.data.get('username')
-        
         if not username:
             return Response({"detail": "Please provide username."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -59,7 +58,6 @@ class ProjectMemberManagementView(generics.GenericAPIView):
 
     def remove_member(self, request, project):
         user_id = request.data.get('user_id')
-        
         if not user_id:
             return Response({"detail": "Please provide user_id."}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -71,7 +69,7 @@ class ProjectMemberManagementView(generics.GenericAPIView):
         if user not in project.members.all():
             return Response({"detail": "User is not a member of this project."}, status=status.HTTP_400_BAD_REQUEST)
         
-        project.members.remove(user)
+        project.remove_member(user)
         return Response({"detail": "Member removed successfully."}, status=status.HTTP_200_OK)
     
 
