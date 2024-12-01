@@ -109,5 +109,5 @@ class ProjectMemberSerializer(serializers.ModelSerializer):
 class ChangeRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChangeRequest
-        fields = ['id', 'project', 'request_type', 'target_table', 'target_table_id', 'description', 'new_data', 'reviewed_at', 'declined_reason']
-        read_only_fields = ['requester', 'status', 'created_at', 'reviewed_by', 'reviewed_at']
+        fields = ['id', 'project', 'requester', 'request_type', 'target_table', 'target_table_id', 'description', 'new_data', 'created_at', 'reviewed_by', 'reviewed_at', 'declined_reason', 'status']
+        read_only_fields = ['project', 'requester', 'status', 'created_at', 'reviewed_by', 'reviewed_at']

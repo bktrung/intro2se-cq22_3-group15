@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from .models import Project, Task, Role, Issue, ChangeRequest, RequestStatus, RequestType, TargetTable
 from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer, RoleSerializer, IssueSerializer, ProjectMemberSerializer, ChangeRequestSerializer
-from .permissons import IsProjectHostOrReadOnly, IsHostOrAssignee, IsProjectHostOrProjectMember
+from .permissons import IsProjectHostOrReadOnly, IsHostOrAssignee
 
 User = get_user_model()    
 
@@ -242,19 +242,28 @@ class ProjectMemberRetrieveView(generics.RetrieveAPIView):
 class ChangeRequestListCreateView(generics.ListCreateAPIView):
     queryset = ChangeRequest.objects.all()
     serializer_class = ChangeRequestSerializer
-    permission_classes = [IsProjectHostOrProjectMember]
 
     def get_queryset(self):
-        return ChangeRequest.objects.filter(project_id=self.kwargs['project_id'])
+        project_id = self.kwargs['project_id']
+        project = get_object_or_404(Project, id=project_id)
+
+        if self.request.user not in project.members.all():
+            raise PermissionDenied("You must be a project member to view change requests.")
+
+        return ChangeRequest.objects.filter(project=project)
 
     def get_serializer_context(self):
-        user = self.request.user
-        return ChangeRequest.objects.filter(project__members=user)
+        context = super().get_serializer_context()
+        context['project'] = get_object_or_404(Project, id=self.kwargs['project_id'])
+        return context
 
     def perform_create(self, serializer):
         user = self.request.user
-        project_id = self.request.data.get('project')
+        project_id = self.kwargs['project_id']
         project = get_object_or_404(Project, id=project_id)
+        
+        if user not in project.members.all():
+            raise PermissionDenied("You must be a project member to create a change request.")
         
         # save method does not automatically call the clean method, so we need to call it manually using full_clean
         change_request = ChangeRequest(
@@ -277,10 +286,11 @@ class ChangeRequestListCreateView(generics.ListCreateAPIView):
         
         
 class ChangeRequestActionView(generics.GenericAPIView):
-    permission_classes = [IsProjectHostOrReadOnly]
-
     def post(self, request, project_id, pk):
         change_request = get_object_or_404(ChangeRequest, pk=pk)
+        project = get_object_or_404(Project, id=project_id)
+        if request.user != project.host:
+            raise PermissionDenied("Only the project host can approve or reject change requests.")
         if change_request.status != RequestStatus.PENDING:
             return Response({"error": "Request has already been reviewed."}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -327,15 +337,23 @@ class ChangeRequestActionView(generics.GenericAPIView):
 
             # Create the object
             obj = model_class.objects.create(**data)
+            serializer_class = TaskSerializer if model_class == Task else RoleSerializer
+            serializer = serializer_class(obj)
             
             change_request.status = RequestStatus.APPROVED
             change_request.reviewed_by = request.user
             change_request.reviewed_at = timezone.now()
             change_request.save()
             
-            return Response({"message": f"{model_class.__name__} created successfully.", "id": obj.id}, status=status.HTTP_200_OK)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         
         except Exception as e:
+            # Auto reject the request if there is an error
+            change_request.reviewed_by = request.user
+            change_request.reviewed_at = timezone.now()
+            change_request.status = RequestStatus.REJECTED
+            change_request.declined_reason = str(e)
+            change_request.save()
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def generic_update(self, request, change_request, model_class):
@@ -359,15 +377,18 @@ class ChangeRequestActionView(generics.GenericAPIView):
             
             return Response({"message": f"{model_class.__name__} updated successfully."}, status=status.HTTP_200_OK)
         
-        except model_class.DoesNotExist:
-            return Response({"error": f"{model_class.__name__} not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
+            change_request.reviewed_by = request.user
+            change_request.reviewed_at = timezone.now()
+            change_request.status = RequestStatus.REJECTED
+            change_request.declined_reason = str(e)
+            change_request.save()
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def generic_delete(self, request, change_request, model_class):
         try:
             obj = model_class.objects.get(id=change_request.target_table_id, project=change_request.project)
-
+            
             obj.delete()
 
             change_request.status = RequestStatus.APPROVED
@@ -377,7 +398,10 @@ class ChangeRequestActionView(generics.GenericAPIView):
             
             return Response({"message": f"{model_class.__name__} deleted successfully."}, status=status.HTTP_200_OK)
         
-        except model_class.DoesNotExist:
-            return Response({"error": f"{model_class.__name__} not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
+            change_request.reviewed_by = request.user
+            change_request.reviewed_at = timezone.now()
+            change_request.status = RequestStatus.REJECTED
+            change_request.declined_reason = str(e)
+            change_request.save()
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

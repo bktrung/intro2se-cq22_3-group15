@@ -71,7 +71,8 @@ class Issue(TimeStampedModel):
     assignee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='assigned_issues', blank=True, null=True)
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='task_issues', blank=True, null=True)
     
-   
+# Why do i use uppercase name (Ex: "TASK" instead of "Task")? Because it is a convention to use uppercase for constants in Python
+# And it looks nicer :p . However, I still have to convert it to Task when I use it in views.py, which is a nuisance.
 class RequestStatus(models.TextChoices):
     PENDING = 'PENDING', 'Pending'
     APPROVED = 'APPROVED', 'Approved'
@@ -102,10 +103,12 @@ class ChangeRequest(models.Model):
     reviewed_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='requests_reviewed', blank=True, null=True)
     reviewed_at = models.DateTimeField(blank=True, null=True)
     declined_reason = models.TextField(blank=True, null=True)
-
+    
     def clean(self):
         if self.status != 'REJECTED' and self.declined_reason:
             self.declined_reason = None
+        if (self.request_type == 'CREATE' or self.request_type == 'UPDATE') and (not self.new_data or self.new_data == {}):
+            raise ValidationError("Creation/Updation requests should include new data.")
         if self.request_type == 'DELETE' and self.new_data:
             raise ValidationError("Deletion requests should not include new data.")
         
