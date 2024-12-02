@@ -472,3 +472,27 @@ class UserRetrieveView(generics.RetrieveAPIView):
     
     def get_object(self):
         return self.request.user
+    
+    
+class ProjectHostEmpowerView(generics.GenericAPIView):
+    permission_classes = [IsProjectHostOrReadOnly]
+    
+    def post(self, request, pk):
+        project = get_object_or_404(Project, pk=pk)
+        self.check_object_permissions(request, project)
+        user_id = request.data.get('user_id')
+        if not user_id:
+            return Response({"detail": "Please provide user_id."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = get_object_or_404(User, id=user_id)
+        
+        if user == project.host:
+            return Response({"detail": "User is already the host of this project."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if user not in project.members.all():
+            return Response({"detail": "User must be a project member to be empowered as host."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        project.host = user
+        project.save()
+        
+        return Response({"detail": "Project host updated successfully."}, status=status.HTTP_200_OK)

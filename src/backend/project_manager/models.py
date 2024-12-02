@@ -29,6 +29,11 @@ class Project(TimeStampedModel):
                 assignee=user
             ).update(assignee=None)
             
+            Issue.objects.filter(
+                project=self,
+                assignee=user
+            ).update(assignee=None)
+            
             # Remove member
             self.members.remove(user)
     

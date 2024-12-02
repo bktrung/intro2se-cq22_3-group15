@@ -18,4 +18,5 @@ urlpatterns = [
     path('projects/<int:project_id>/change-requests/', ChangeRequestListCreateView.as_view(), name='change-request-list-create'),
     path('projects/<int:project_id>/change-requests/<int:pk>/', ChangeRequestActionView.as_view(), name='change-request-action'),
     path('users/self/', UserRetrieveView.as_view(), name='user-retrieve'),
+    path('projects/<int:pk>/empower/', ProjectHostEmpowerView.as_view(), name='project-host-empower'),
 ]
