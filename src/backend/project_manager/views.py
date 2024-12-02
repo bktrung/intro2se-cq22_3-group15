@@ -464,3 +464,11 @@ class ChangeRequestActionView(generics.GenericAPIView):
             change_request.declined_reason = str(e)
             change_request.save()
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+class UserRetrieveView(generics.RetrieveAPIView):
+    serializer_class = UserSerializer
+    queryset = User.objects.all()
+    
+    def get_object(self):
+        return self.request.user

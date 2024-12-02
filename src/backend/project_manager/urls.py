@@ -1,21 +1,5 @@
 from django.urls import path
-from .views import (
-    ProjectListCreateView,
-    ProjectRetrieveUpdateDestroyView,
-    ProjectMemberManagementView,
-    TaskListCreateView,
-    TaskRetrieveUpdateDestroyView,
-    CommentListCreateView,
-    CommentRetrieveUpdateDestroyView,
-    RoleListCreateView,
-    RoleRetrieveUpdateDestroyView,
-    RoleManagementView,
-    IssueListCreateView,
-    IssueRetrieveUpdateDestroyView,
-    ProjectMemberRetrieveView,
-    ChangeRequestListCreateView,
-    ChangeRequestActionView
-)
+from .views import *
 
 urlpatterns = [
     path('projects/', ProjectListCreateView.as_view(), name='project-list-create'),
@@ -33,4 +17,5 @@ urlpatterns = [
     path('projects/<int:project_id>/issues/<int:pk>/', IssueRetrieveUpdateDestroyView.as_view(), name='issue-retrieve-update-destroy'),
     path('projects/<int:project_id>/change-requests/', ChangeRequestListCreateView.as_view(), name='change-request-list-create'),
     path('projects/<int:project_id>/change-requests/<int:pk>/', ChangeRequestActionView.as_view(), name='change-request-action'),
+    path('users/self/', UserRetrieveView.as_view(), name='user-retrieve'),
 ]
