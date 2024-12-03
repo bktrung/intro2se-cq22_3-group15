@@ -4,9 +4,9 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from .models import Project, Task, Role, Issue, Comment, ChangeRequest, RequestStatus, RequestType, TargetTable
-from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer, RoleSerializer, IssueSerializer, ProjectMemberSerializer, ChangeRequestSerializer
-from .permissons import IsProjectHostOrReadOnly, IsHostOrAssignee, IsHostOrAssigneeOrReporter
+from .models import *
+from .serializers import *
+from .permissons import *
 
 User = get_user_model()    
 
@@ -45,7 +45,6 @@ class ProjectMemberManagementView(generics.GenericAPIView):
 
     def add_member(self, request, project):
         username = request.data.get('username')
-        
         if not username:
             return Response({"detail": "Please provide username."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -59,7 +58,6 @@ class ProjectMemberManagementView(generics.GenericAPIView):
 
     def remove_member(self, request, project):
         user_id = request.data.get('user_id')
-        
         if not user_id:
             return Response({"detail": "Please provide user_id."}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -71,7 +69,7 @@ class ProjectMemberManagementView(generics.GenericAPIView):
         if user not in project.members.all():
             return Response({"detail": "User is not a member of this project."}, status=status.HTTP_400_BAD_REQUEST)
         
-        project.members.remove(user)
+        project.remove_member(user)
         return Response({"detail": "Member removed successfully."}, status=status.HTTP_200_OK)
     
 
@@ -466,3 +464,35 @@ class ChangeRequestActionView(generics.GenericAPIView):
             change_request.declined_reason = str(e)
             change_request.save()
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+class UserRetrieveView(generics.RetrieveAPIView):
+    serializer_class = UserSerializer
+    queryset = User.objects.all()
+    
+    def get_object(self):
+        return self.request.user
+    
+    
+class ProjectHostEmpowerView(generics.GenericAPIView):
+    permission_classes = [IsProjectHostOrReadOnly]
+    
+    def post(self, request, pk):
+        project = get_object_or_404(Project, pk=pk)
+        self.check_object_permissions(request, project)
+        user_id = request.data.get('user_id')
+        if not user_id:
+            return Response({"detail": "Please provide user_id."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = get_object_or_404(User, id=user_id)
+        
+        if user == project.host:
+            return Response({"detail": "User is already the host of this project."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if user not in project.members.all():
+            return Response({"detail": "User must be a project member to be empowered as host."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        project.host = user
+        project.save()
+        
+        return Response({"detail": "Project host updated successfully."}, status=status.HTTP_200_OK)

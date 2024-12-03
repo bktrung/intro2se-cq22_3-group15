@@ -20,6 +20,23 @@ class Project(TimeStampedModel):
     host = models.ForeignKey(User, on_delete=models.CASCADE, related_name='hosted_projects')
     members = models.ManyToManyField(User, related_name='projects')
     
+    def remove_member(self, user):
+        """Remove member and reassign their tasks"""
+        if user in self.members.all():
+            # Update tasks first
+            Task.objects.filter(
+                project=self,
+                assignee=user
+            ).update(assignee=None)
+            
+            Issue.objects.filter(
+                project=self,
+                assignee=user
+            ).update(assignee=None)
+            
+            # Remove member
+            self.members.remove(user)
+    
     
 class Status(models.TextChoices):
     PENDING = 'PENDING', 'Pending'

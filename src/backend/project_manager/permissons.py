@@ -8,7 +8,7 @@ class IsProjectHostOrReadOnly(permissions.BasePermission):
         if hasattr(obj, 'project'):
             return obj.project.host == request.user
         return obj.host == request.user
-    
+
 
 class IsHostOrAssignee(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
