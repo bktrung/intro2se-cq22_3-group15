@@ -56,6 +56,12 @@ sealed class TaskManagementRouteScreen(
     data object TaskDetail : TaskManagementRouteScreen("task_detail/{projectId}/{taskId}")
 }
 
+sealed class ChatRouteScreen(
+    val route: String
+){
+    data object ChatScreen: ChatRouteScreen("chat_room/{projectId}")
+}
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RootNavGraph(

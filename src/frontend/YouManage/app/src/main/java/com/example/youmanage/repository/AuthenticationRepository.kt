@@ -18,6 +18,7 @@ import com.example.youmanage.data.remote.authentication.UserLogInResponse
 import com.example.youmanage.data.remote.authentication.UserSignUp
 import com.example.youmanage.data.remote.authentication.UserSignUpResponse
 import com.example.youmanage.data.remote.authentication.VerifyRequest
+import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.utils.Constants.ACCESS_TOKEN_KEY
 import com.example.youmanage.utils.Constants.REFRESH_TOKEN_KEY
 import com.example.youmanage.utils.Resource
@@ -102,6 +103,10 @@ class AuthenticationRepository @Inject constructor(
 
     suspend fun changePassword(request: ChangePasswordRequest): Resource<Message> {
         return safeApiCall { api.changePassword(request) }
+    }
+
+    suspend fun getUser(authorization: String): Resource<User>{
+        return safeApiCall { api.getUser(authorization) }
     }
 
     suspend fun saveToken(

@@ -10,15 +10,19 @@ import androidx.annotation.RequiresApi
 import androidx.navigation.compose.rememberNavController
 import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
 import com.example.youmanage.data.remote.authentication.VerifyRequest
+import com.example.youmanage.data.remote.chat.MessageRequest
 import com.example.youmanage.data.remote.taskmanagement.TaskCreate
 import com.example.youmanage.data.remote.taskmanagement.Username
 import com.example.youmanage.navigation.RootNavGraph
+import com.example.youmanage.screens.chat.ChatScreenWithViewModel
 import com.example.youmanage.screens.project_management.ProjectDetailScreen
 import com.example.youmanage.screens.task_management.CreateTaskScreen
 import com.example.youmanage.screens.task_management.TaskDetailScreen
 import com.example.youmanage.screens.task_management.TaskListScreen
 import com.example.youmanage.ui.theme.YouManageTheme
+import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.ChatViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -53,7 +57,18 @@ class MainActivity : ComponentActivity() {
 //                authorization = authorization
 //            )
 //        }
-
+//        val api = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzMzMzA3MjE0LCJpYXQiOjE3MzMxMzQ0MTQsImp0aSI6IjBkYjVjMTI1NTg1YzQ0OWI5YmFjZTIwNzg1NWY0YjM0IiwidXNlcl9pZCI6MX0.uDa7jZdy_YFrer59vwVoLbAIw_-lTD_OdEqI_LFj7gI"
+//        val url = "${WEB_SOCKET}chat/1/?token=$api"
+//
+//        val viewModel : ChatViewModel by viewModels()
+//
+//        viewModel.connectToSocket(url)
+//
+//        viewModel.sendMessage(
+//            MessageRequest(
+//                "Rank con"
+//            )
+//        )
 
 //        viewModel.verifyResetPasswordOTP(
 //            VerifyRequest(
@@ -101,6 +116,7 @@ class MainActivity : ComponentActivity() {
 
                 //viewModel.sendOTP(SendOTPRequest("duonghuutuong0712@gmail.com"))
 
+                //ChatScreenWithViewModel()
             }
         }
     }

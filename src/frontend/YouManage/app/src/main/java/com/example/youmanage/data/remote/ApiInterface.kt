@@ -11,6 +11,7 @@ import com.example.youmanage.data.remote.authentication.UserLogInResponse
 import com.example.youmanage.data.remote.authentication.UserSignUp
 import com.example.youmanage.data.remote.authentication.UserSignUpResponse
 import com.example.youmanage.data.remote.authentication.VerifyRequest
+import com.example.youmanage.data.remote.chat.Messages
 import com.example.youmanage.data.remote.taskmanagement.Comment
 import com.example.youmanage.data.remote.taskmanagement.Detail
 import com.example.youmanage.data.remote.projectmanagement.Id
@@ -24,6 +25,7 @@ import com.example.youmanage.data.remote.taskmanagement.TaskCreate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdateStatus
 import com.example.youmanage.data.remote.taskmanagement.Username
+import com.example.youmanage.utils.Resource
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -243,5 +245,16 @@ interface ApiInterface {
     ): Response<Unit>
 
 
+    @GET("/projects/{projectId}/messages/")
+    suspend fun getMessage(
+        @Path("projectId") projectId: String,
+        @Header("Authorization") authorization: String
+    ): Messages
+
+
+    @GET("/users/self/")
+    suspend fun getUser(
+        @Header("Authorization") authorization: String,
+    ): User
 
 }

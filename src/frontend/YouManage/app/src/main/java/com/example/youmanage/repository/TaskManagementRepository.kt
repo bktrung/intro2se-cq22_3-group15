@@ -29,10 +29,9 @@ class TaskManagementRepository @Inject constructor(
 
     private var webSocket: WebSocket? = null
 
-
-    suspend fun connectToSocket(url: String, liveData: MutableLiveData<Resource<List<Task>>>): Resource<TaskWebSocket> {
+    fun connectToSocket(url: String, liveData: MutableLiveData<Resource<List<Task>>>): Resource<TaskWebSocket> {
         return try {
-            val webSocket = webSocketFactory.createWebSocket(url, object : WebSocketListener() {
+            webSocketFactory.createWebSocket(url, object : WebSocketListener() {
 
                 override fun onOpen(webSocket: WebSocket, response: Response) {
                     super.onOpen(webSocket, response)
@@ -59,40 +58,18 @@ class TaskManagementRepository @Inject constructor(
                             liveData.postValue(Resource.Success(updatedTasks))
                         }
                         else if (taskResponse.type == "task_created") {
-                            val createdTask = taskResponse.task
                             val currentTasks = liveData.value?.data.orEmpty()
-                            val updatedTasks = currentTasks + createdTask
-
-                            liveData.postValue(Resource.Success(updatedTasks))
+                            liveData.postValue(Resource.Success(currentTasks))
                         }
                         Resource.Success(taskResponse)
                     } catch (e: Exception) {
                         Resource.Error("Error parsing response")
                     }
                 }
-
-                override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                    super.onFailure(webSocket, t, response)
-                   // Resource.Error("")
-                }
             })
 
-            Resource.Success(TaskWebSocket(
-                task = Task(
-                    assignee = User("", 0, ""), // Giả sử bạn cần khởi tạo đối tượng User, bạn có thể để trống nếu User có giá trị mặc định.
-                    createdAt = "",
-                    endDate = "",
-                    id = 0,
-                    project = 0,
-                    startDate = "",
-                    status = "",
-                    title = "",
-                    updatedAt = ""
-                ),
-                type = ""
-            ))
+            Resource.Success(TaskWebSocket(task = Task(), type = ""))
         } catch (e: Exception) {
-            // Xử lý lỗi WebSocket
             Resource.Error("Error with WebSocket: ${e.localizedMessage}")
         }
     }

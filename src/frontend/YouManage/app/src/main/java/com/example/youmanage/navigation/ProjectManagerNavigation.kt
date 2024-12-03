@@ -16,6 +16,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import com.example.youmanage.screens.chat.ChatScreenWithViewModel
 import com.example.youmanage.screens.project_management.AddProjectScreen
 import com.example.youmanage.screens.project_management.HomeScreen
 import com.example.youmanage.screens.project_management.MainScreen
@@ -131,8 +132,21 @@ fun NavGraphBuilder.projectManagementNavGraph(
                 },
                 onTaskList = {
                     rootNavController.navigate("task_list/${id}")
+                },
+                onChatRoom = {
+                    rootNavController.navigate("chat_room/${id}")
                 }
             )
+        }
+
+        composable(
+            route = ChatRouteScreen.ChatScreen.route
+        ){
+            val projectId = it.arguments?.getString("projectId")
+
+            ChatScreenWithViewModel(
+                projectId = projectId ?: "",
+                onNavigateBack = { rootNavController.navigateUp() })
         }
 
     }

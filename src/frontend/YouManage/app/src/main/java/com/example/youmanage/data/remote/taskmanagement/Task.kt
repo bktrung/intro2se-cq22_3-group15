@@ -24,4 +24,5 @@ data class Task(
     val title: String = "",
     @SerializedName("updated_at")
     val updatedAt: String = ""
+
 )

@@ -1,16 +1,15 @@
 package com.example.youmanage.viewmodel
 
 import android.util.Log
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
+import com.example.youmanage.data.remote.authentication.Email
 import com.example.youmanage.data.remote.authentication.Message
 import com.example.youmanage.data.remote.authentication.RefreshToken
-import com.example.youmanage.data.remote.authentication.Email
 import com.example.youmanage.data.remote.authentication.ResetToken
 import com.example.youmanage.data.remote.authentication.UserGoogleLogIn
 import com.example.youmanage.data.remote.authentication.UserLogIn
@@ -18,6 +17,7 @@ import com.example.youmanage.data.remote.authentication.UserLogInResponse
 import com.example.youmanage.data.remote.authentication.UserSignUp
 import com.example.youmanage.data.remote.authentication.UserSignUpResponse
 import com.example.youmanage.data.remote.authentication.VerifyRequest
+import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.repository.AuthenticationRepository
 import com.example.youmanage.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -48,6 +48,9 @@ class AuthenticationViewModel @Inject constructor(
 
     private val _message = MutableLiveData<Resource<Message>>()
     val message: LiveData<Resource<Message>> get() = _message
+
+    private val _user = MutableLiveData<Resource<User>>()
+    val user : LiveData<Resource<User>> get() = _user
 
     val accessToken: Flow<String?> = repository.accessToken
     val refreshToken: Flow<String?> = repository.refreshToken
@@ -128,6 +131,12 @@ class AuthenticationViewModel @Inject constructor(
     fun clearToken(key: Preferences.Key<String>) {
         viewModelScope.launch {
             repository.clearToken(key)
+        }
+    }
+
+    fun getUser(authorization: String){
+        viewModelScope.launch {
+            _user.value = repository.getUser(authorization)
         }
     }
 }

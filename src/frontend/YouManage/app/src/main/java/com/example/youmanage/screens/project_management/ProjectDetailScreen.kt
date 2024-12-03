@@ -68,21 +68,10 @@ fun ProjectDetailScreen(
     val addMemberResponse by projectManagementViewModel.addMemberResponse.observeAsState()
     val removeMemberResponse by projectManagementViewModel.deleteMemberResponse.observeAsState()
 
-    var showAddMemberDialog by remember {
-        mutableStateOf(false)
-    }
-
-    var showRemoveAlertDialog by remember {
-        mutableStateOf(false)
-    }
-
-    var showAddAlertDialog by remember {
-        mutableStateOf(false)
-    }
-
-    var showDeleteDialog by remember {
-        mutableStateOf(false)
-    }
+    var showAddMemberDialog by remember { mutableStateOf(false) }
+    var showRemoveAlertDialog by remember { mutableStateOf(false) }
+    var showAddAlertDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(
         key1 = accessToken.value,
@@ -113,7 +102,6 @@ fun ProjectDetailScreen(
 
     Log.d("Access Token", "${accessToken.value}")
 
-
     Log.d(
         "Project ID",
         "Project ID: $id"
@@ -121,9 +109,7 @@ fun ProjectDetailScreen(
 
     if (project is Resource.Success) {
 
-        var memberId by remember {
-            mutableStateOf("")
-        }
+        var memberId by remember { mutableStateOf("") }
 
         Scaffold(
             topBar = {
@@ -198,9 +184,7 @@ fun ProjectDetailScreen(
                             ) {
                                 Text(text = "➜", modifier = Modifier)
                             }
-
                         }
-
                     }
 
                     MembersSection(
@@ -214,7 +198,6 @@ fun ProjectDetailScreen(
                         },
                         members = project?.data?.members ?: emptyList()
                     )
-
                 }
             }
         }
@@ -274,7 +257,6 @@ fun ProjectDetailScreen(
                 showDeleteDialog = false
             }
         )
-
     }
 }
 
@@ -309,8 +291,6 @@ fun TopBar(
         )
 
         trailing?.invoke()
-
-
     }
 }
 
@@ -408,6 +388,4 @@ fun MembersSection(
             }
         }
     }
-
-
 }

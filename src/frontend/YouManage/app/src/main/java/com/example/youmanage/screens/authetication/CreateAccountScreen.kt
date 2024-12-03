@@ -85,10 +85,13 @@ fun CreateAccountScreen(
             is Resource.Loading -> {
                 isLoading = true
             }
-
-            null -> TODO()
+             else ->{
+                 //isLoading = true
+             }
         }
     }
+
+    Log.d("IN create account", signUpResponse.toString())
 
     if(isLoading){
         Box(modifier = Modifier.fillMaxSize(),

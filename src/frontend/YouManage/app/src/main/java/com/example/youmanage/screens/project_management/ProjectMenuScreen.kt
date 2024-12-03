@@ -44,6 +44,7 @@ data class ProjectMenuItem(
 fun ProjectMenuScreen(
     onNavigateBack: () -> Unit = {},
     onTaskList: () -> Unit = {},
+    onChatRoom: () -> Unit = {}
 ) {
 
     val projectMenuItems = listOf(
@@ -66,7 +67,10 @@ fun ProjectMenuScreen(
         ProjectMenuItem(
             title = "Chat Room",
             icon = R.drawable.bubble_chat,
-            color = Color.Black
+            color = Color.Black,
+            onClick = {
+                onChatRoom()
+            }
         ),
         ProjectMenuItem(
             title = "Delete Project",

@@ -4,6 +4,7 @@ import android.content.Context
 import com.example.youmanage.data.remote.ApiInterface
 import com.example.youmanage.factory.WebSocketFactory
 import com.example.youmanage.repository.AuthenticationRepository
+import com.example.youmanage.repository.ChatRepository
 import com.example.youmanage.repository.ProjectManagementRepository
 import com.example.youmanage.repository.TaskManagementRepository
 import com.example.youmanage.utils.Constants.BASE_URL
@@ -87,5 +88,9 @@ object AppModule {
     fun provideWebSocket(okHttpClient: OkHttpClient): WebSocketFactory {
         return WebSocketFactory(okHttpClient)
     }
+
+    @Provides
+    @Singleton
+    fun provideChatRepository(api: ApiInterface, webSocketFactory: WebSocketFactory) = ChatRepository(api, webSocketFactory)
 
 }

@@ -75,7 +75,7 @@ fun TaskListScreen(
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     var filterTasks by remember { mutableStateOf(emptyList<Task>()) }
 
-    val webSocketUrl = "$WEB_SOCKET$projectId/"
+    val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
