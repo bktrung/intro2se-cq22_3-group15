@@ -95,7 +95,7 @@ class ChangeRequest(models.Model):
     requester = models.ForeignKey(User, on_delete=models.CASCADE, related_name='requests_sent')
     request_type = models.CharField(choices=RequestType.choices, max_length=6)
     target_table = models.CharField(choices=TargetTable.choices, max_length=4)
-    target_table_id = models.IntegerField()
+    target_table_id = models.IntegerField(blank=True, null=True)
     status = models.CharField(choices=RequestStatus.choices, max_length=8, default=RequestStatus.PENDING)
     description = models.TextField(blank=True, null=True)
     new_data = models.JSONField(blank=True, null=True)
@@ -107,10 +107,16 @@ class ChangeRequest(models.Model):
     def clean(self):
         if self.status != 'REJECTED' and self.declined_reason:
             self.declined_reason = None
+            
         if (self.request_type == 'CREATE' or self.request_type == 'UPDATE') and (not self.new_data or self.new_data == {}):
             raise ValidationError("Creation/Updation requests should include new data.")
-        if self.request_type == 'DELETE' and self.new_data:
+        elif self.request_type == 'DELETE' and self.new_data:
             raise ValidationError("Deletion requests should not include new data.")
+        
+        if self.request_type == 'CREATE' and self.target_table_id:
+            raise ValidationError("Creation requests should not include target_table_id.")
+        elif (self.request_type == 'UPDATE' or self.request_type == 'DELETE') and (not self.target_table_id or self.target_table_id == {}):
+            raise ValidationError("Updation/Deletion requests should include target_table_id.")
         
         if self.target_table == 'TASK':
             allowed_fields = ['title', 'description', 'start_date', 'end_date', 'status', 'priority']
