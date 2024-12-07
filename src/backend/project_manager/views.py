@@ -498,3 +498,26 @@ class ProjectHostEmpowerView(generics.GenericAPIView):
         return Response({"detail": "Project host updated successfully."}, status=status.HTTP_200_OK)
     
     
+class ProjectProgressTrackingView(generics.GenericAPIView):
+    def post(self, request, pk):
+        project = get_object_or_404(Project, pk=pk)
+        
+        pending_tasks = project.tasks.filter(status=Status.PENDING).count()
+        in_progress_tasks = project.tasks.filter(status=Status.IN_PROGRESS).count()
+        completed_tasks = project.tasks.filter(status=Status.COMPLETED).count()
+        
+        return Response({
+            'pending_tasks': pending_tasks,
+            'in_progress_tasks': in_progress_tasks,
+            'completed_tasks': completed_tasks,
+            'total_tasks': pending_tasks + in_progress_tasks + completed_tasks
+        }, status=status.HTTP_200_OK)
+        
+        
+class TaskGanttChartListView(generics.ListAPIView):
+    serializer_class = TaskGanttChartSerializer
+    
+    def get_queryset(self):
+        project_id = self.kwargs['project_id']
+        project = get_object_or_404(Project, id=project_id)
+        return project.tasks.all().order_by('start_date', 'end_date')

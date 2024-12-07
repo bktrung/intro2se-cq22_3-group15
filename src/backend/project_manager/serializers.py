@@ -155,3 +155,8 @@ class ChangeRequestSerializer(serializers.ModelSerializer):
         fields = ['id', 'project', 'requester', 'request_type', 'target_table', 'target_table_id', 'description', 'new_data', 'created_at', 'reviewed_by', 'reviewed_at', 'declined_reason', 'status']
         read_only_fields = ['project', 'requester', 'status', 'created_at', 'reviewed_by', 'reviewed_at']
         
+
+class TaskGanttChartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ['id', 'title', 'start_date', 'end_date']
