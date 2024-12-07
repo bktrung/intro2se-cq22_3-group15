@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -167,3 +168,6 @@ EMAIL_USE_TLS = True
 # If the Outlook account cant be used, contact C0smic for the email and password
 EMAIL_HOST_USER = 'vvtung2004@gmail.com'
 EMAIL_HOST_PASSWORD = 'irqa vavd buzv brlc'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
