@@ -1,5 +1,6 @@
-from rest_framework.pagination import CursorPagination
+from rest_framework.pagination import PageNumberPagination
 
-class ActivityLogPagination(CursorPagination):
+class ActivityLogPagination(PageNumberPagination):
     page_size = 20  # Number of messages to load per request
-    ordering = 'timestamp'  # Load messages by ascending timestamp
+    page_size_query_param = 'page_size'
+    max_page_size = 100

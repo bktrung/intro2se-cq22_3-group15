@@ -496,3 +496,5 @@ class ProjectHostEmpowerView(generics.GenericAPIView):
         project.save()
         
         return Response({"detail": "Project host updated successfully."}, status=status.HTTP_200_OK)
+    
+    
