@@ -2,6 +2,7 @@ package com.example.youmanage.repository
 
 import com.example.youmanage.data.remote.ApiInterface
 import com.example.youmanage.data.remote.projectmanagement.Id
+import com.example.youmanage.data.remote.projectmanagement.Progress
 import com.example.youmanage.data.remote.projectmanagement.Project
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
 import com.example.youmanage.data.remote.projectmanagement.Projects
@@ -57,10 +58,13 @@ class ProjectManagementRepository @Inject constructor(
     suspend fun updateProject(id: String, project: ProjectCreate, authorization: String): Resource<Project> =
         safeApiCall { api.updateProject(id, project, authorization) }
 
-    suspend fun deleteProject(id: String, authorization: String): Resource<Unit> {
+    suspend fun getProgressTrack(projectId: String, authorization: String): Resource<Progress> =
+        safeApiCall { api.getProgressTracker(projectId, authorization) }
+
+    suspend fun deleteProject(id: String, authorization: String): Resource<String> {
         return try {
-            api.deleteProject(id, authorization)
-            Resource.Success(Unit)
+            api.deleteProject(id = id, authorization = authorization)
+            Resource.Success("Delete Successful")
         } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message.toString())

@@ -74,9 +74,12 @@ class ChatRepository @Inject constructor(
         }
     }
 
-    suspend fun getMessages(projectId: String, authorization: String): Resource<Messages> {
+    suspend fun getMessages(
+        projectId: String,
+        cursor: String? = null,
+        authorization: String): Resource<Messages> {
         return try {
-            val response = api.getMessage(projectId = projectId, authorization = authorization)
+            val response = api.getMessage(projectId = projectId, cursor = cursor, authorization = authorization)
             Resource.Success(response)
         } catch (e: Exception) {
             Resource.Error("Error getting messages: ${e.localizedMessage}")

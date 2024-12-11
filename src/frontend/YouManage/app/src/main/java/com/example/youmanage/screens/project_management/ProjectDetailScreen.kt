@@ -49,7 +49,9 @@ import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.taskmanagement.Username
 import com.example.youmanage.screens.components.AlertDialog
 import com.example.youmanage.screens.components.PieChart
+import com.example.youmanage.screens.components.PieChartInput
 import com.example.youmanage.screens.components.pieChartInput
+import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
@@ -61,12 +63,19 @@ fun ProjectDetailScreen(
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
-    onClickMenu: () -> Unit
+    onClickMenu: () -> Unit,
+    onDisableAction: () -> Unit
 ) {
     val project by projectManagementViewModel.project.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     val addMemberResponse by projectManagementViewModel.addMemberResponse.observeAsState()
     val removeMemberResponse by projectManagementViewModel.deleteMemberResponse.observeAsState()
+    val projectProgress by projectManagementViewModel.progress.observeAsState()
+    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
+    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
+    val user by authenticationViewModel.user.observeAsState()
+
+    var pieChartInputList by remember { mutableStateOf<List<PieChartInput>>(emptyList()) }
 
     var showAddMemberDialog by remember { mutableStateOf(false) }
     var showRemoveAlertDialog by remember { mutableStateOf(false) }
@@ -79,11 +88,91 @@ fun ProjectDetailScreen(
         key3 = removeMemberResponse
     ) {
         accessToken.value?.let { token ->
+            val authorization = "Bearer $token"
 
             projectManagementViewModel.getProject(
                 id = id.toString(),
-                authorization = "Bearer $token"
+                authorization = authorization
             )
+
+            projectManagementViewModel.getProgressTrack(
+                id = id.toString(),
+                authorization = authorization
+            )
+        }
+    }
+
+    LaunchedEffect(accessToken.value)
+    {
+        accessToken.value?.let {
+            val webSocketUrl = "${WEB_SOCKET}project/$id/"
+            authenticationViewModel.getUser("Bearer $it")
+            projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
+            projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+        }
+    }
+
+
+    LaunchedEffect(
+        key1 = memberSocket,
+        key2 = projectSocket
+    ) {
+        if (
+            projectSocket is Resource.Success &&
+            projectSocket?.data?.type == "project_deleted" &&
+            projectSocket?.data?.content?.id.toString() == id.toString()
+        ) {
+            onDisableAction()
+        }
+
+        if (
+            memberSocket is Resource.Success &&
+            memberSocket?.data?.type == "member_removed" &&
+            user is Resource.Success &&
+            memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
+        ) {
+            onDisableAction()
+        }
+    }
+
+    LaunchedEffect(projectProgress) {
+
+        Log.d("Chart", projectProgress.toString())
+        if (projectProgress is Resource.Success) {
+
+            val total = projectProgress?.data?.total ?: 1
+            val pending = projectProgress?.data?.pending ?: 0
+            val inProgress = projectProgress?.data?.inProgress ?: 0
+            val completed = projectProgress?.data?.completed ?: 0
+
+
+
+            Log.d(
+                "Pie", "Total: $total," +
+                        " Pending: ${pending.toDouble().div(total)*100.0}, " +
+                        "In Progress: ${inProgress.toDouble().div(total)*100.0}," +
+                        " Completed: ${completed.toDouble().div(total)*100.0}"
+            )
+
+            pieChartInputList = listOf(
+                PieChartInput(
+                    color = Color(0xffbaf4ca),
+                    value = pending.toDouble().div(total) * 100.0,
+                    description = "Completed"
+                ),
+                PieChartInput(
+                    color = Color(0xfffccdcd),
+                    value = inProgress.toDouble().div(total) * 100.0,
+                    description = "In Progress"
+                ),
+                PieChartInput(
+                    color = Color(0xffedf0f2),
+                    value = completed.toDouble().div(total) * 100.0,
+                    description = "Pending"
+                ),
+            )
+        } else if (projectProgress is Resource.Error) {
+            Log.d("Progress Tracker Error", projectProgress?.message.toString())
         }
     }
 
@@ -149,12 +238,18 @@ fun ProjectDetailScreen(
                         .fillMaxSize()
                         .verticalScroll(scrollState)
                 ) {
-                    PieChart(
-                        input = pieChartInput,
-                        modifier = Modifier.padding(36.dp)
-                    )
 
-                    DescriptionSection(description = project?.data?.description.toString())
+                    if (projectProgress is Resource.Success) {
+                        PieChart(
+                            input = pieChartInputList,
+                            modifier = Modifier.padding(36.dp)
+                        )
+                    }
+
+
+                    DescriptionSection(
+                        description = project?.data?.description.toString()
+                    )
 
                     Button(
                         onClick = { /* Thêm hành động cho nút View Project */ },
@@ -163,7 +258,10 @@ fun ProjectDetailScreen(
                             .padding(horizontal = 36.dp)
                             .fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF251034))
+                        colors = ButtonDefaults
+                            .buttonColors(
+                                containerColor = Color(0xFF251034)
+                            )
                     ) {
                         Row(
                             horizontalArrangement = Arrangement.SpaceBetween,

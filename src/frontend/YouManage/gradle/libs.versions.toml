@@ -12,6 +12,7 @@ runtimeLivedata = "1.7.3"
 googleid = "1.1.1"
 firebaseAuthKtx = "23.0.0"
 datastoreCoreJvm = "1.1.1"
+toolsCore = "1.0.0-alpha10"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -32,6 +33,7 @@ androidx-runtime-livedata = { group = "androidx.compose.runtime", name = "runtim
 googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
 firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx", version.ref = "firebaseAuthKtx" }
 androidx-datastore-core-jvm = { group = "androidx.datastore", name = "datastore-core-jvm", version.ref = "datastoreCoreJvm" }
+androidx-tools-core = { group = "androidx.privacysandbox.tools", name = "tools-core", version.ref = "toolsCore" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

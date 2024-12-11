@@ -37,6 +37,9 @@ fun NavGraphBuilder.taskManagementNavGraph(
                     taskId ->
                     Log.d("From Task List", "Task ID: $taskId Task ID: $id")
                     rootNavController.navigate("task_detail/$id/$taskId")
+                },
+                onDisableAction = {
+                    rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
                 }
             )
         }
@@ -53,6 +56,12 @@ fun NavGraphBuilder.taskManagementNavGraph(
                 projectId = id ?: "",
                 onCreateTask = {
                     rootNavController.navigateUp()
+                },
+                onDisableAction = {
+                    rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
+                },
+                onNavigateBack = {
+                    rootNavController.navigateUp()
                 }
             )
         }
@@ -66,6 +75,9 @@ fun NavGraphBuilder.taskManagementNavGraph(
                 taskId = taskId.toString(),
                 onNavigateBack = {
                     rootNavController.navigateUp()
+                },
+                onDisableAction = {
+                    rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
                 }
             )
 

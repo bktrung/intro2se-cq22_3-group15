@@ -64,6 +64,7 @@ dependencies {
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.googleid)
     implementation(libs.firebase.auth.ktx)
+    implementation(libs.androidx.tools.core)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

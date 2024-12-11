@@ -1,23 +1,15 @@
 package com.example.youmanage.repository
 
-import android.util.Log
-import androidx.lifecycle.MutableLiveData
 import com.example.youmanage.data.remote.ApiInterface
-import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.taskmanagement.Comment
 import com.example.youmanage.data.remote.taskmanagement.Content
 import com.example.youmanage.data.remote.taskmanagement.Task
 import com.example.youmanage.data.remote.taskmanagement.TaskCreate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdateStatus
-import com.example.youmanage.data.remote.taskmanagement.TaskWebSocket
 import com.example.youmanage.factory.WebSocketFactory
 import com.example.youmanage.utils.Resource
-import com.google.gson.Gson
 import dagger.hilt.android.scopes.ActivityScoped
-import okhttp3.Response
-import okhttp3.WebSocket
-import okhttp3.WebSocketListener
 import retrofit2.HttpException
 import javax.inject.Inject
 
@@ -26,53 +18,6 @@ class TaskManagementRepository @Inject constructor(
     private val api: ApiInterface,
     private val webSocketFactory: WebSocketFactory
 ) {
-
-    private var webSocket: WebSocket? = null
-
-    fun connectToSocket(url: String, liveData: MutableLiveData<Resource<List<Task>>>): Resource<TaskWebSocket> {
-        return try {
-            webSocketFactory.createWebSocket(url, object : WebSocketListener() {
-
-                override fun onOpen(webSocket: WebSocket, response: Response) {
-                    super.onOpen(webSocket, response)
-                    println("WebSocket opened: ${response.message}")
-                }
-
-                override fun onMessage(webSocket: WebSocket, text: String) {
-                    super.onMessage(webSocket, text)
-                    try {
-                        val taskResponse = Gson().fromJson(text, TaskWebSocket::class.java)
-
-                        if(taskResponse.type == "task_updated"){
-                            val updatedTask = taskResponse.task
-                            val currentTasks = liveData.value?.data.orEmpty()
-
-                            val updatedTasks = currentTasks.map { task ->
-                                if (task.id == updatedTask.id) {
-                                    updatedTask
-                                } else {
-                                    task
-                                }
-                            }
-
-                            liveData.postValue(Resource.Success(updatedTasks))
-                        }
-                        else if (taskResponse.type == "task_created") {
-                            val currentTasks = liveData.value?.data.orEmpty()
-                            liveData.postValue(Resource.Success(currentTasks))
-                        }
-                        Resource.Success(taskResponse)
-                    } catch (e: Exception) {
-                        Resource.Error("Error parsing response")
-                    }
-                }
-            })
-
-            Resource.Success(TaskWebSocket(task = Task(), type = ""))
-        } catch (e: Exception) {
-            Resource.Error("Error with WebSocket: ${e.localizedMessage}")
-        }
-    }
 
     suspend fun getTasks(projectId: String, authorization: String): Resource<List<Task>> {
         val response = try {
@@ -92,12 +37,10 @@ class TaskManagementRepository @Inject constructor(
     ): Resource<Task> {
         val response = try {
             Resource.Success(api.createTask(projectId, task, authorization))
-        }
-        catch (e: HttpException) {
+        } catch (e: HttpException) {
             e.printStackTrace()
             Resource.Error(e.message.toString())
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message.toString())
         }
@@ -256,9 +199,21 @@ class TaskManagementRepository @Inject constructor(
         taskId: String,
         commentId: String,
         authorization: String
-    ) {
-        api.deleteComment(projectId, taskId, commentId, authorization)
+    ): Resource<String> {
+
+        return try {
+            api.deleteComment(
+                projectId,
+                taskId,
+                commentId,
+                authorization
+            )
+            Resource.Success("Comment has been deleted successfully.")
+        } catch (e: HttpException) {
+            Resource.Error("Comment not found")
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Resource.Error(e.message.toString())
+        }
     }
-
-
 }

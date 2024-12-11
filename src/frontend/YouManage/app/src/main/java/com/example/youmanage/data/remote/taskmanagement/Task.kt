@@ -16,13 +16,14 @@ data class Task(
     val endDate: String = "",
     val id: Int = 0,
     val issues: List<String> = emptyList(),
-    val priority: Int? = null,
+    val priority: String? = null,
     val project: Int = 0,
     @SerializedName("start_date")
     val startDate: String = "",
     val status: String = "",
     val title: String = "",
     @SerializedName("updated_at")
-    val updatedAt: String = ""
-
+    val updatedAt: String = "",
+    @SerializedName("comments_count")
+    val commentsCount: Int = 0
 )

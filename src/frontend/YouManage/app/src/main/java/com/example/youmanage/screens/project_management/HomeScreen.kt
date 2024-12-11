@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -49,7 +50,6 @@ import com.example.youmanage.utils.randomColor
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 
-
 @Composable
 fun HomeScreen(
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
@@ -58,6 +58,7 @@ fun HomeScreen(
     onAddNewProject: () -> Unit,
     onViewProject: (Int) -> Unit
 ) {
+
     val textFieldColor = Color(0xFFF5F5F5)
     var searchQuery by remember { mutableStateOf("") }
 
@@ -69,8 +70,8 @@ fun HomeScreen(
             projectManagementViewModel.getProjectList(
                 authorization = "Bearer $token"
             )
+            authenticationViewModel.getUser("Bearer $token")
         }
-
     }
 
     Box(
@@ -151,8 +152,8 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            when(projects){
-                is Resource.Success ->{
+            when (projects) {
+                is Resource.Success -> {
                     val projectList = (projects as Resource.Success<Projects>).data!!
 
                     LazyColumn(
@@ -171,11 +172,19 @@ fun HomeScreen(
                     }
                 }
 
-                is Resource.Error -> {}
-                null -> {}
-                is Resource.Loading ->{}
-            }
+                is Resource.Error -> {
+                    Text(
+                        text = (projects as Resource.Error<Projects>).message!!,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
 
+                is Resource.Loading -> {
+                    CircularProgressIndicator()
+                }
+
+                else -> {}
+            }
         }
     }
 }
@@ -250,9 +259,7 @@ fun ProjectItem(
                 ) {
                     Text(text = "➜", modifier = Modifier)
                 }
-
             }
-
         }
     }
 }

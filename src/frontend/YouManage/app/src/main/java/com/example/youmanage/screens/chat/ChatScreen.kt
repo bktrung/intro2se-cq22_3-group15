@@ -74,6 +74,9 @@ fun ChatScreen(
     onMessageSent: (String, Boolean) -> Unit = { _, _ -> },
     userId: Int = 1,
     onNavigateBack: () -> Unit = {},
+    loadPrevMessage: () -> Unit = {},
+    loadNextMessage: () -> Unit = {},
+
 ) {
     Scaffold(
         modifier = Modifier
@@ -135,6 +138,14 @@ fun ChatScreen(
                         .padding(horizontal = 8.dp),
                     verticalArrangement = Arrangement.Bottom
                 ) {
+
+
+                    item {
+                        LaunchedEffect(Unit) {
+                            loadPrevMessage()
+                        }
+                    }
+
                     items(messages.size) { index ->
                         Column {
                             MessageBubble(
@@ -146,8 +157,14 @@ fun ChatScreen(
                             Spacer(modifier = Modifier.height(5.dp))
                         }
                     }
-                }
 
+                    item {
+                        LaunchedEffect(Unit) {
+                            loadNextMessage()
+                        }
+
+                    }
+                }
             }
         }
     }
@@ -191,7 +208,8 @@ fun MessageBubble(
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
-                            color = Color.Gray),
+                            color = Color.Gray
+                        ),
                         modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
                     )
                 }
@@ -211,7 +229,7 @@ fun MessageBubble(
                 //  }
             }
 
-            if(isSentByUser){
+            if (isSentByUser) {
                 Spacer(modifier = Modifier.width(8.dp))
             }
 
@@ -488,7 +506,6 @@ fun ChatScreenWithViewModel(
     val messages by chatViewModel.messages.observeAsState()
     val message by chatViewModel.message.observeAsState()
 
-
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             authenticationViewModel.getUser("Bearer $token")
@@ -525,12 +542,21 @@ fun ChatScreenWithViewModel(
         }
     } else {
         ChatScreen(
-            messages = messages?.data?.results ?: emptyList(),
+            messages = messages ?: emptyList(),
             onMessageSent = { content, isAudio ->
                 chatViewModel.sendMessage(MessageRequest(content))
             },
             userId = userId,
             onNavigateBack = onNavigateBack,
+            loadPrevMessage = {
+                chatViewModel.getPreviousMessages(
+                    projectId = projectId,
+                    authorization = "Bearer ${accessToken.value}")
+            },
+            loadNextMessage = {
+                chatViewModel.getNextMessages(
+                    projectId = projectId,
+                    authorization = "Bearer ${accessToken.value}")}
         )
     }
 }

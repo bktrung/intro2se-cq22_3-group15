@@ -1,5 +1,6 @@
 package com.example.youmanage.screens.components
 
+import android.annotation.SuppressLint
 import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -42,21 +43,22 @@ import androidx.compose.ui.unit.sp
 val pieChartInput = listOf(
     PieChartInput(
         color = Color(0xffbaf4ca),
-        value = 50,
+        value = 50.0,
         description = "Done"
     ),
     PieChartInput(
         color = Color(0xfffccdcd),
-        value = 25,
+        value = 24.95,
         description = "In Progress"
     ),
     PieChartInput(
         color = Color(0xffedf0f2),
-        value = 25,
+        value = 25.0,
         description = "To Do"
     ),
 )
 
+@SuppressLint("DefaultLocale")
 @Composable
 fun PieChart(
     modifier: Modifier = Modifier,
@@ -64,7 +66,6 @@ fun PieChart(
     input: List<PieChartInput>
 ) {
     var circleCenter by remember { mutableStateOf(Offset.Zero) }
-    val inputList by remember { mutableStateOf(input) }
 
     Column(
         modifier = modifier
@@ -99,21 +100,21 @@ fun PieChart(
 
                 circleCenter = Offset(x = width / 2f, y = height)
 
-                val totalValue = inputList.sumOf { it.value }
+                val totalValue = input.sumOf { it.value }
                 val anglePerValue = -180f / totalValue
                 var currentStartAngle = 0f
 
-                inputList.reversed().forEach { pieChartInput ->
+                input.reversed().forEach { pieChartInput ->
                     val angleToDraw = pieChartInput.value * anglePerValue
                     drawArc(
                         color = pieChartInput.color,
                         startAngle = currentStartAngle,
-                        sweepAngle = angleToDraw,
+                        sweepAngle = angleToDraw.toFloat(),
                         useCenter = true,
                         size = Size(width = radius * 2f, height = radius * 2f),
                         topLeft = Offset(0f, 0f)
                     )
-                    currentStartAngle += angleToDraw
+                    currentStartAngle += angleToDraw.toFloat()
                 }
 
                 drawArc(
@@ -148,7 +149,9 @@ fun PieChart(
                         isAntiAlias = true
                     }
 
-                    val text = "80%"
+                    val text = if (input.isNotEmpty()) "${
+                        String.format("%.1f", input.last().value).toDouble()
+                    }%" else "Null "
                     val textBounds = android.graphics.Rect()
                     textPaint.getTextBounds(text, 0, text.length, textBounds)
 
@@ -179,7 +182,7 @@ fun PieChart(
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceAround,
         ) {
-            inputList.forEach { item ->
+            input.forEach { item ->
                 AnnotationItem(item.color, item.description)
             }
         }
@@ -227,6 +230,6 @@ fun OverallSection(modifier: Modifier = Modifier) {
 
 data class PieChartInput(
     val color: Color,
-    val value: Int,
+    val value: Double,
     val description: String
 )
