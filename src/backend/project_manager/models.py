@@ -55,8 +55,10 @@ class Task(TimeStampedModel):
     description = models.TextField(blank=True, null=True)
     start_date = models.DateField()
     end_date = models.DateField()
+    # consider delele this field
     actual_start_date = models.DateField(blank=True, null=True)
     actual_end_date = models.DateField(blank=True, null=True)
+    # -------------------------
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     priority = models.CharField(max_length=20, choices=Priority.choices, blank=True, null=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks')
