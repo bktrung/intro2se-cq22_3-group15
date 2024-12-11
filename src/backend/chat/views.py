@@ -9,4 +9,4 @@ class ChatMessageListView(generics.ListAPIView):
 
     def get_queryset(self):
         project_id = self.kwargs['project_id']
-        return ChatMessage.objects.filter(project_id=project_id).order_by('timestamp')
+        return ChatMessage.objects.filter(project_id=project_id).order_by('-timestamp')
