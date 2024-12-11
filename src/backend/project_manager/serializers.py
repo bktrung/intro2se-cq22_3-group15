@@ -54,18 +54,11 @@ class IssueSerializer(serializers.ModelSerializer):
         if value not in project.members.all():
             raise serializers.ValidationError("Assignee must be a member of the project.")
         return value
-    
-    
-class IssueTaskSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Issue
-        fields = ['id', 'title', 'description', 'status']
 
         
 class TaskSerializer(serializers.ModelSerializer):
     assignee = UserSerializer(read_only=True)
     assignee_id = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), source='assignee', write_only=True, required=False)
-    issues = IssueTaskSerializer(many=True, read_only=True, source='task_issues')
     comments_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -86,7 +79,6 @@ class TaskSerializer(serializers.ModelSerializer):
             'comments_count',
             'created_at',
             'updated_at',
-            'issues'
             ]
         read_only_fields = ['project', 'created_at', 'updated_at']
         
@@ -161,3 +153,9 @@ class ChangeRequestSerializer(serializers.ModelSerializer):
         model = ChangeRequest
         fields = ['id', 'project', 'requester', 'request_type', 'target_table', 'target_table_id', 'description', 'new_data', 'created_at', 'reviewed_by', 'reviewed_at', 'declined_reason', 'status']
         read_only_fields = ['project', 'requester', 'status', 'created_at', 'reviewed_by', 'reviewed_at']
+        
+
+class TaskGanttChartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ['id', 'title', 'start_date', 'end_date']

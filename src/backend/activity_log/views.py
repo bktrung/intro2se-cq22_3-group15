@@ -3,6 +3,7 @@ from rest_framework.exceptions import PermissionDenied, NotFound
 from .models import ActivityLog
 from .serializers import ActivityLogSerializer
 from project_manager.models import Project
+from .paginations import ActivityLogPagination
 
 class ProjectActivityLogListView(generics.ListAPIView):
     """
@@ -10,6 +11,7 @@ class ProjectActivityLogListView(generics.ListAPIView):
     Only accessible to users who are members of the project.
     """
     serializer_class = ActivityLogSerializer
+    pagination_class = ActivityLogPagination
 
     def get_queryset(self):
         user = self.request.user

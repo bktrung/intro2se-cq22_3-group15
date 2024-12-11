@@ -19,4 +19,6 @@ urlpatterns = [
     path('projects/<int:project_id>/change-requests/<int:pk>/', ChangeRequestActionView.as_view(), name='change-request-action'),
     path('users/self/', UserRetrieveView.as_view(), name='user-retrieve'),
     path('projects/<int:pk>/empower/', ProjectHostEmpowerView.as_view(), name='project-host-empower'),
+    path('projects/<int:pk>/progress/track/', ProjectProgressTrackingView.as_view(), name='project-progress-track'),
+    path('projects/<int:project_id>/gantt-chart/', TaskGanttChartListView.as_view(), name='task-gantt-chart-list'),
 ]
