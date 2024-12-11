@@ -20,6 +20,22 @@ class Project(TimeStampedModel):
     host = models.ForeignKey(User, on_delete=models.CASCADE, related_name='hosted_projects')
     members = models.ManyToManyField(User, related_name='projects')
     
+    def delete(self, *args, **kwargs):
+        # Delete tasks first since they may have related issues
+        self.tasks.all().delete()
+        
+        # Delete issues not related to tasks
+        self.issues.filter(task__isnull=True).delete()
+        
+        # Delete roles
+        self.roles.all().delete()
+        
+        # Clear members
+        self.members.clear()
+        
+        # Finally delete project
+        super().delete(*args, **kwargs)
+    
     def remove_member(self, user):
         """Remove member and reassign their tasks"""
         if user in self.members.all():
