@@ -1,5 +1,6 @@
 package com.example.youmanage.data.remote.taskmanagement
 
+import com.example.youmanage.data.remote.issusemanagement.Issue
 import com.example.youmanage.data.remote.projectmanagement.User
 import com.google.gson.annotations.SerializedName
 
@@ -15,7 +16,7 @@ data class Task(
     @SerializedName("end_date")
     val endDate: String = "",
     val id: Int = 0,
-    val issues: List<String> = emptyList(),
+    val issues: List<Issue> = emptyList(),
     val priority: Int? = null,
     val project: Int = 0,
     @SerializedName("start_date")

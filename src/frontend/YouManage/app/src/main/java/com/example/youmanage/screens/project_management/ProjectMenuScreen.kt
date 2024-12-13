@@ -2,7 +2,6 @@ package com.example.youmanage.screens.project_management
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.content.MediaType.Companion.Text
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,9 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -44,6 +40,7 @@ data class ProjectMenuItem(
 fun ProjectMenuScreen(
     onNavigateBack: () -> Unit = {},
     onTaskList: () -> Unit = {},
+    onIssueList: () -> Unit = {},
     onChatRoom: () -> Unit = {}
 ) {
 
@@ -53,6 +50,12 @@ fun ProjectMenuScreen(
             icon = R.drawable.task_icon,
             color = Color.Black,
             onClick = { onTaskList() }
+        ),
+        ProjectMenuItem(
+            title = "Issue List",
+            icon = R.drawable.bug_icon,
+            color = Color.Black,
+            onClick = { onIssueList() }
         ),
         ProjectMenuItem(
             title = "Member",

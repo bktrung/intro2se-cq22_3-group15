@@ -23,6 +23,7 @@ object Graph {
     const val AUTHENTICATION = "auth_graph"
     const val PROJECT_MANAGEMENT = "project_management_graph"
     const val TASK_MANAGEMENT = "task_management_graph"
+    const val ISSUE_MANAGEMENT = "issue_management_graph"
 }
 
 sealed class AuthRouteScreen(
@@ -43,6 +44,7 @@ sealed class ProjectManagementRouteScreen(
     data object Home : ProjectManagementRouteScreen("home")
     data object UserProfile : ProjectManagementRouteScreen("user_profile")
     data object Calender: ProjectManagementRouteScreen("calender")
+    data object Issue: ProjectManagementRouteScreen("issue")
     data object AddProject : ProjectManagementRouteScreen("add_project")
     data object ProjectDetail : ProjectManagementRouteScreen("project_detail/{id}")
     data object ProjectMenu: ProjectManagementRouteScreen("project_menu/{id}")
@@ -61,6 +63,15 @@ sealed class ChatRouteScreen(
 ){
     data object ChatScreen: ChatRouteScreen("chat_room/{projectId}")
 }
+
+sealed class IssuesManagementRouteScreen(
+    val route: String
+) {
+    data object IssueList : IssuesManagementRouteScreen("issue_list/{projectId}")
+    data object CreateIssue : IssuesManagementRouteScreen("create_issue/{projectId}")
+    data object IssueDetail : IssuesManagementRouteScreen("issue_detail/{projectId}/{issueId}")
+}
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -97,6 +108,7 @@ fun RootNavGraph(
             authenticationNavGraph(rootNavController = navController)
             projectManagementNavGraph(rootNavController = navController)
             taskManagementNavGraph(rootNavController = navController)
+            issuesManagementNavGraph(rootNavController = navController)
         }
     }
 }

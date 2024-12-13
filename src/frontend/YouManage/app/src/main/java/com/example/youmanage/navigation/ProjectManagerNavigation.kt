@@ -5,12 +5,10 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -23,7 +21,6 @@ import com.example.youmanage.screens.project_management.MainScreen
 import com.example.youmanage.screens.project_management.ProjectDetailScreen
 import com.example.youmanage.screens.project_management.ProjectMenuScreen
 import com.example.youmanage.screens.project_management.UserProfileScreen
-import kotlinx.coroutines.delay
 
 @Composable
 fun ProjectManagementNavGraph(
@@ -65,6 +62,18 @@ fun ProjectManagementNavGraph(
         }
 
         composable(ProjectManagementRouteScreen.Calender.route) {}
+
+        composable(ProjectManagementRouteScreen.Issue.route) {
+            UserProfileScreen(
+                onLogout = {
+                    rootNavController.navigate(Graph.AUTHENTICATION) {
+                        popUpTo(Graph.PROJECT_MANAGEMENT) {
+                            inclusive = true
+                        }
+                    }
+                }
+            )
+        }
 
     }
 
@@ -129,6 +138,9 @@ fun NavGraphBuilder.projectManagementNavGraph(
             ProjectMenuScreen(
                 onNavigateBack = {
                     rootNavController.navigateUp()
+                },
+                onIssueList = {
+                    rootNavController.navigate("issue_list/${id}")
                 },
                 onTaskList = {
                     rootNavController.navigate("task_list/${id}")
