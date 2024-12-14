@@ -25,7 +25,8 @@ class ChatRepository @Inject constructor(
 
     private var webSocket: WebSocket? = null
 
-    fun connectToSocket(url: String, liveData: MutableLiveData<Resource<MessageResponse>>): Resource<MessageResponse> {
+    fun connectToSocket(
+        url: String, liveData: MutableLiveData<Resource<MessageResponse>>): Resource<MessageResponse> {
         return try {
             webSocket = webSocketFactory.createWebSocket(url, object : WebSocketListener() {
 
@@ -64,7 +65,7 @@ class ChatRepository @Inject constructor(
         }
     }
 
-    suspend fun sendMessage(messageRequest: MessageRequest): Resource<String> {
+    fun sendMessage(messageRequest: MessageRequest): Resource<String> {
         return try {
             val jsonMessage = Gson().toJson(messageRequest)
             webSocket?.send(jsonMessage) ?: return Resource.Error("WebSocket is not connected")

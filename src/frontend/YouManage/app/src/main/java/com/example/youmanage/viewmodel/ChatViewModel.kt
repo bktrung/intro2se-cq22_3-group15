@@ -7,10 +7,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.youmanage.data.remote.chat.Message
 import com.example.youmanage.data.remote.chat.MessageRequest
 import com.example.youmanage.data.remote.chat.MessageResponse
-import com.example.youmanage.data.remote.chat.Messages
 import com.example.youmanage.repository.ChatRepository
 import com.example.youmanage.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -22,15 +22,17 @@ class ChatViewModel @Inject constructor(
     private val _messages = MutableLiveData<List<Message>>()
     val messages: MutableLiveData<List<Message>> get() = _messages
 
-    private val _message = MutableLiveData<Resource<MessageResponse>>()
-    val message: MutableLiveData<Resource<MessageResponse>> get() = _message
+    private val _messageSocket = MutableLiveData<Resource<MessageResponse>>()
+    val messageSocket: MutableLiveData<Resource<MessageResponse>> get() = _messageSocket
 
     private val _response = MutableLiveData<Resource<String>>()
     val response: MutableLiveData<Resource<String>> get() = _response
 
+    private val _isLoading = MutableLiveData<Boolean>()
+    val isLoading: MutableLiveData<Boolean> get() = _isLoading
+
     private var nextCursor: String? = null
     private var preCursor: String? = null
-    private var isLoading = false
 
     fun sendMessage(
         message: MessageRequest,
@@ -42,34 +44,60 @@ class ChatViewModel @Inject constructor(
 
     fun connectToSocket(url: String) {
         viewModelScope.launch {
-            repository.connectToSocket(url, _message)
+            repository.connectToSocket(url, _messageSocket)
         }
     }
 
-    fun getMessage(
+    fun getNewSocketMessage(
+        projectId: String,
+        authorization: String
+    ) {
+        viewModelScope.launch {
+            // Lấy các tin nhắn mới từ API
+            val newListMessage = repository.getMessages(
+                projectId = projectId,
+                authorization = authorization
+            ).data?.results ?: emptyList()
+
+            // Cập nhật danh sách tin nhắn
+            _messages.value = when {
+                _messages.value.isNullOrEmpty() -> newListMessage // Nếu danh sách rỗng, chỉ cần gán mới
+                _messages.value!!.size <= 19 -> newListMessage // Nếu danh sách có 19 phần tử hoặc ít hơn, thay thế hoàn toàn
+                else -> newListMessage + _messages.value!!.drop(19) // Nếu có hơn 19 phần tử, bỏ qua 19 phần tử đầu và thêm mới vào đầu
+            }
+        }
+    }
+
+    fun getMessages(
         projectId: String,
         cursor: String? = null,
         authorization: String
     ){
 
-        if(isLoading) return
-
-        isLoading = true
         viewModelScope.launch {
-            val response = repository.getMessages(projectId = projectId, cursor = cursor, authorization = authorization)
+            _isLoading.value = true
+
+            val response = repository.getMessages(
+                projectId = projectId,
+                cursor = cursor,
+                authorization = authorization
+            )
+
             try {
                 if(response is Resource.Success){
                    response.data?.let {
-                       nextCursor = it.next
+                       nextCursor = it.next?.substringAfter("cursor=")
+                       Log.d("ChatViewModel", "getMessages: $nextCursor")
                        preCursor = it.previous
                        _messages.value = (_messages.value ?: emptyList()) + it.results
-                       Log.d("ChatViewModel", "Messages: ${_messages.value!!.size}")
+                       Log.d("ChatViewModel", "getMessages: ${_messages.value}")
                    }
                 }
             } catch(e: Exception) {
                 Log.e("ChatViewModel", "Exception: ${e.message}")
             } finally {
-                isLoading = false
+                delay(500)
+                isLoading.value = false
             }
         }
     }
@@ -77,13 +105,13 @@ class ChatViewModel @Inject constructor(
 
     fun getPreviousMessages(projectId: String, authorization: String){
         preCursor?.let {
-            getMessage(projectId, it, authorization)
+            getMessages(projectId, it, authorization)
         }
     }
 
     fun getNextMessages(projectId: String, authorization: String){
         nextCursor?.let {
-            getMessage(projectId, it, authorization)
+            getMessages(projectId, it, authorization)
         }
     }
 
