@@ -8,12 +8,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.navigation.compose.rememberNavController
+import com.example.youmanage.data.remote.activitylogs.ActivityLog
 import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
 import com.example.youmanage.data.remote.authentication.VerifyRequest
 import com.example.youmanage.data.remote.chat.MessageRequest
 import com.example.youmanage.data.remote.taskmanagement.TaskCreate
 import com.example.youmanage.data.remote.taskmanagement.Username
 import com.example.youmanage.navigation.RootNavGraph
+import com.example.youmanage.screens.activity_logs.ActivityLogsScreen
 import com.example.youmanage.screens.chat.ChatScreenWithViewModel
 import com.example.youmanage.screens.project_management.ProjectDetailScreen
 import com.example.youmanage.screens.task_management.CreateTaskScreen
@@ -86,7 +88,7 @@ class MainActivity : ComponentActivity() {
 //        )
 
         setContent {
-            YouManageTheme {
+            //YouManageTheme {
                 //val nav = rememberNavController()
 
 //                viewModel.createTask(
@@ -117,7 +119,13 @@ class MainActivity : ComponentActivity() {
                 //viewModel.sendOTP(SendOTPRequest("duonghuutuong0712@gmail.com"))
 
                 //ChatScreenWithViewModel()
-            }
+                //ActivityLogsScreen(projectId = "1", token = "your_token")
+             //}
+//            ActivityLogsScreen(
+//                projectId = "12345",  // Giả sử ID của project
+//                token = "fake_token",  // Giả sử token xác thực
+//                onBackClick = {}
+//            )
         }
     }
 }

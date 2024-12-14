@@ -24,12 +24,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.compose.rememberNavController
 import com.example.youmanage.R
+import com.example.youmanage.navigation.ProjectManagementRouteScreen
 
 
 data class ProjectMenuItem(
@@ -44,8 +47,11 @@ data class ProjectMenuItem(
 fun ProjectMenuScreen(
     onNavigateBack: () -> Unit = {},
     onTaskList: () -> Unit = {},
-    onChatRoom: () -> Unit = {}
+    onChatRoom: () -> Unit = {},
+
 ) {
+    val context = LocalContext.current
+    val navController = rememberNavController()
 
     val projectMenuItems = listOf(
         ProjectMenuItem(
@@ -58,6 +64,15 @@ fun ProjectMenuScreen(
             title = "Member",
             icon = R.drawable.user_icon,
             color = Color.Black
+        ),
+        ProjectMenuItem(
+            title = "Activity Logs",
+            icon = R.drawable.activity_logs,
+            color = Color.Black,
+            onClick = {
+                 // Điều hướng đến ActivityLogsScreen
+                navController.navigate(ProjectManagementRouteScreen.ActivityLogs.route)
+            }
         ),
         ProjectMenuItem(
             title = "Project Setting",
@@ -76,7 +91,9 @@ fun ProjectMenuScreen(
             title = "Delete Project",
             icon = R.drawable.trash_icon,
             color = Color.Black
-        )
+        ),
+
+
     )
 
     Scaffold(
@@ -115,7 +132,8 @@ fun ProjectMenuScreen(
                             Icon(
                                 painter = painterResource(id = item.icon),
                                 contentDescription = item.title,
-                                tint = item.color
+                                tint = item.color,
+                                modifier = Modifier.size(30.dp)
                             )
                         },
                         title = item.title,
