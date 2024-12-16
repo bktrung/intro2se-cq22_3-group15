@@ -113,6 +113,9 @@ fun NavGraphBuilder.projectManagementNavGraph(
                 onClickMenu = {
                     rootNavController.navigate("project_menu/${id}")
                 },
+                onDisableAction = {
+                    rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
+                },
                 id = id!!.toInt()
             )
         }
@@ -147,7 +150,14 @@ fun NavGraphBuilder.projectManagementNavGraph(
                 },
                 onChatRoom = {
                     rootNavController.navigate("chat_room/${id}")
-                }
+                },
+                onDeleteProjectSuccess = {
+                    rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
+                },
+                onDisableAction = {
+                    rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
+                },
+                id = id.toString()
             )
         }
 

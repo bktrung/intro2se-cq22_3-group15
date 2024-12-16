@@ -18,6 +18,7 @@ import com.example.youmanage.data.remote.issusemanagement.IssueUpdate
 import com.example.youmanage.data.remote.taskmanagement.Comment
 import com.example.youmanage.data.remote.taskmanagement.Detail
 import com.example.youmanage.data.remote.projectmanagement.Id
+import com.example.youmanage.data.remote.projectmanagement.Progress
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
 import com.example.youmanage.data.remote.projectmanagement.Projects
 import com.example.youmanage.data.remote.projectmanagement.Project
@@ -138,11 +139,11 @@ interface ApiInterface {
         @Header("Authorization") authorization: String
     ): Project
 
-    @DELETE("/projects/{id}/")
+    @DELETE("/projects/{projectId}/")
     suspend fun deleteProject(
-        @Path("id") id: String,
+        @Path("projectId") id: String,
         @Header("Authorization") authorization: String
-    )
+    ): Response<Unit>
 
     @POST("/projects/{projectId}/members/add/")
     suspend fun addMember(
@@ -247,10 +248,10 @@ interface ApiInterface {
         @Header("Authorization") authorization: String
     ): Response<Unit>
 
-
     @GET("/projects/{projectId}/messages/")
     suspend fun getMessage(
         @Path("projectId") projectId: String,
+        @Query("cursor") cursor: String? = null,
         @Header("Authorization") authorization: String
     ): Messages
 
@@ -295,4 +296,9 @@ interface ApiInterface {
         @Header("Authorization") authorization: String,
     ): User
 
+    @POST("/projects/{projectId}/progress/track/")
+    suspend fun getProgressTracker(
+        @Path("projectId") projectId: String,
+        @Header("Authorization") authorization: String
+    ): Progress
 }

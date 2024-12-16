@@ -2,6 +2,7 @@ package com.example.youmanage.screens.task_management
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,6 +50,8 @@ import com.example.youmanage.screens.components.DatePickerField
 import com.example.youmanage.screens.components.DatePickerModal
 import com.example.youmanage.screens.components.ErrorDialog
 import com.example.youmanage.screens.components.LeadingTextFieldComponent
+import com.example.youmanage.utils.Constants.WEB_SOCKET
+import com.example.youmanage.utils.Constants.priorityChoice
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
@@ -62,29 +65,59 @@ fun CreateTaskScreen(
     projectId: String = "",
     onCreateTask: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
+    onDisableAction: () -> Unit = {},
     taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel()
 ) {
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
+    val user by authenticationViewModel.user.observeAsState()
     val members by projectManagementViewModel.members.observeAsState()
     val task by taskManagementViewModel.task.observeAsState()
     var openErrorDialog by remember { mutableStateOf(false) }
 
-
+    val taskSocket by taskManagementViewModel.taskSocket.observeAsState()
+    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
+    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
 
     LaunchedEffect(task) {
         if (task is Resource.Success) {
             onCreateTask()
-        }
-        if (task is Resource.Error) {
+        } else if (task is Resource.Error) {
             openErrorDialog = true
         }
     }
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
+            val webSocketUrl = "${WEB_SOCKET}project/${projectId}/"
             projectManagementViewModel.getMembers(projectId, "Bearer $token")
+            authenticationViewModel.getUser("Bearer $token")
+            taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
+            projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
+            projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+        }
+    }
+
+    LaunchedEffect(
+        key1 = memberSocket,
+        key2 = projectSocket
+    ) {
+        if (
+            projectSocket is Resource.Success &&
+            projectSocket?.data?.type == "project_deleted" &&
+            projectSocket?.data?.content?.id.toString() == projectId
+        ) {
+            onDisableAction()
+        }
+
+        if (
+            memberSocket is Resource.Success &&
+            memberSocket?.data?.type == "member_removed" &&
+            user is Resource.Success &&
+            memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
+        ) {
+            onDisableAction()
         }
     }
 
@@ -101,6 +134,7 @@ fun CreateTaskScreen(
     var description by rememberSaveable { mutableStateOf("") }
     var startDate by rememberSaveable { mutableStateOf("") }
     var endDate by rememberSaveable { mutableStateOf("") }
+    var priority by rememberSaveable { mutableIntStateOf(-1) }
 
     var assignedMemberId by remember {
         mutableIntStateOf(-1)
@@ -256,6 +290,14 @@ fun CreateTaskScreen(
                     containerColor = textFieldColor
                 )
 
+                PrioritySelector(
+                    priorityChoice = priorityChoice,
+                    priority = priority,
+                    onPrioritySelected = {
+                        priority = it
+                    }
+                )
+
                 AssigneeSelector(
                     label = "Assign to",
                     avatarRes = R.drawable.avatar,
@@ -264,6 +306,7 @@ fun CreateTaskScreen(
                         showChooseMember = true
                     }
                 )
+
 
                 Button(
                     onClick = {
@@ -274,7 +317,8 @@ fun CreateTaskScreen(
                                 description = description,
                                 startDate = startDate,
                                 endDate = endDate,
-                                assigneeId = assignedMemberId
+                                assigneeId = assignedMemberId,
+                                priority = if(priority == -1) null else priorityChoice[priority].uppercase() ,
                             ),
                             authorization = "Bearer ${accessToken.value}"
                         )
@@ -294,9 +338,7 @@ fun CreateTaskScreen(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
-
                 }
-
             }
         }
     }
@@ -338,6 +380,48 @@ fun CreateTaskScreen(
         onConfirm = { openErrorDialog = false }
 
     )
-
 }
 
+@Composable
+fun PrioritySelector(
+    priorityChoice: List<String>,
+    priority: Int,
+    onPrioritySelected: (Int) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            "Priority",
+            color = Color.Black,
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            priorityChoice.forEachIndexed { index, item ->
+                Button(
+                    onClick = {
+                        // Toggle the state if the same button is clicked twice
+                        onPrioritySelected(if (index == priority) -1 else index)
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        if (index == priority) Color.Black else Color.Transparent
+                    ),
+                    border = BorderStroke(2.dp, Color.Black)
+                ) {
+                    Text(
+                        text = item,
+                        color = if (index == priority) Color.White else Color.Black
+                    )
+                }
+            }
+        }
+    }
+}

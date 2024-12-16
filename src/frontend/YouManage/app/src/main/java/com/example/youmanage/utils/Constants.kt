@@ -12,4 +12,11 @@ object Constants {
     val ACCESS_TOKEN_KEY = stringPreferencesKey("access_token")
     val REFRESH_TOKEN_KEY = stringPreferencesKey("refresh_token")
 
+
+    val priorityChoice = listOf(
+        "Low",
+        "Medium",
+        "High"
+    )
+
 }

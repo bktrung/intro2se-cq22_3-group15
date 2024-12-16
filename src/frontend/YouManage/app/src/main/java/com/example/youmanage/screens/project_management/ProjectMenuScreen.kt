@@ -1,5 +1,6 @@
 package com.example.youmanage.screens.project_management
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,7 +33,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
+import com.example.youmanage.screens.components.AlertDialog
+import com.example.youmanage.screens.components.ErrorDialog
+import com.example.youmanage.utils.Constants.WEB_SOCKET
+import com.example.youmanage.utils.Resource
+import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.ProjectManagementViewModel
 
 
 data class ProjectMenuItem(
@@ -35,14 +50,68 @@ data class ProjectMenuItem(
     val onClick: () -> Unit = {}
 )
 
-@Preview
+
 @Composable
 fun ProjectMenuScreen(
     onNavigateBack: () -> Unit = {},
     onTaskList: () -> Unit = {},
     onIssueList: () -> Unit = {},
     onChatRoom: () -> Unit = {}
+    onDeleteProjectSuccess: () -> Unit = {},
+    onDisableAction: () -> Unit = {},
+    id: String,
+    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
+    authenticationViewModel: AuthenticationViewModel = hiltViewModel()
 ) {
+
+    val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
+    val deleteProjectResponse by projectManagementViewModel.deleteProjectResponse.observeAsState()
+    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
+    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
+    val user by authenticationViewModel.user.observeAsState()
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showDeleteErrorDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(deleteProjectResponse) {
+        if(deleteProjectResponse is Resource.Success){
+            Log.d("Delete Project", "Success")
+            onDeleteProjectSuccess()
+        } else if (deleteProjectResponse is Resource.Error){
+            Log.d("Delete Project", "Failed")
+            showDeleteErrorDialog = true
+        }
+    }
+
+    LaunchedEffect(accessToken.value) {
+        accessToken.value?.let { token ->
+            val webSocketUrl = "${WEB_SOCKET}project/${id}/"
+            authenticationViewModel.getUser("Bearer $token")
+            projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
+            projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+        }
+    }
+
+    LaunchedEffect(
+        key1 = memberSocket,
+        key2 = projectSocket
+    ) {
+        if (
+            projectSocket is Resource.Success &&
+            projectSocket?.data?.type == "project_deleted" &&
+            projectSocket?.data?.content?.id.toString() == id
+        ) {
+            onDisableAction()
+        }
+
+        if (
+            memberSocket is Resource.Success &&
+            memberSocket?.data?.type == "member_removed" &&
+            user is Resource.Success &&
+            memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
+        ) {
+            onDisableAction()
+        }
+    }
 
     val projectMenuItems = listOf(
         ProjectMenuItem(
@@ -78,7 +147,8 @@ fun ProjectMenuScreen(
         ProjectMenuItem(
             title = "Delete Project",
             icon = R.drawable.trash_icon,
-            color = Color.Black
+            color = Color.Black,
+            onClick = { showDeleteDialog = true }
         )
     )
 
@@ -111,8 +181,7 @@ fun ProjectMenuScreen(
                     .padding(vertical = 42.dp)
             ) {
 
-                projectMenuItems.forEachIndexed{
-                    _, item ->
+                projectMenuItems.forEachIndexed { _, item ->
                     MenuItem(
                         trailingIcon = {
                             Icon(
@@ -126,11 +195,33 @@ fun ProjectMenuScreen(
                     )
                 }
             }
-
         }
-
     }
 
+    AlertDialog(
+        title = "Delete this project?",
+        content = "Are you sure you want to delete this project?",
+        showDialog = showDeleteDialog,
+        onDismiss = { showDeleteDialog = false },
+        onConfirm = {
+            accessToken.value?.let { token ->
+                projectManagementViewModel.deleteProject(
+                    id = id,
+                    authorization = "Bearer $token"
+                )
+            }
+
+            showDeleteDialog = false
+        }
+    )
+
+    ErrorDialog(
+        title = "Something went wrong?",
+        content = "Can't delete this project? .Please try again later!",
+        showDialog = showDeleteErrorDialog,
+        onDismiss = { showDeleteErrorDialog = false },
+        onConfirm = { showDeleteErrorDialog = false }
+    )
 }
 
 @Composable

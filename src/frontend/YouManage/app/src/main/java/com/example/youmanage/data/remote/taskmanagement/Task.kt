@@ -24,6 +24,7 @@ data class Task(
     val status: String = "",
     val title: String = "",
     @SerializedName("updated_at")
-    val updatedAt: String = ""
-
+    val updatedAt: String = "",
+    @SerializedName("comments_count")
+    val commentsCount: Int = 0
 )
