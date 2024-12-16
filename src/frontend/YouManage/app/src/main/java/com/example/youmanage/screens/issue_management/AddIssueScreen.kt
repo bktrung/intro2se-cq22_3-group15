@@ -98,7 +98,7 @@ fun AddIssueScreen(
     Scaffold(
         topBar = {
             TopBar(
-                title = "Issue List",
+                title = "Create Issue",
                 onNavigateBack = { onNavigateBack() }
             )
         }
@@ -108,7 +108,7 @@ fun AddIssueScreen(
                 .fillMaxSize()
                 .background(backgroundColor)
                 .padding(paddingValues)
-                .padding(top = 24.dp)
+                .padding(horizontal = 20.dp)
         ) {
             val scrollState = rememberScrollState()
 
@@ -204,7 +204,7 @@ fun AddIssueScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
+
 
                 ) {
                     Text(

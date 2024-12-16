@@ -107,7 +107,6 @@ fun IssueListScreen(
                 .fillMaxSize()
                 .background(backgroundColor)
                 .padding(paddingValues)
-                .padding(top = 24.dp)
         ) {
             Column {
                 ButtonSection(

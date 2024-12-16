@@ -78,7 +78,8 @@ val bottomNavigationItems = listOf(
 
 @Composable
 fun MainScreen(
-    rootNavController: NavHostController
+    rootNavController: NavHostController,
+    onViewProject: (Int) -> Unit
 ) {
     val navController = rememberNavController()
 
@@ -91,6 +92,7 @@ fun MainScreen(
             paddingValues = paddingValues,
             rootNavController = rootNavController,
             homeNavController = navController
+
         )
     }
 }

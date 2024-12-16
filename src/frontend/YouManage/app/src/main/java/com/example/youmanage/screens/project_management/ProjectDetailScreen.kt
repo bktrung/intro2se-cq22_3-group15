@@ -34,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,16 +78,16 @@ fun ProjectDetailScreen(
 
     var pieChartInputList by remember { mutableStateOf<List<PieChartInput>>(emptyList()) }
 
-    var showAddMemberDialog by remember { mutableStateOf(false) }
-    var showRemoveAlertDialog by remember { mutableStateOf(false) }
+    var showAddMemberDialog by rememberSaveable { mutableStateOf(false) }
+    var showRemoveAlertDialog by rememberSaveable { mutableStateOf(false) }
     var showAddAlertDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(
-        key1 = accessToken.value,
-        key2 = addMemberResponse,
-        key3 = removeMemberResponse
-    ) {
+    var isRemove by remember { mutableStateOf(false) }
+    var isAdd by remember { mutableStateOf(false) }
+
+    LaunchedEffect(accessToken.value)
+    {
         accessToken.value?.let { token ->
             val authorization = "Bearer $token"
 
@@ -102,6 +103,19 @@ fun ProjectDetailScreen(
         }
     }
 
+    LaunchedEffect(addMemberResponse) {
+        Log.d("Again", "Again")
+        if (addMemberResponse is Resource.Error && isAdd) {
+            showAddAlertDialog = true
+        }
+    }
+
+    LaunchedEffect(removeMemberResponse) {
+        if (removeMemberResponse is Resource.Error && isRemove) {
+            showRemoveAlertDialog = true
+        }
+    }
+
     LaunchedEffect(accessToken.value)
     {
         accessToken.value?.let {
@@ -111,7 +125,6 @@ fun ProjectDetailScreen(
             projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
         }
     }
-
 
     LaunchedEffect(
         key1 = memberSocket,
@@ -129,30 +142,20 @@ fun ProjectDetailScreen(
             memberSocket is Resource.Success &&
             memberSocket?.data?.type == "member_removed" &&
             user is Resource.Success &&
-            memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
+            memberSocket?.data?.content?.affectedMembers?.
+            contains(user?.data) == true
         ) {
             onDisableAction()
         }
     }
 
     LaunchedEffect(projectProgress) {
-
-        Log.d("Chart", projectProgress.toString())
         if (projectProgress is Resource.Success) {
 
             val total = projectProgress?.data?.total ?: 1
             val pending = projectProgress?.data?.pending ?: 0
             val inProgress = projectProgress?.data?.inProgress ?: 0
             val completed = projectProgress?.data?.completed ?: 0
-
-
-
-            Log.d(
-                "Pie", "Total: $total," +
-                        " Pending: ${pending.toDouble().div(total)*100.0}, " +
-                        "In Progress: ${inProgress.toDouble().div(total)*100.0}," +
-                        " Completed: ${completed.toDouble().div(total)*100.0}"
-            )
 
             pieChartInputList = listOf(
                 PieChartInput(
@@ -176,25 +179,9 @@ fun ProjectDetailScreen(
         }
     }
 
-    LaunchedEffect(addMemberResponse) {
-        if (addMemberResponse is Resource.Error) {
-            showAddAlertDialog = true
-        }
-    }
-
-    LaunchedEffect(removeMemberResponse) {
-        if (removeMemberResponse is Resource.Error) {
-            showRemoveAlertDialog = true
-            Log.d("Remove Error", removeMemberResponse?.message.toString())
-        }
-    }
-
     Log.d("Access Token", "${accessToken.value}")
 
-    Log.d(
-        "Project ID",
-        "Project ID: $id"
-    )
+    Log.d("Project ID", "$id")
 
     if (project is Resource.Success) {
 
@@ -246,44 +233,9 @@ fun ProjectDetailScreen(
                         )
                     }
 
-
                     DescriptionSection(
                         description = project?.data?.description.toString()
                     )
-
-                    Button(
-                        onClick = { /* Thêm hành động cho nút View Project */ },
-                        modifier = Modifier
-                            .padding(vertical = 16.dp)
-                            .padding(horizontal = 36.dp)
-                            .fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults
-                            .buttonColors(
-                                containerColor = Color(0xFF251034)
-                            )
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(vertical = 2.dp)
-                        ) {
-                            Text(text = "Task List", color = Color.White)
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .background(
-                                        Color.Gray,
-                                        shape = CircleShape
-                                    )
-                                    .padding(4.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(text = "➜", modifier = Modifier)
-                            }
-                        }
-                    }
 
                     MembersSection(
                         onAddNewMember = {
@@ -314,12 +266,14 @@ fun ProjectDetailScreen(
                         authorization = "Bearer $token"
                     )
                 }
+                isAdd = true
 
                 showAddMemberDialog = false
             },
         )
 
-        AlertDialog(title = "Something wrong",
+        AlertDialog(
+            title = "Something wrong",
             content = addMemberResponse?.message.toString(),
             showDialog = showAddAlertDialog,
             onDismiss = {
@@ -329,7 +283,8 @@ fun ProjectDetailScreen(
                 showAddAlertDialog = false
             })
 
-        AlertDialog(title = "Something wrong",
+        AlertDialog(
+            title = "Something wrong",
             content = removeMemberResponse?.message.toString(),
             showDialog = showRemoveAlertDialog,
             onDismiss = {
@@ -339,7 +294,8 @@ fun ProjectDetailScreen(
                 showRemoveAlertDialog = false
             })
 
-        AlertDialog(title = "Remove Member?",
+        AlertDialog(
+            title = "Remove Member?",
             content = "Are you sure you want to remove this member?",
             showDialog = showDeleteDialog,
             onDismiss = { showDeleteDialog = false },
@@ -351,7 +307,7 @@ fun ProjectDetailScreen(
                         authorization = "Bearer $token"
                     )
                 }
-
+                isRemove = true
                 showDeleteDialog = false
             }
         )

@@ -9,6 +9,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -21,6 +22,7 @@ import com.example.youmanage.screens.project_management.MainScreen
 import com.example.youmanage.screens.project_management.ProjectDetailScreen
 import com.example.youmanage.screens.project_management.ProjectMenuScreen
 import com.example.youmanage.screens.project_management.UserProfileScreen
+import com.example.youmanage.viewmodel.ProjectManagementViewModel
 
 @Composable
 fun ProjectManagementNavGraph(
@@ -90,7 +92,10 @@ fun NavGraphBuilder.projectManagementNavGraph(
 
         composable(ProjectManagementRouteScreen.Main.route) {
             MainScreen(
-                rootNavController = rootNavController
+                rootNavController = rootNavController,
+                onViewProject = {
+                    rootNavController.navigate("project_detail/${it}")
+                }
             )
         }
 
@@ -127,8 +132,6 @@ fun NavGraphBuilder.projectManagementNavGraph(
                     initialOffsetX = { 1000 },
                     animationSpec = tween(300)
                 ) + fadeIn()
-
-
             },
             exitTransition = {
                 slideOutHorizontally(

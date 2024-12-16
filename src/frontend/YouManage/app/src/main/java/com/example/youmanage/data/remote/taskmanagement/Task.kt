@@ -17,7 +17,7 @@ data class Task(
     val endDate: String = "",
     val id: Int = 0,
     val issues: List<Issue> = emptyList(),
-    val priority: Int? = null,
+    val priority: String? = null,
     val project: Int = 0,
     @SerializedName("start_date")
     val startDate: String = "",

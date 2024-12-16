@@ -56,7 +56,7 @@ fun ProjectMenuScreen(
     onNavigateBack: () -> Unit = {},
     onTaskList: () -> Unit = {},
     onIssueList: () -> Unit = {},
-    onChatRoom: () -> Unit = {}
+    onChatRoom: () -> Unit = {},
     onDeleteProjectSuccess: () -> Unit = {},
     onDisableAction: () -> Unit = {},
     id: String,

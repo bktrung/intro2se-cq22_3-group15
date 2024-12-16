@@ -1,6 +1,7 @@
 package com.example.youmanage.screens.issue_management
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,7 +53,6 @@ import com.example.youmanage.viewmodel.IssuesViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun IssueDetailScreen(
@@ -74,8 +73,6 @@ fun IssueDetailScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showSaveDialog by remember { mutableStateOf(false) }
     var showStatusDialog by remember { mutableStateOf(false) }
-
-
 
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
@@ -144,7 +141,7 @@ fun IssueDetailScreen(
                 .fillMaxSize()
                 .background(backgroundColor)
                 .padding(paddingValues)
-                .padding(top = 24.dp)
+                .padding(horizontal = 20.dp)
         ) {
             val scrollState = rememberScrollState()
 
@@ -276,8 +273,8 @@ fun IssueDetailScreen(
     )
 
     AlertDialog(
-        title = "Update task?",
-        content = "Are you sure you want to update this task?",
+        title = "Update issue?",
+        content = "Are you sure you want to update this issue?",
         showDialog = showSaveDialog,
         onDismiss = {
             showSaveDialog = false
@@ -285,17 +282,18 @@ fun IssueDetailScreen(
         onConfirm = {
 
             accessToken.value?.let { token ->
+
+                Log.d("Issuse Status", selectedStatus)
                 issueManagementViewModel.updateIssue(
                     projectId = projectId,
-                    issueId = issue?.data?.id.toString() ?: return@let,
+                    issueId = issue?.data?.id.toString(),
                     IssueUpdate(
                         title = title,
                         description = description,
                         project = projectId.toInt(),
                         assignee = if (assignedMemberId != -1) assignedMemberId else null,
                         task = selectedTask?.id,
-                        status =  statusMapping.firstOrNull { it.first == selectedStatus }?.second
-                            ?: "PENDING",
+                        status = selectedStatus,
                     ),
                     authorization = "Bearer $token"
                 )
