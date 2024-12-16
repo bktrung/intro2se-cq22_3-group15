@@ -20,14 +20,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -59,7 +56,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -76,6 +72,7 @@ import com.example.youmanage.screens.components.AssigneeSelector
 import com.example.youmanage.screens.components.ChooseItemDialog
 import com.example.youmanage.screens.components.DatePickerField
 import com.example.youmanage.screens.components.DatePickerModal
+import com.example.youmanage.screens.components.DropdownStatusSelector
 import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.ui.theme.fontFamily
 import com.example.youmanage.utils.Constants.WEB_SOCKET
@@ -526,42 +523,7 @@ fun TaskDetailScreen(
 
 }
 
-@Composable
-fun DropdownStatusSelector(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    backgroundColor: Color = Color.White,
-    textColor: Color = Color.Black,
-    cornerRadius: Dp = 10.dp,
-    padding: Dp = 12.dp
-) {
-    Box(
-        modifier = modifier
-            .wrapContentSize()
-            .clip(RoundedCornerShape(cornerRadius))
-            .background(backgroundColor)
-            .clickable { onClick() }
-    ) {
-        Row(
-            modifier = Modifier.padding(padding),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = text,
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
-                color = textColor
-            )
-            Icon(
-                imageVector = Icons.Default.ArrowDropDown,
-                contentDescription = null,
-                tint = textColor
-            )
-        }
-    }
-}
+
 
 @Composable
 fun LabeledTextField(

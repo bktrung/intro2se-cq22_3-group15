@@ -3,11 +3,9 @@ package com.example.youmanage.screens.project_management
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -59,7 +57,7 @@ val bottomNavigationItems = listOf(
         icon = R.drawable.bug_icon,
         selectedColor = Color.Black,
         unselectedColor = Color.Gray,
-        route = ""
+        route = ProjectManagementRouteScreen.Issue.route
     ),
 
     BottomNavigationItem(
