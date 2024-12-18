@@ -13,6 +13,7 @@ urlpatterns = [
     path('projects/<int:pk>/roles/', RoleListCreateView.as_view(), name='role-list-create'),
     path('projects/<int:project_id>/roles/<int:pk>/', RoleRetrieveUpdateDestroyView.as_view(), name='role-retrieve-update-destroy'),
     path('projects/<int:project_id>/roles/<int:pk>/<str:action>/', RoleManagementView.as_view(), name='role-management'),
+    path('projects/<int:project_id>/members/<int:pk>/roles/', MemberRoleListView.as_view(), name='member-role-list'),
     path('projects/<int:project_id>/issues/', IssueListCreateView.as_view(), name='issue-list-create'),
     path('projects/<int:project_id>/issues/<int:pk>/', IssueRetrieveUpdateDestroyView.as_view(), name='issue-retrieve-update-destroy'),
     path('projects/<int:project_id>/change-requests/', ChangeRequestListCreateView.as_view(), name='change-request-list-create'),

@@ -254,6 +254,18 @@ class RoleManagementView(generics.GenericAPIView):
         role.users.remove(user)
         return Response({"detail": "User unassigned from role successfully."}, status=status.HTTP_200_OK)
     
+class MemberRoleListView(generics.ListAPIView):
+    serializer_class = RoleSerializer
+    
+    def get_queryset(self):
+        project = get_object_or_404(Project, id=self.kwargs['project_id'])
+        user = get_object_or_404(User, id=self.kwargs['pk'])
+        
+        if user not in project.members.all():
+            raise PermissionDenied({"error": "User must be a project member to view roles."})
+        
+        return Role.objects.filter(project=project, users=user).select_related('project')
+    
     
 class IssueListCreateView(generics.ListCreateAPIView):
     serializer_class = IssueSerializer
