@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
 
         //val viewModel: AuthenticationViewModel by viewModels()
 
-       //val viewModel: TaskManagementViewModel by viewModels()
+        //val viewModel: TaskManagementViewModel by viewModels()
 //
 //        val project = ProjectCreate(
 //            "My Project Update 1",
@@ -82,8 +82,8 @@ class MainActivity : ComponentActivity() {
 //            )
 //        )
 
-            setContent {
-                YouManageTheme {
+        setContent {
+            YouManageTheme {
 
                 //val nav = rememberNavController()
 
@@ -102,26 +102,27 @@ class MainActivity : ComponentActivity() {
 //                    navHostController = nav,
 //                    projectId = "1")
 
-              //  CreateTaskScreen()
+                //  CreateTaskScreen()
                 //TaskListScreen()
-            //ProjectDetailScreen()
+                //ProjectDetailScreen()
                 //FindUserScreen()
-               RootNavGraph()
+                RootNavGraph()
                 //TestPieChart()
 
-               // TaskDetailScreen()
+                // TaskDetailScreen()
                 //TaskDetailScreen(projectId = "1", taskId = "1")
 
                 //viewModel.sendOTP(SendOTPRequest("duonghuutuong0712@gmail.com"))
 
                 //ChatScreenWithViewModel()
                 //ActivityLogsScreen(projectId = "1", token = "your_token")
-             //}
+                //}
 //            ActivityLogsScreen(
 //                projectId = "12345",  // Giả sử ID của project
 //                token = "fake_token",  // Giả sử token xác thực
 //                onBackClick = {}
 //            )
+            }
         }
     }
 }

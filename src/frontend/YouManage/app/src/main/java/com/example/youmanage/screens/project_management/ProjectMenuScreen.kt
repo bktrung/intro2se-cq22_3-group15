@@ -38,7 +38,6 @@ import androidx.navigation.compose.rememberNavController
 import com.example.youmanage.R
 import com.example.youmanage.navigation.ProjectManagementRouteScreen
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.youmanage.R
 import com.example.youmanage.screens.components.AlertDialog
 import com.example.youmanage.screens.components.ErrorDialog
 import com.example.youmanage.utils.Constants.WEB_SOCKET

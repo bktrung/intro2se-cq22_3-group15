@@ -2,10 +2,8 @@ package com.example.youmanage.data.remote.projectmanagement
 
 import com.google.gson.annotations.SerializedName
 
-data class Role(
-    val description: String,
-    val id: Int,
-    val project: Int,
+data class RoleRequest(
     @SerializedName("role_name")
-    val name: String
+    val name: String,
+    val description: String
 )
