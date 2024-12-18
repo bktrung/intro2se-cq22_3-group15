@@ -28,11 +28,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.compose.rememberNavController
+import com.example.youmanage.R
+import com.example.youmanage.navigation.ProjectManagementRouteScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
 import com.example.youmanage.screens.components.AlertDialog
@@ -41,6 +45,7 @@ import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
+
 
 
 data class ProjectMenuItem(
@@ -63,6 +68,8 @@ fun ProjectMenuScreen(
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
+    val navController = rememberNavController()
 
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     val deleteProjectResponse by projectManagementViewModel.deleteProjectResponse.observeAsState()
@@ -132,6 +139,15 @@ fun ProjectMenuScreen(
             color = Color.Black
         ),
         ProjectMenuItem(
+            title = "Activity Logs",
+            icon = R.drawable.activity_logs,
+            color = Color.Black,
+            onClick = {
+                 // Điều hướng đến ActivityLogsScreen
+                navController.navigate(ProjectManagementRouteScreen.ActivityLogs.route)
+            }
+        ),
+        ProjectMenuItem(
             title = "Project Setting",
             icon = R.drawable.setting_icon,
             color = Color.Black
@@ -187,7 +203,8 @@ fun ProjectMenuScreen(
                             Icon(
                                 painter = painterResource(id = item.icon),
                                 contentDescription = item.title,
-                                tint = item.color
+                                tint = item.color,
+                                modifier = Modifier.size(30.dp)
                             )
                         },
                         title = item.title,

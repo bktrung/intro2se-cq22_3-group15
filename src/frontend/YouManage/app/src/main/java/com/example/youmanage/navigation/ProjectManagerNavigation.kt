@@ -15,6 +15,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import com.example.youmanage.screens.activity_logs.ActivityLogsScreen
 import com.example.youmanage.screens.chat.ChatScreenWithViewModel
 import com.example.youmanage.screens.project_management.AddProjectScreen
 import com.example.youmanage.screens.project_management.HomeScreen
@@ -173,6 +174,18 @@ fun NavGraphBuilder.projectManagementNavGraph(
                 projectId = projectId ?: "",
                 onNavigateBack = { rootNavController.navigateUp() })
         }
+
+        composable(
+            route = ProjectManagementRouteScreen.ActivityLogs.route
+        ) { backStackEntry ->
+            val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
+            ActivityLogsScreen(
+                projectId = projectId,
+                token = "your_auth_token", // Thay thế bằng token thực tế nếu cần
+                onBackClick = { rootNavController.navigateUp() }
+            )
+        }
+
 
     }
 }

@@ -1,5 +1,6 @@
 package com.example.youmanage.data.remote
 
+import com.example.youmanage.data.remote.activitylogs.Activity
 import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
 import com.example.youmanage.data.remote.authentication.RefreshToken
 import com.example.youmanage.data.remote.authentication.Message
@@ -29,7 +30,6 @@ import com.example.youmanage.data.remote.taskmanagement.TaskCreate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdateStatus
 import com.example.youmanage.data.remote.taskmanagement.Username
-import com.example.youmanage.utils.Resource
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -296,9 +296,17 @@ interface ApiInterface {
         @Header("Authorization") authorization: String,
     ): User
 
+    @GET("projects/{projectId}/activities/")
+    suspend fun getActivityLogs(
+        @Path("projectId") projectId: String,
+        @Header("Authorization") authorization: String
+    ): List<Activity>
+
+
     @POST("/projects/{projectId}/progress/track/")
     suspend fun getProgressTracker(
         @Path("projectId") projectId: String,
         @Header("Authorization") authorization: String
     ): Progress
+
 }

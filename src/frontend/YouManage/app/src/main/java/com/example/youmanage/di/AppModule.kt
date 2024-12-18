@@ -3,6 +3,7 @@ package com.example.youmanage.di
 import android.content.Context
 import com.example.youmanage.data.remote.ApiInterface
 import com.example.youmanage.factory.WebSocketFactory
+import com.example.youmanage.repository.ActivityLogRepository
 import com.example.youmanage.repository.AuthenticationRepository
 import com.example.youmanage.repository.ChatRepository
 import com.example.youmanage.repository.ProjectManagementRepository
@@ -120,4 +121,7 @@ object AppModule {
 
 
 
+    @Provides
+    @Singleton
+    fun provideActivityLogRepository(api: ApiInterface) = ActivityLogRepository(api)
 }
