@@ -8,5 +8,6 @@ data class TaskUpdate(
     val endDate: String,
     @SerializedName("start_date")
     val startDate: String,
-    val title: String
+    val title: String,
+    val priority: String? = null
 )

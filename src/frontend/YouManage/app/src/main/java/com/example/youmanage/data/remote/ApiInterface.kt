@@ -13,9 +13,13 @@ import com.example.youmanage.data.remote.authentication.UserSignUp
 import com.example.youmanage.data.remote.authentication.UserSignUpResponse
 import com.example.youmanage.data.remote.authentication.VerifyRequest
 import com.example.youmanage.data.remote.chat.Messages
+import com.example.youmanage.data.remote.issusemanagement.Issue
+import com.example.youmanage.data.remote.issusemanagement.IssueCreate
+import com.example.youmanage.data.remote.issusemanagement.IssueUpdate
 import com.example.youmanage.data.remote.taskmanagement.Comment
 import com.example.youmanage.data.remote.taskmanagement.Detail
 import com.example.youmanage.data.remote.projectmanagement.Id
+import com.example.youmanage.data.remote.projectmanagement.Progress
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
 import com.example.youmanage.data.remote.projectmanagement.Projects
 import com.example.youmanage.data.remote.projectmanagement.Project
@@ -135,11 +139,11 @@ interface ApiInterface {
         @Header("Authorization") authorization: String
     ): Project
 
-    @DELETE("/projects/{id}/")
+    @DELETE("/projects/{projectId}/")
     suspend fun deleteProject(
-        @Path("id") id: String,
+        @Path("projectId") id: String,
         @Header("Authorization") authorization: String
-    )
+    ): Response<Unit>
 
     @POST("/projects/{projectId}/members/add/")
     suspend fun addMember(
@@ -244,13 +248,48 @@ interface ApiInterface {
         @Header("Authorization") authorization: String
     ): Response<Unit>
 
-
     @GET("/projects/{projectId}/messages/")
     suspend fun getMessage(
         @Path("projectId") projectId: String,
+        @Query("cursor") cursor: String? = null,
         @Header("Authorization") authorization: String
     ): Messages
 
+    ///////// Issues
+    @GET("/projects/{projectId}/issues/")
+    suspend fun getIssues(
+        @Path("projectId") projectId: String,
+        @Header("Authorization") authorization: String
+    ): List<Issue>
+
+    @POST("/projects/{projectId}/issues/")
+    suspend fun createIssue(
+        @Path("projectId") projectId: String,
+        @Body issue: IssueCreate,
+        @Header("Authorization") authorization: String
+    ): Issue
+
+    @GET("/projects/{projectId}/issues/{issueId}/")
+    suspend fun getIssue(
+        @Path("projectId") projectId: String,
+        @Path("issueId") issueId: String,
+        @Header("Authorization") authorization: String
+    ): Issue
+
+    @PATCH("/projects/{projectId}/issues/{issueId}/")
+    suspend fun updateIssue(
+        @Path("projectId") projectId: String,
+        @Path("issueId") issueId: String,
+        @Body issueUpdate: IssueUpdate,
+        @Header("Authorization") authorization: String
+    ): Issue
+
+    @DELETE("/projects/{projectId}/issues/{issueId}/")
+    suspend fun deleteIssue(
+        @Path("projectId") projectId: String,
+        @Path("issueId") issueId: String,
+        @Header("Authorization") authorization: String
+    ): Response<Unit>
 
     @GET("/users/self/")
     suspend fun getUser(
@@ -262,5 +301,12 @@ interface ApiInterface {
         @Path("projectId") projectId: String,
         @Header("Authorization") authorization: String
     ): List<Activity>
+
+
+    @POST("/projects/{projectId}/progress/track/")
+    suspend fun getProgressTracker(
+        @Path("projectId") projectId: String,
+        @Header("Authorization") authorization: String
+    ): Progress
 
 }

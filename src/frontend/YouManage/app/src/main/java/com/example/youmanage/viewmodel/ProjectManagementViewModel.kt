@@ -1,33 +1,44 @@
 package com.example.youmanage.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.youmanage.data.remote.projectmanagement.Id
+import com.example.youmanage.data.remote.projectmanagement.Progress
 import com.example.youmanage.data.remote.projectmanagement.Project
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
 import com.example.youmanage.data.remote.projectmanagement.Projects
 import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.taskmanagement.Detail
 import com.example.youmanage.data.remote.taskmanagement.Username
+import com.example.youmanage.data.remote.websocket.MemberObject
+import com.example.youmanage.data.remote.websocket.WebSocketResponse
 import com.example.youmanage.repository.ProjectManagementRepository
+import com.example.youmanage.repository.WebSocketRepository
 import com.example.youmanage.utils.Resource
+import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ProjectManagementViewModel @Inject constructor(
-    private val repository: ProjectManagementRepository
-): ViewModel() {
+    private val repository: ProjectManagementRepository,
+    private val webSocketRepository: WebSocketRepository
+) : ViewModel() {
 
     private val _projects = MutableLiveData<Resource<Projects>>()
     val projects: LiveData<Resource<Projects>> get() = _projects
 
     private val _project = MutableLiveData<Resource<Project>>()
     val project: LiveData<Resource<Project>> get() = _project
+
+    private val _deleteProjectResponse = MutableLiveData<Resource<String>>()
+    val deleteProjectResponse: LiveData<Resource<String>> get() = _deleteProjectResponse
+
+    private val _progress = MutableLiveData<Resource<Progress>>()
+    val progress: LiveData<Resource<Progress>> get() = _progress
 
     private val _addMemberResponse = MutableLiveData<Resource<Detail>>()
     val addMemberResponse: LiveData<Resource<Detail>> get() = _addMemberResponse
@@ -38,15 +49,21 @@ class ProjectManagementViewModel @Inject constructor(
     private val _members = MutableLiveData<Resource<List<User>>>()
     val members: LiveData<Resource<List<User>>> get() = _members
 
+    private val _projectSocket = MutableLiveData<Resource<WebSocketResponse<Project>>>()
+    val projectSocket: LiveData<Resource<WebSocketResponse<Project>>> get() = _projectSocket
+
+    private val _memberSocket = MutableLiveData<Resource<WebSocketResponse<MemberObject>>>()
+    val memberSocket: LiveData<Resource<WebSocketResponse<MemberObject>>> get() = _memberSocket
+
     fun getProjectList(authorization: String) {
         viewModelScope.launch {
-           _projects.value = repository.getProjectList(authorization = authorization)
+            _projects.value = repository.getProjectList(authorization = authorization)
         }
     }
 
     fun createProject(project: ProjectCreate, authorization: String) {
         viewModelScope.launch {
-           repository.createProject(project = project, authorization = authorization)
+            repository.createProject(project = project, authorization = authorization)
         }
     }
 
@@ -70,7 +87,10 @@ class ProjectManagementViewModel @Inject constructor(
 
     fun deleteProject(id: String, authorization: String) {
         viewModelScope.launch {
-            repository.deleteProject(id = id, authorization = authorization)
+            _deleteProjectResponse.value = repository.deleteProject(
+                id = id,
+                authorization = authorization
+            )
         }
     }
 
@@ -94,9 +114,41 @@ class ProjectManagementViewModel @Inject constructor(
         }
     }
 
-    fun getMembers(id: String, authorization: String){
+    fun getMembers(id: String, authorization: String) {
         viewModelScope.launch {
-            _members.value = repository.getMembers(id = id, authorization = authorization)
+            _members.value = repository.getMembers(
+                id = id,
+                authorization = authorization
+            )
+        }
+    }
+
+    fun getProgressTrack(id: String, authorization: String) {
+        viewModelScope.launch {
+            _progress.value = repository.getProgressTrack(
+                projectId = id,
+                authorization = authorization
+            )
+        }
+    }
+
+    fun connectToProjectWebsocket(url: String) {
+        viewModelScope.launch {
+            webSocketRepository.connectToSocket(
+                url,
+                object : TypeToken<WebSocketResponse<Project>>() {},
+                _projectSocket
+            )
+        }
+    }
+
+    fun connectToMemberWebsocket(url: String) {
+        viewModelScope.launch {
+            webSocketRepository.connectToSocket(
+                url,
+                object : TypeToken<WebSocketResponse<MemberObject>>() {},
+                _memberSocket
+            )
         }
     }
 }

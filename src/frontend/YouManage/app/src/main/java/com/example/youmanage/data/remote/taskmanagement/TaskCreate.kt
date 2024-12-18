@@ -10,5 +10,7 @@ data class TaskCreate(
     val description: String? = null,
     @SerializedName("start_date")
     val startDate: String,
-    val title: String
+    val title: String,
+    val priority: String? = null
+
 )

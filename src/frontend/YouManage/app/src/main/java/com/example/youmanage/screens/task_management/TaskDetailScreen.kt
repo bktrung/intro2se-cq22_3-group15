@@ -1,6 +1,7 @@
 package com.example.youmanage.screens.task_management
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
@@ -19,14 +20,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -58,7 +56,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -75,8 +72,11 @@ import com.example.youmanage.screens.components.AssigneeSelector
 import com.example.youmanage.screens.components.ChooseItemDialog
 import com.example.youmanage.screens.components.DatePickerField
 import com.example.youmanage.screens.components.DatePickerModal
+import com.example.youmanage.screens.components.DropdownStatusSelector
 import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.ui.theme.fontFamily
+import com.example.youmanage.utils.Constants.WEB_SOCKET
+import com.example.youmanage.utils.Constants.priorityChoice
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.formatToRelativeTime
 import com.example.youmanage.viewmodel.AuthenticationViewModel
@@ -98,6 +98,7 @@ fun TaskDetailScreen(
     projectId: String,
     taskId: String,
     onNavigateBack: () -> Unit = {},
+    onDisableAction: () -> Unit = {},
     taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
@@ -109,12 +110,62 @@ fun TaskDetailScreen(
     val comment by taskManagementViewModel.comment.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     val response by taskManagementViewModel.response.observeAsState()
+    val taskSocket by taskManagementViewModel.taskSocket.observeAsState()
+    val commentDelete by taskManagementViewModel.deleteCommentResponse.observeAsState()
+    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
+    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
+    val user by authenticationViewModel.user.observeAsState()
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             taskManagementViewModel.getTask(projectId, taskId, "Bearer $token")
             taskManagementViewModel.getComments(projectId, taskId, "Bearer $token")
             projectManagementViewModel.getMembers(projectId, "Bearer $token")
+            authenticationViewModel.getUser("Bearer $token")
+        }
+    }
+
+    val webSocketUrl = "${WEB_SOCKET}project/${projectId}/"
+
+    LaunchedEffect(Unit) {
+        projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
+        projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+        taskManagementViewModel.connectToTaskWebSocket(webSocketUrl)
+    }
+
+    LaunchedEffect(
+        key1 = memberSocket,
+        key2 = projectSocket
+    ) {
+        if (
+            projectSocket is Resource.Success &&
+            projectSocket?.data?.type == "project_deleted" &&
+            projectSocket?.data?.content?.id.toString() == projectId
+        ) {
+            onDisableAction()
+        }
+
+        if (
+            memberSocket is Resource.Success &&
+            memberSocket?.data?.type == "member_removed" &&
+            user is Resource.Success &&
+            memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
+        ) {
+            onDisableAction()
+        }
+    }
+
+
+    LaunchedEffect(taskSocket) {
+        if (
+            taskSocket is Resource.Success &&
+            taskSocket?.data?.modelType == "task"
+        ) {
+            accessToken.value?.let { token ->
+                taskManagementViewModel.getTask(projectId, taskId, "Bearer $token")
+                taskManagementViewModel.getComments(projectId, taskId, "Bearer $token")
+                projectManagementViewModel.getMembers(projectId, "Bearer $token")
+            }
         }
     }
 
@@ -136,6 +187,7 @@ fun TaskDetailScreen(
     var endDate by rememberSaveable { mutableStateOf("") }
     var isTime by rememberSaveable { mutableIntStateOf(0) }
     var description by rememberSaveable { mutableStateOf("Your Description") }
+    var priority by rememberSaveable { mutableIntStateOf(-1) }
 
     var currentComment by remember {
         mutableStateOf(
@@ -155,9 +207,16 @@ fun TaskDetailScreen(
         }
     }
 
-    LaunchedEffect(comment) {
-        if (comment is Resource.Success) {
-            taskManagementViewModel.getComments(projectId, taskId, "Bearer ${accessToken.value}")
+    LaunchedEffect(
+        key1 = comment,
+        key2 = commentDelete
+    ) {
+        if (comment is Resource.Success || commentDelete is Resource.Success) {
+            taskManagementViewModel.getComments(
+                projectId,
+                taskId,
+                "Bearer ${accessToken.value}"
+            )
         }
     }
 
@@ -172,6 +231,13 @@ fun TaskDetailScreen(
             startDate = task?.data?.startDate ?: ""
             endDate = task?.data?.endDate ?: ""
             memberId = task?.data?.assignee?.id ?: -1
+
+            val priorityValue = task?.data?.priority?.lowercase()
+                .toString()
+                .replaceFirstChar { char ->
+                    char.uppercase()
+                }
+            priority = priorityChoice.indexOf(priorityValue)
         }
     }
 
@@ -250,10 +316,8 @@ fun TaskDetailScreen(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-
                     )
                 }
-
 
                 DropdownStatusSelector(
                     text = status,
@@ -268,6 +332,14 @@ fun TaskDetailScreen(
                     placeholder = "Enter project description",
                     leadingIconRes = R.drawable.description_icon,
                     backgroundColor = primaryColor
+                )
+
+                PrioritySelector(
+                    priorityChoice = priorityChoice,
+                    priority = priority,
+                    onPrioritySelected = {
+                        priority = it
+                    }
                 )
 
                 AssigneeSelector(
@@ -384,18 +456,10 @@ fun TaskDetailScreen(
                         "Bearer ${accessToken.value}"
                     )
 
-                    taskManagementViewModel.getComments(
-                        projectId,
-                        taskId,
-                        "Bearer ${accessToken.value}"
-                    )
-
                     showCommentEditor = false
                 }
             )
-
         }
-
     }
 
     AlertDialog(
@@ -425,10 +489,15 @@ fun TaskDetailScreen(
                     title = editTitle,
                     description = description,
                     startDate = startDate,
-                    endDate = endDate
+                    endDate = endDate,
+                    priority = if (priority == -1) null else priorityChoice[priority].uppercase()
                 ),
                 authorization = "Bearer ${accessToken.value}"
             )
+
+            Log.d("Task Update", if (priority == -1) "Failed" else priorityChoice[priority].uppercase())
+
+
 
             showTitleEditor = false
             showSaveDialog = false
@@ -454,42 +523,7 @@ fun TaskDetailScreen(
 
 }
 
-@Composable
-fun DropdownStatusSelector(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    backgroundColor: Color = Color.White,
-    textColor: Color = Color.Black,
-    cornerRadius: Dp = 10.dp,
-    padding: Dp = 12.dp
-) {
-    Box(
-        modifier = modifier
-            .wrapContentSize()
-            .clip(RoundedCornerShape(cornerRadius))
-            .background(backgroundColor)
-            .clickable { onClick() }
-    ) {
-        Row(
-            modifier = Modifier.padding(padding),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = text,
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
-                color = textColor
-            )
-            Icon(
-                imageVector = Icons.Default.ArrowDropDown,
-                contentDescription = null,
-                tint = textColor
-            )
-        }
-    }
-}
+
 
 @Composable
 fun LabeledTextField(

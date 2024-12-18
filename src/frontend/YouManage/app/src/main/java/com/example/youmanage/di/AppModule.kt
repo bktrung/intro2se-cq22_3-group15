@@ -8,7 +8,9 @@ import com.example.youmanage.repository.AuthenticationRepository
 import com.example.youmanage.repository.ChatRepository
 import com.example.youmanage.repository.ProjectManagementRepository
 import com.example.youmanage.repository.TaskManagementRepository
+import com.example.youmanage.repository.WebSocketRepository
 import com.example.youmanage.utils.Constants.BASE_URL
+import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -74,25 +76,50 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAuthenticationRepository(api: ApiInterface, @ApplicationContext context: Context) = AuthenticationRepository(api, context)
+    fun provideAuthenticationRepository(
+        api: ApiInterface,
+        @ApplicationContext context: Context
+    ) = AuthenticationRepository(api, context)
 
     @Provides
     @Singleton
-    fun provideProjectManagementRepository(api: ApiInterface) = ProjectManagementRepository(api)
+    fun provideProjectManagementRepository(
+        api: ApiInterface
+    ) = ProjectManagementRepository(api)
 
     @Provides
     @Singleton
-    fun provideTaskManagementRepository(api: ApiInterface, webSocket: WebSocketFactory) = TaskManagementRepository(api, webSocket)
+    fun provideTaskManagementRepository(
+        api: ApiInterface,
+        webSocket: WebSocketFactory
+    ) = TaskManagementRepository(api, webSocket)
 
     @Provides
     @Singleton
-    fun provideWebSocket(okHttpClient: OkHttpClient): WebSocketFactory {
-        return WebSocketFactory(okHttpClient)
+    fun provideWebSocket(
+        okHttpClient: OkHttpClient
+    ) = WebSocketFactory(okHttpClient)
+
+
+    @Provides
+    @Singleton
+    fun provideChatRepository(
+        api: ApiInterface,
+        webSocketFactory: WebSocketFactory) = ChatRepository(api, webSocketFactory)
+
+    @Provides
+    fun provideGson(): Gson {
+        return Gson()  // Tạo instance Gson
     }
 
     @Provides
     @Singleton
-    fun provideChatRepository(api: ApiInterface, webSocketFactory: WebSocketFactory) = ChatRepository(api, webSocketFactory)
+    fun provideWebSocketRepository(
+        webSocketFactory: WebSocketFactory,
+        gson: Gson
+    ) = WebSocketRepository(webSocketFactory, gson)
+
+
 
     @Provides
     @Singleton

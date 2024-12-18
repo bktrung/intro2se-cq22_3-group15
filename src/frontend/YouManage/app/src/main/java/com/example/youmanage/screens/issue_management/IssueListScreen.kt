@@ -1,9 +1,8 @@
-package com.example.youmanage.screens.task_management
+package com.example.youmanage.screens.issue_management
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,91 +46,49 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
-import com.example.youmanage.data.remote.taskmanagement.Task
+import com.example.youmanage.data.remote.issusemanagement.Issue
+import com.example.youmanage.screens.task_management.ButtonSection
+import com.example.youmanage.screens.task_management.statusMapping
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
-import com.example.youmanage.viewmodel.TaskManagementViewModel
-
+import com.example.youmanage.viewmodel.IssuesViewModel
 
 @Composable
-fun TaskListScreen(
+fun IssueListScreen(
     onNavigateBack: () -> Unit = {},
     projectId: String,
-    onCreateTask: () -> Unit = {},
-    onTaskDetail: (Int) -> Unit,
-    onDisableAction: () -> Unit = {},
-    taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
+    onCreateIssue: () -> Unit = {},
+    onIssueDetail: (Int) -> Unit,
+    issueManagementViewModel: IssuesViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
 ) {
-
     val backgroundColor = Color(0xffBAE5F5)
-
-    val tasks by taskManagementViewModel.tasks.observeAsState()
+    val issues by issueManagementViewModel.issues.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
-    var filterTasks by remember { mutableStateOf(emptyList<Task>()) }
-    val taskSocket by taskManagementViewModel.taskSocket.observeAsState()
-    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
-    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
-    val user by authenticationViewModel.user.observeAsState()
+    var filterIssues by remember { mutableStateOf(emptyList<Issue>()) }
 
-    val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
+    val webSocketUrl = "${WEB_SOCKET}project/$projectId/issues/"
 
+    // Fetch issues when the token is available
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
-            taskManagementViewModel.getTasks(
+            issueManagementViewModel.getIssues(
                 projectId = projectId,
                 authorization = "Bearer $token"
             )
-            authenticationViewModel.getUser("Bearer $token")
-        }
-        projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-        projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
-    }
-
-    LaunchedEffect(
-        key1 = memberSocket,
-        key2 = projectSocket
-    ) {
-        if (
-            projectSocket is Resource.Success &&
-            projectSocket?.data?.type == "project_deleted" &&
-            projectSocket?.data?.content?.id.toString() == projectId
-        ) {
-            onDisableAction()
-        }
-
-        if (
-            memberSocket is Resource.Success &&
-            memberSocket?.data?.type == "member_removed" &&
-            user is Resource.Success &&
-            memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
-        ) {
-            onDisableAction()
         }
     }
 
     var isSelectedButton by rememberSaveable { mutableIntStateOf(0) }
 
-    LaunchedEffect(Unit) {
-        taskManagementViewModel.connectToTaskWebSocket(webSocketUrl)
-    }
+    // WebSocket for real-time updates
 
-    LaunchedEffect(taskSocket) {
-        taskManagementViewModel.getTasks(
-            projectId = projectId,
-            authorization = "Bearer ${accessToken.value}"
-        )
-    }
 
-    LaunchedEffect(
-        key1 = isSelectedButton,
-        key2 = tasks
-    ) {
-        if (tasks is Resource.Success) {
-            filterTasks = tasks?.data?.filter {
+    // Filter issues based on status selection
+    LaunchedEffect(key1 = isSelectedButton, key2 = issues) {
+        if (issues is Resource.Success) {
+            filterIssues = issues?.data?.filter {
                 it.status == statusMapping[isSelectedButton].second
             } ?: emptyList()
         }
@@ -140,25 +97,21 @@ fun TaskListScreen(
     Scaffold(
         topBar = {
             TopBar(
+                title = "Issue List",
                 onNavigateBack = { onNavigateBack() }
             )
         }
     ) { paddingValues ->
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(backgroundColor)
-                //.background(Color(0xffF26A6A))
                 .padding(paddingValues)
-                .padding(top = 24.dp)
         ) {
             Column {
                 ButtonSection(
                     isSelectedButton = isSelectedButton,
-                    onClick = {
-                        isSelectedButton = it
-                    },
+                    onClick = { isSelectedButton = it },
                     status = statusMapping
                 )
 
@@ -172,25 +125,18 @@ fun TaskListScreen(
                             .fillMaxWidth()
                             .padding(10.dp)
                             .height(550.dp)
-
                     ) {
-                        items(filterTasks.size) { index ->
-                            TaskItem(
-                                title = filterTasks[index].title,
-                                priority = filterTasks[index].priority,
-                                assignee = filterTasks[index].assignee.username,
-                                endDate = filterTasks[index].endDate,
-                                comments = filterTasks[index].commentsCount,
-                                onCommentClick = {},
-                                onTaskClick = { onTaskDetail(filterTasks[index].id) }
+                        items(filterIssues.size) { index ->
+                            IssueItem(
+                                title = filterIssues[index].title,
+                                reporter = filterIssues[index].reporter.username,
+                                onIssueClick = { onIssueDetail(filterIssues[index].id) }
                             )
                         }
                     }
 
                     Button(
-                        onClick = {
-                            onCreateTask()
-                        },
+                        onClick = { onCreateIssue() },
                         shape = RoundedCornerShape(30.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color.Transparent,
@@ -201,10 +147,9 @@ fun TaskListScreen(
                             Color.Black,
                             RoundedCornerShape(10.dp)
                         )
-
                     ) {
                         Text(
-                            "Create Task",
+                            "Create Issue",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             modifier = Modifier.padding(vertical = 10.dp)
@@ -217,17 +162,13 @@ fun TaskListScreen(
 }
 
 @Composable
-fun TaskItem(
+fun IssueItem(
     title: String,
-    priority: String?,
-    assignee: String,
-    endDate: String,
-    comments: Int,
-    onCommentClick: () -> Unit = {},
-    onTaskClick: () -> Unit = {}
+    reporter: String,
+    onIssueClick: () -> Unit = {}
 ) {
     Card(
-        onClick = { onTaskClick() },
+        onClick = { onIssueClick() },
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
@@ -235,11 +176,10 @@ fun TaskItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp)
-
     ) {
         Column(
             horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(50.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(24.dp)
@@ -259,26 +199,6 @@ fun TaskItem(
                         .wrapContentWidth(Alignment.Start)
                         .padding(end = 5.dp)
                 )
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(5.dp))
-                        .background(Color.LightGray)
-                        .then(
-                            if (priority.isNullOrBlank()) Modifier
-                                .size(10.dp)
-                                .background(Color.Transparent) else Modifier
-                        )
-                ) {
-                    priority?.let {
-                        Text(
-                            text = it,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(vertical = 5.dp, horizontal = 10.dp)
-                        )
-                    }
-                }
             }
 
             Row(
@@ -287,49 +207,23 @@ fun TaskItem(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.avatar),
-                    contentDescription = "Avatar",
+                    contentDescription = "Reporter Avatar",
                     modifier = Modifier
                         .size(50.dp)
                         .clip(CircleShape)
                 )
                 Text(
-                    assignee, fontSize = 20.sp,
+                    reporter, fontSize = 20.sp,
                     fontWeight = FontWeight.Medium
                 )
             }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.comment_icon),
-                    contentDescription = "Comment",
-                    tint = Color.Black,
-                    modifier = Modifier.clickable { onCommentClick() }
-                )
-
-                Text(
-                    comments.toString(),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium
-                )
-
-                Icon(
-                    painter = painterResource(id = R.drawable.calendar_icon),
-                    contentDescription = "Deadline",
-                    tint = Color.Black
-                )
-                Text(endDate, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-
-            }
-
         }
     }
 }
 
 @Composable
 fun TopBar(
+    title: String,
     onNavigateBack: () -> Unit = {}
 ) {
     Row(
@@ -348,7 +242,7 @@ fun TopBar(
             )
         }
         Text(
-            text = "Task List",
+            text = title,
             fontSize = 30.sp,
             fontWeight = FontWeight.Bold
         )
@@ -356,62 +250,3 @@ fun TopBar(
         Spacer(modifier = Modifier.size(30.dp))
     }
 }
-
-@Composable
-fun ButtonSection(
-    isSelectedButton: Int,
-    onClick: (Int) -> Unit,
-    status: List<Pair<String, String>>
-) {
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp)
-            .padding(bottom = 20.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        status.forEachIndexed { index, name ->
-            TaskListButton(
-                name = name.first,
-                contentColor = if (index == isSelectedButton) Color(0xffBAE5F5) else Color.Black,
-                containerColor = if (index == isSelectedButton) Color.Black else Color.Transparent,
-                onClick = { onClick(index) }
-            )
-        }
-    }
-}
-
-
-@Composable
-fun TaskListButton(
-    name: String,
-    contentColor: Color,
-    containerColor: Color,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        shape = RoundedCornerShape(30.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = containerColor,
-            contentColor = contentColor
-        ),
-        modifier = Modifier
-            .border(
-                2.dp,
-                Color(0xffBAE5F5),
-                RoundedCornerShape(30.dp)
-            )
-
-    ) {
-        Text(
-            name,
-            fontWeight = FontWeight.Bold,
-            fontSize = 15.sp,
-            modifier = Modifier.padding(vertical = 10.dp)
-        )
-    }
-}
-

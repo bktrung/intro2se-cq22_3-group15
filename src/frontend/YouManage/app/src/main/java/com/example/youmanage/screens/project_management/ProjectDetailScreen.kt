@@ -34,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,7 +50,9 @@ import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.taskmanagement.Username
 import com.example.youmanage.screens.components.AlertDialog
 import com.example.youmanage.screens.components.PieChart
+import com.example.youmanage.screens.components.PieChartInput
 import com.example.youmanage.screens.components.pieChartInput
+import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
@@ -61,51 +64,124 @@ fun ProjectDetailScreen(
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
-    onClickMenu: () -> Unit
+    onClickMenu: () -> Unit,
+    onDisableAction: () -> Unit
 ) {
     val project by projectManagementViewModel.project.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     val addMemberResponse by projectManagementViewModel.addMemberResponse.observeAsState()
     val removeMemberResponse by projectManagementViewModel.deleteMemberResponse.observeAsState()
+    val projectProgress by projectManagementViewModel.progress.observeAsState()
+    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
+    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
+    val user by authenticationViewModel.user.observeAsState()
 
-    var showAddMemberDialog by remember { mutableStateOf(false) }
-    var showRemoveAlertDialog by remember { mutableStateOf(false) }
+    var pieChartInputList by remember { mutableStateOf<List<PieChartInput>>(emptyList()) }
+
+    var showAddMemberDialog by rememberSaveable { mutableStateOf(false) }
+    var showRemoveAlertDialog by rememberSaveable { mutableStateOf(false) }
     var showAddAlertDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(
-        key1 = accessToken.value,
-        key2 = addMemberResponse,
-        key3 = removeMemberResponse
-    ) {
+    var isRemove by remember { mutableStateOf(false) }
+    var isAdd by remember { mutableStateOf(false) }
+
+    LaunchedEffect(accessToken.value)
+    {
         accessToken.value?.let { token ->
+            val authorization = "Bearer $token"
 
             projectManagementViewModel.getProject(
                 id = id.toString(),
-                authorization = "Bearer $token"
+                authorization = authorization
+            )
+
+            projectManagementViewModel.getProgressTrack(
+                id = id.toString(),
+                authorization = authorization
             )
         }
     }
 
     LaunchedEffect(addMemberResponse) {
-        if (addMemberResponse is Resource.Error) {
+        Log.d("Again", "Again")
+        if (addMemberResponse is Resource.Error && isAdd) {
             showAddAlertDialog = true
         }
     }
 
     LaunchedEffect(removeMemberResponse) {
-        if (removeMemberResponse is Resource.Error) {
+        if (removeMemberResponse is Resource.Error && isRemove) {
             showRemoveAlertDialog = true
-            Log.d("Remove Error", removeMemberResponse?.message.toString())
+        }
+    }
+
+    LaunchedEffect(accessToken.value)
+    {
+        accessToken.value?.let {
+            val webSocketUrl = "${WEB_SOCKET}project/$id/"
+            authenticationViewModel.getUser("Bearer $it")
+            projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
+            projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+        }
+    }
+
+    LaunchedEffect(
+        key1 = memberSocket,
+        key2 = projectSocket
+    ) {
+        if (
+            projectSocket is Resource.Success &&
+            projectSocket?.data?.type == "project_deleted" &&
+            projectSocket?.data?.content?.id.toString() == id.toString()
+        ) {
+            onDisableAction()
+        }
+
+        if (
+            memberSocket is Resource.Success &&
+            memberSocket?.data?.type == "member_removed" &&
+            user is Resource.Success &&
+            memberSocket?.data?.content?.affectedMembers?.
+            contains(user?.data) == true
+        ) {
+            onDisableAction()
+        }
+    }
+
+    LaunchedEffect(projectProgress) {
+        if (projectProgress is Resource.Success) {
+
+            val total = projectProgress?.data?.total ?: 1
+            val pending = projectProgress?.data?.pending ?: 0
+            val inProgress = projectProgress?.data?.inProgress ?: 0
+            val completed = projectProgress?.data?.completed ?: 0
+
+            pieChartInputList = listOf(
+                PieChartInput(
+                    color = Color(0xffbaf4ca),
+                    value = pending.toDouble().div(total) * 100.0,
+                    description = "Completed"
+                ),
+                PieChartInput(
+                    color = Color(0xfffccdcd),
+                    value = inProgress.toDouble().div(total) * 100.0,
+                    description = "In Progress"
+                ),
+                PieChartInput(
+                    color = Color(0xffedf0f2),
+                    value = completed.toDouble().div(total) * 100.0,
+                    description = "Pending"
+                ),
+            )
+        } else if (projectProgress is Resource.Error) {
+            Log.d("Progress Tracker Error", projectProgress?.message.toString())
         }
     }
 
     Log.d("Access Token", "${accessToken.value}")
 
-    Log.d(
-        "Project ID",
-        "Project ID: $id"
-    )
+    Log.d("Project ID", "$id")
 
     if (project is Resource.Success) {
 
@@ -149,43 +225,17 @@ fun ProjectDetailScreen(
                         .fillMaxSize()
                         .verticalScroll(scrollState)
                 ) {
-                    PieChart(
-                        input = pieChartInput,
-                        modifier = Modifier.padding(36.dp)
-                    )
 
-                    DescriptionSection(description = project?.data?.description.toString())
-
-                    Button(
-                        onClick = { /* Thêm hành động cho nút View Project */ },
-                        modifier = Modifier
-                            .padding(vertical = 16.dp)
-                            .padding(horizontal = 36.dp)
-                            .fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF251034))
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(vertical = 2.dp)
-                        ) {
-                            Text(text = "Task List", color = Color.White)
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .background(
-                                        Color.Gray,
-                                        shape = CircleShape
-                                    )
-                                    .padding(4.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(text = "➜", modifier = Modifier)
-                            }
-                        }
+                    if (projectProgress is Resource.Success) {
+                        PieChart(
+                            input = pieChartInputList,
+                            modifier = Modifier.padding(36.dp)
+                        )
                     }
+
+                    DescriptionSection(
+                        description = project?.data?.description.toString()
+                    )
 
                     MembersSection(
                         onAddNewMember = {
@@ -216,12 +266,14 @@ fun ProjectDetailScreen(
                         authorization = "Bearer $token"
                     )
                 }
+                isAdd = true
 
                 showAddMemberDialog = false
             },
         )
 
-        AlertDialog(title = "Something wrong",
+        AlertDialog(
+            title = "Something wrong",
             content = addMemberResponse?.message.toString(),
             showDialog = showAddAlertDialog,
             onDismiss = {
@@ -231,7 +283,8 @@ fun ProjectDetailScreen(
                 showAddAlertDialog = false
             })
 
-        AlertDialog(title = "Something wrong",
+        AlertDialog(
+            title = "Something wrong",
             content = removeMemberResponse?.message.toString(),
             showDialog = showRemoveAlertDialog,
             onDismiss = {
@@ -241,7 +294,8 @@ fun ProjectDetailScreen(
                 showRemoveAlertDialog = false
             })
 
-        AlertDialog(title = "Remove Member?",
+        AlertDialog(
+            title = "Remove Member?",
             content = "Are you sure you want to remove this member?",
             showDialog = showDeleteDialog,
             onDismiss = { showDeleteDialog = false },
@@ -253,7 +307,7 @@ fun ProjectDetailScreen(
                         authorization = "Bearer $token"
                     )
                 }
-
+                isRemove = true
                 showDeleteDialog = false
             }
         )

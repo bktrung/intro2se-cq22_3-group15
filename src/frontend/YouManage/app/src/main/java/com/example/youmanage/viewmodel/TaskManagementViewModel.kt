@@ -10,15 +10,20 @@ import com.example.youmanage.data.remote.taskmanagement.Task
 import com.example.youmanage.data.remote.taskmanagement.TaskCreate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdateStatus
+import com.example.youmanage.data.remote.websocket.WebSocketResponse
 import com.example.youmanage.repository.TaskManagementRepository
+import com.example.youmanage.repository.WebSocketRepository
 import com.example.youmanage.utils.Resource
+import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import retrofit2.Response
 import javax.inject.Inject
 
 @HiltViewModel
 class TaskManagementViewModel @Inject constructor(
-    private val repository: TaskManagementRepository
+    private val repository: TaskManagementRepository,
+    private val webSocketRepository: WebSocketRepository
 ) : ViewModel() {
 
     private val _tasks = MutableLiveData<Resource<List<Task>>>()
@@ -43,11 +48,9 @@ class TaskManagementViewModel @Inject constructor(
     val deleteCommentResponse: LiveData<Resource<String>>
         get() = _deleteCommentResponse
 
-    fun connectToWebSocket(url: String) {
-        viewModelScope.launch {
-            repository.connectToSocket(url, _tasks)
-        }
-    }
+    private val _taskSocket = MutableLiveData<Resource<WebSocketResponse<Task>>>()
+    val taskSocket: LiveData<Resource<WebSocketResponse<Task>>>
+        get() = _taskSocket
 
     fun getTasks(
         projectId: String,
@@ -152,8 +155,22 @@ class TaskManagementViewModel @Inject constructor(
         authorization: String
     ){
         viewModelScope.launch {
-            repository.deleteComment(projectId, taskId, commentId, authorization)
+            _deleteCommentResponse.value = repository.deleteComment(
+                projectId,
+                taskId,
+                commentId,
+                authorization
+            )
         }
     }
 
+    fun connectToTaskWebSocket(url: String) {
+        viewModelScope.launch {
+            webSocketRepository.connectToSocket(
+                url,
+                object : TypeToken<WebSocketResponse<Task>>() {},
+                _taskSocket
+            )
+        }
+    }
 }

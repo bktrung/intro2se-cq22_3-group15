@@ -5,7 +5,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.navigation.compose.rememberNavController
 import com.example.youmanage.data.remote.activitylogs.ActivityLog
@@ -21,12 +20,8 @@ import com.example.youmanage.screens.project_management.ProjectDetailScreen
 import com.example.youmanage.screens.task_management.CreateTaskScreen
 import com.example.youmanage.screens.task_management.TaskDetailScreen
 import com.example.youmanage.screens.task_management.TaskListScreen
+import com.example.youmanage.navigation.RootNavGraph
 import com.example.youmanage.ui.theme.YouManageTheme
-import com.example.youmanage.utils.Constants.WEB_SOCKET
-import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.ChatViewModel
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
-import com.example.youmanage.viewmodel.TaskManagementViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -87,8 +82,9 @@ class MainActivity : ComponentActivity() {
 //            )
 //        )
 
-        setContent {
-            //YouManageTheme {
+            setContent {
+                YouManageTheme {
+
                 //val nav = rememberNavController()
 
 //                viewModel.createTask(
