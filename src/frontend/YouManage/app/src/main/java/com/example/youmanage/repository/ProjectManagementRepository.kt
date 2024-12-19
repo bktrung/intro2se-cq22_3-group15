@@ -1,11 +1,14 @@
 package com.example.youmanage.repository
 
 import com.example.youmanage.data.remote.ApiInterface
+import com.example.youmanage.data.remote.projectmanagement.Assign
 import com.example.youmanage.data.remote.projectmanagement.Id
 import com.example.youmanage.data.remote.projectmanagement.Progress
 import com.example.youmanage.data.remote.projectmanagement.Project
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
 import com.example.youmanage.data.remote.projectmanagement.Projects
+import com.example.youmanage.data.remote.projectmanagement.Role
+import com.example.youmanage.data.remote.projectmanagement.RoleRequest
 import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.taskmanagement.Detail
 import com.example.youmanage.data.remote.taskmanagement.Username
@@ -35,9 +38,9 @@ class ProjectManagementRepository @Inject constructor(
         return when (e.code()) {
             400 -> {
                 val errorBody = e.response()?.errorBody()?.string()
-                val errorMessage = errorBody?.let { JSONObject(it).getString("detail") } ?: "Bad Request"
-                Resource.Error(errorMessage)
+                Resource.Error(errorBody.toString())
             }
+
             404 -> Resource.Error("User not found")
             else -> Resource.Error("HTTP Error: ${e.code()}")
         }
@@ -52,10 +55,18 @@ class ProjectManagementRepository @Inject constructor(
     suspend fun getProject(id: String, authorization: String): Resource<Project> =
         safeApiCall { api.getProject(id, authorization) }
 
-    suspend fun updateFullProject(id: String, project: ProjectCreate, authorization: String): Resource<Project> =
+    suspend fun updateFullProject(
+        id: String,
+        project: ProjectCreate,
+        authorization: String
+    ): Resource<Project> =
         safeApiCall { api.updateFullProject(id, project, authorization) }
 
-    suspend fun updateProject(id: String, project: ProjectCreate, authorization: String): Resource<Project> =
+    suspend fun updateProject(
+        id: String,
+        project: ProjectCreate,
+        authorization: String
+    ): Resource<Project> =
         safeApiCall { api.updateProject(id, project, authorization) }
 
     suspend fun getProgressTrack(projectId: String, authorization: String): Resource<Progress> =
@@ -79,4 +90,97 @@ class ProjectManagementRepository @Inject constructor(
 
     suspend fun getMembers(id: String, authorization: String): Resource<List<User>> =
         safeApiCall { api.getProject(id, authorization).members }
+
+    suspend fun getRoles(
+        projectId: String,
+        authorization: String
+    ): Resource<List<Role>> =
+        safeApiCall {
+            api.getRoles(projectId, authorization)
+        }
+
+    suspend fun createRole(
+        projectId: String,
+        role: RoleRequest,
+        authorization: String
+    ): Resource<Role> =
+        safeApiCall {
+            api.createRole(
+                projectId,
+                role,
+                authorization
+            )
+        }
+
+
+    suspend fun getRole(
+        projectId: String,
+        roleId: String,
+        authorization: String
+    ): Resource<Role> = safeApiCall {
+        api.getRole(
+            projectId,
+            roleId,
+            authorization
+        )
+    }
+
+    suspend fun deleteRole(
+        projectId: String,
+        roleId: String, authorization: String
+    ): Resource<String>  {
+        return try {
+            api.deleteRole(
+                projectId,
+                roleId,
+                authorization
+            )
+            Resource.Success("Delete Role Successful")
+        } catch (e: Exception) {
+            Resource.Error("Delete Role Failed")
+        }
+    }
+
+    suspend fun updateRole(
+        projectId: String,
+        roleId: String,
+        role: RoleRequest,
+        authorization: String
+    ): Resource<Role> = safeApiCall {
+        api.updateRole(
+            projectId,
+            roleId,
+            role,
+            authorization
+        )
+    }
+
+    suspend fun assignRole(
+        projectId: String,
+        roleId: String,
+        action: String,
+        member: Assign,
+        authorization: String
+    ): Resource<Detail> = safeApiCall {
+        api.assignRole(
+            projectId,
+            roleId,
+            action,
+            member,
+            authorization
+        )
+    }
+
+    suspend fun getNonMember(
+        projectId: String,
+        roleId: String,
+        authorization: String
+    ): Resource<List<User>> = safeApiCall {
+        api.getNonMembers(
+            projectId,
+            roleId,
+            authorization
+        )
+    }
+
 }

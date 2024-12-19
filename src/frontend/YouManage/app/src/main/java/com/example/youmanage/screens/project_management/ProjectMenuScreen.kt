@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -61,6 +63,7 @@ fun ProjectMenuScreen(
     onTaskList: () -> Unit = {},
     onIssueList: () -> Unit = {},
     onChatRoom: () -> Unit = {},
+    onRoles: () -> Unit = {},
     onDeleteProjectSuccess: () -> Unit = {},
     onDisableAction: () -> Unit = {},
     id: String,
@@ -151,6 +154,14 @@ fun ProjectMenuScreen(
             icon = R.drawable.setting_icon,
             color = Color.Black
         ),
+
+        ProjectMenuItem(
+            title = "Roles",
+            icon = R.drawable.task_icon,
+            color = Color.Black,
+            onClick = { onRoles() }
+        ),
+
         ProjectMenuItem(
             title = "Chat Room",
             icon = R.drawable.bubble_chat,
@@ -188,7 +199,7 @@ fun ProjectMenuScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            Column(
+            LazyColumn (
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
@@ -196,7 +207,8 @@ fun ProjectMenuScreen(
                     .padding(vertical = 42.dp)
             ) {
 
-                projectMenuItems.forEachIndexed { _, item ->
+                items(projectMenuItems.size){
+                    val item = projectMenuItems[it]
                     MenuItem(
                         trailingIcon = {
                             Icon(

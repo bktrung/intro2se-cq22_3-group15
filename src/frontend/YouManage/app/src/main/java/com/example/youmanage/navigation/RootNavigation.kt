@@ -49,6 +49,7 @@ sealed class ProjectManagementRouteScreen(
     data object ProjectDetail : ProjectManagementRouteScreen("project_detail/{id}")
     data object ProjectMenu: ProjectManagementRouteScreen("project_menu/{id}")
     data object ActivityLogs : ProjectManagementRouteScreen("activity_logs/{projectId}")
+    data object Roles : ProjectManagementRouteScreen("roles/{projectId}")
 
 }
 

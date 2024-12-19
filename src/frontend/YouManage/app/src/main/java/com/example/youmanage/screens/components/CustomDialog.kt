@@ -1,6 +1,7 @@
 package com.example.youmanage.screens.components
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,6 +29,7 @@ import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -34,6 +37,7 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -42,8 +46,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -267,22 +273,29 @@ fun <T> ChooseItemDialog(
     title: String = "Choose item",
     showDialog: Boolean = true,
     items: List<T>,
-    displayText: (T) -> String, // Hàm để hiển thị tên item
+    checkItems: List<Boolean> = emptyList(),
+    displayText: (T) -> String,
     onDismiss: () -> Unit = {},
     onConfirm: (T) -> Unit,
     itemBackgroundColor: Color = Color.Black.copy(alpha = 0.05f),
-    selectedItemBackgroundColor: Color = Color.Cyan
+    isReset: Boolean = false,
+    selectedItemBackgroundColor: Color = Color(0xffBAE5F5)
 ) {
+
     var isChosenItem by remember { mutableIntStateOf(-1) }
 
     if (showDialog) {
         Dialog(
-            onDismissRequest = onDismiss,
+            onDismissRequest = {
+                onDismiss()
+            },
             properties = DialogProperties(
                 dismissOnBackPress = true,
                 dismissOnClickOutside = true
             )
         ) {
+
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -323,12 +336,16 @@ fun <T> ChooseItemDialog(
                                         .fillMaxWidth()
                                         .clip(RoundedCornerShape(10.dp))
                                         .background(
-                                            if (index != isChosenItem) itemBackgroundColor
+                                            if(!checkItems[index]) Color.LightGray
+                                            else if (index != isChosenItem) itemBackgroundColor
                                             else selectedItemBackgroundColor
                                         )
                                         .padding(horizontal = 20.dp, vertical = 5.dp)
                                         .clickable {
-                                            isChosenItem = index
+                                            if(checkItems[index]){
+                                                isChosenItem = index
+                                            }
+
                                         }
                                 ) {
 
@@ -355,7 +372,9 @@ fun <T> ChooseItemDialog(
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(
-                            onClick = onDismiss,
+                            onClick = {
+                                onDismiss()
+                            },
                             colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
                         ) {
                             Text("Cancel", fontFamily = fontFamily)
@@ -363,7 +382,9 @@ fun <T> ChooseItemDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
                             onClick = {
-                                onConfirm(items[isChosenItem])
+                                if (isChosenItem >= 0) {
+                                    onConfirm(items[isChosenItem])
+                                }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
                             shape = RoundedCornerShape(10.dp)
@@ -375,4 +396,110 @@ fun <T> ChooseItemDialog(
             }
         }
     }
+
+    if(isReset) isChosenItem = -1
 }
+
+
+
+@Composable
+fun CreateRoleDialog(
+    title: String = "Create Role",
+    showDialog: Boolean = true,
+    onDismiss: () -> Unit = {},
+    nameOg: String = "",
+    descriptionOg: String = "",
+    onNameChange: (String) -> Unit,
+    onDescriptionChange: (String) -> Unit,
+    onConfirm: () -> Unit,
+) {
+    if (showDialog) {
+
+        var name by remember(nameOg) { mutableStateOf(nameOg) }
+        var description by remember(descriptionOg) { mutableStateOf(descriptionOg) }
+
+        Dialog(onDismissRequest = onDismiss) {
+            Column(
+                modifier = Modifier
+                    .background(Color.White)
+                    .padding(16.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .widthIn(min = 300.dp, max = 400.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+
+                Text(
+                    title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Column {
+                    Text(
+                        "Role name",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = {
+                            name = it
+                            onNameChange(it)
+                        },
+                        label = { Text("Role name") }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Column {
+                    Text(
+                        "Role description",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = {
+                            description = it
+                            onDescriptionChange(it)
+                        },
+                        label = { Text("Role description") },
+                        maxLines = 5
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
+                    ) {
+                        Text("Cancel", fontFamily = fontFamily)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            onNameChange(if (name != nameOg) name else nameOg)
+                            onDescriptionChange(if (description != descriptionOg) description else descriptionOg)
+                            onConfirm()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("OK", color = Color.White, fontFamily = fontFamily)
+                    }
+                }
+            }
+        }
+    }
+}
+
+

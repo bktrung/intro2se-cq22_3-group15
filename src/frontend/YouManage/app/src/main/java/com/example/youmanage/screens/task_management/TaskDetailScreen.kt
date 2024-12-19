@@ -223,6 +223,7 @@ fun TaskDetailScreen(
     LaunchedEffect(task) {
         if (task is Resource.Success) {
             title = task?.data?.title ?: "My Task"
+            editTitle = title
             description = task?.data?.description ?: "Your Description"
             status = statusMapping.firstOrNull {
                 it.second == (task?.data?.status ?: "PENDING")
@@ -494,10 +495,6 @@ fun TaskDetailScreen(
                 ),
                 authorization = "Bearer ${accessToken.value}"
             )
-
-            Log.d("Task Update", if (priority == -1) "Failed" else priorityChoice[priority].uppercase())
-
-
 
             showTitleEditor = false
             showSaveDialog = false

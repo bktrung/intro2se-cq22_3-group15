@@ -75,6 +75,7 @@ fun ProjectDetailScreen(
     val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
     val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
     val user by authenticationViewModel.user.observeAsState()
+    val members by projectManagementViewModel.members.observeAsState()
 
     var pieChartInputList by remember { mutableStateOf<List<PieChartInput>>(emptyList()) }
 
@@ -100,6 +101,7 @@ fun ProjectDetailScreen(
                 id = id.toString(),
                 authorization = authorization
             )
+
         }
     }
 
@@ -108,11 +110,26 @@ fun ProjectDetailScreen(
         if (addMemberResponse is Resource.Error && isAdd) {
             showAddAlertDialog = true
         }
+
+        if(addMemberResponse is Resource.Success) {
+            projectManagementViewModel.getProject(
+                id = id.toString(),
+                authorization = "Bearer ${accessToken.value}"
+            )
+        }
+
     }
 
     LaunchedEffect(removeMemberResponse) {
         if (removeMemberResponse is Resource.Error && isRemove) {
             showRemoveAlertDialog = true
+        }
+
+        if(removeMemberResponse is Resource.Success) {
+            projectManagementViewModel.getProject(
+                id = id.toString(),
+                authorization = "Bearer ${accessToken.value}"
+            )
         }
     }
 
@@ -152,16 +169,22 @@ fun ProjectDetailScreen(
     LaunchedEffect(projectProgress) {
         if (projectProgress is Resource.Success) {
 
-            val total = projectProgress?.data?.total ?: 1
-            val pending = projectProgress?.data?.pending ?: 0
+            var total = projectProgress?.data?.total ?: 1
+            var pending = projectProgress?.data?.pending ?: 0
             val inProgress = projectProgress?.data?.inProgress ?: 0
             val completed = projectProgress?.data?.completed ?: 0
+            Log.d("Progress Tracker", "Total: $total, Pending: $pending, In Progress: $inProgress, Completed: $completed")
+
+            if(total == 0) {
+                total = 1
+                pending = 1
+            }
 
             pieChartInputList = listOf(
                 PieChartInput(
-                    color = Color(0xffbaf4ca),
+                    color = Color(0xffedf0f2),
                     value = pending.toDouble().div(total) * 100.0,
-                    description = "Completed"
+                    description = "Pending"
                 ),
                 PieChartInput(
                     color = Color(0xfffccdcd),
@@ -169,10 +192,10 @@ fun ProjectDetailScreen(
                     description = "In Progress"
                 ),
                 PieChartInput(
-                    color = Color(0xffedf0f2),
+                    color = Color(0xffbaf4ca),
                     value = completed.toDouble().div(total) * 100.0,
-                    description = "Pending"
-                ),
+                    description = "Completed"
+                )
             )
         } else if (projectProgress is Resource.Error) {
             Log.d("Progress Tracker Error", projectProgress?.message.toString())

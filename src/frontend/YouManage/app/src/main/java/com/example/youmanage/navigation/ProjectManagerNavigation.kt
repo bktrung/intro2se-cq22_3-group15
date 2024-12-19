@@ -23,6 +23,7 @@ import com.example.youmanage.screens.project_management.MainScreen
 import com.example.youmanage.screens.project_management.ProjectDetailScreen
 import com.example.youmanage.screens.project_management.ProjectMenuScreen
 import com.example.youmanage.screens.project_management.UserProfileScreen
+import com.example.youmanage.screens.role.RolesScreen
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 
 @Composable
@@ -161,6 +162,9 @@ fun NavGraphBuilder.projectManagementNavGraph(
                 onDisableAction = {
                     rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
                 },
+                onRoles = {
+                  rootNavController.navigate("roles/${id}")
+                },
                 id = id.toString()
             )
         }
@@ -186,6 +190,15 @@ fun NavGraphBuilder.projectManagementNavGraph(
             )
         }
 
+        composable(
+            route = ProjectManagementRouteScreen.Roles.route
+        ){
+            val projectId = it.arguments?.getString("projectId")
+            RolesScreen(
+                projectId = projectId ?: "",
+                onNavigateBack = { rootNavController.navigateUp() }
+            )
+        }
 
     }
 }
