@@ -64,6 +64,7 @@ fun ProjectMenuScreen(
     onIssueList: () -> Unit = {},
     onChatRoom: () -> Unit = {},
     onRoles: () -> Unit = {},
+    onActivityLog: () -> Unit = {},
     onDeleteProjectSuccess: () -> Unit = {},
     onDisableAction: () -> Unit = {},
     id: String,
@@ -144,10 +145,7 @@ fun ProjectMenuScreen(
             title = "Activity Logs",
             icon = R.drawable.activity_logs,
             color = Color.Black,
-            onClick = {
-                 // Điều hướng đến ActivityLogsScreen
-                navController.navigate(ProjectManagementRouteScreen.ActivityLogs.route)
-            }
+            onClick = { onActivityLog() }
         ),
         ProjectMenuItem(
             title = "Project Setting",

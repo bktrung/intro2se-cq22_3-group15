@@ -5,23 +5,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
-import androidx.navigation.compose.rememberNavController
-import com.example.youmanage.data.remote.activitylogs.ActivityLog
-import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
-import com.example.youmanage.data.remote.authentication.VerifyRequest
-import com.example.youmanage.data.remote.chat.MessageRequest
-import com.example.youmanage.data.remote.taskmanagement.TaskCreate
-import com.example.youmanage.data.remote.taskmanagement.Username
-import com.example.youmanage.navigation.RootNavGraph
-import com.example.youmanage.screens.activity_logs.ActivityLogsScreen
-import com.example.youmanage.screens.chat.ChatScreenWithViewModel
-import com.example.youmanage.screens.project_management.ProjectDetailScreen
-import com.example.youmanage.screens.task_management.CreateTaskScreen
-import com.example.youmanage.screens.task_management.TaskDetailScreen
-import com.example.youmanage.screens.task_management.TaskListScreen
 import com.example.youmanage.navigation.RootNavGraph
 import com.example.youmanage.ui.theme.YouManageTheme
+import com.example.youmanage.viewmodel.ActivityLogsViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -81,6 +69,15 @@ class MainActivity : ComponentActivity() {
 //                "40782c00-09ce-4e07-8315-fa8e3891a572"
 //            )
 //        )
+
+//        val viewModel: ActivityLogsViewModel by viewModels()
+//        val authorization = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzM0Nzc1OTI3LCJpYXQiOjE3MzQ2MDMxMjcsImp0aSI6IjhjMjk3NGE2OWQ5NzRmNDliNDdkZWRjZjZlYzU2ZDQzIiwidXNlcl9pZCI6Mn0.a2x3WgYPp0PBjjlfyZrV18DOhm5HySfirkjIWJZzfPs"
+//
+//        viewModel.getActivities(
+//            projectId = "1",
+//            authorization = authorization
+//        )
+
 
         setContent {
             YouManageTheme {

@@ -336,13 +336,17 @@ fun <T> ChooseItemDialog(
                                         .fillMaxWidth()
                                         .clip(RoundedCornerShape(10.dp))
                                         .background(
-                                            if(!checkItems[index]) Color.LightGray
+                                            if(checkItems.isNotEmpty() && !checkItems[index]) Color.LightGray
                                             else if (index != isChosenItem) itemBackgroundColor
                                             else selectedItemBackgroundColor
                                         )
                                         .padding(horizontal = 20.dp, vertical = 5.dp)
                                         .clickable {
-                                            if(checkItems[index]){
+                                            if(checkItems.isNotEmpty() && checkItems[index]){
+                                                isChosenItem = index
+                                            }
+
+                                            if(!isReset){
                                                 isChosenItem = index
                                             }
 

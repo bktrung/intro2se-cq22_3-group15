@@ -120,8 +120,8 @@ object AppModule {
     ) = WebSocketRepository(webSocketFactory, gson)
 
 
-
     @Provides
     @Singleton
     fun provideActivityLogRepository(api: ApiInterface) = ActivityLogRepository(api)
+
 }

@@ -1,10 +1,13 @@
 package com.example.youmanage.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.youmanage.data.remote.activitylogs.Activity
 import com.example.youmanage.repository.ActivityLogRepository
+import com.example.youmanage.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -18,47 +21,55 @@ class ActivityLogsViewModel @Inject constructor(
     private val _activityLogs = MutableStateFlow<List<Activity>>(emptyList())
     val activityLogs: StateFlow<List<Activity>> = _activityLogs
 
-    fun loadActivityLogs(projectId: String, token: String) {
+    private var nextCursor: String? = null
+    private var preCursor: String? = null
+    var isLoading = MutableStateFlow(false)
+
+    fun getActivityLogs(
+        projectId: String,
+        page: Int? = null,
+        authorization: String
+    ){
         viewModelScope.launch {
+
+            isLoading.value = true
+
+            val response = repository.getActivityLogs(
+                projectId = projectId,
+                page = page,
+               authentication = authorization
+            )
+
             try {
-                //val logs = repository.fetchActivityLogs(projectId, "Bearer $token")
-                val logs = getSampleActivityLogs()
-                _activityLogs.value = logs
-            } catch (e: Exception) {
-                // Xử lý lỗi nếu cần
-                _activityLogs.value = emptyList()
+                if(response is Resource.Success){
+                    response.data?.let {
+                        nextCursor = it.next?.substringAfter("page=")
+                        Log.d("ChatViewModel", "getMessages: $nextCursor")
+                        preCursor = it.previous
+                        _activityLogs.value += it.results
+                        Log.d("ChatViewModel", "getMessages: ${_activityLogs.value}")
+                    }
+                }
+            } catch(e: Exception) {
+                Log.e("ChatViewModel", "Exception: ${e.message}")
+            } finally {
+                delay(500)
+                isLoading.value = false
             }
         }
     }
+
+    fun getMoreActivityLogs(
+        projectId: String,
+        authorization: String
+    ){
+        nextCursor?.let {
+            getActivityLogs(projectId, it.toInt(), authorization)
+        }
+    }
+
+
+
 }
 
 // Giả lập dữ liệu mẫu
-private fun getSampleActivityLogs(): List<Activity> {
-    return listOf(
-        Activity(
-            id = "1",
-            userId = "user123",
-            action = "Added Task",
-            timestamp = System.currentTimeMillis(),
-            modelType = "Task",
-            details = "Task X was added to the project"
-        ),
-        Activity(
-            id = "2",
-            userId = "user456",
-            action = "Updated Task",
-            timestamp = System.currentTimeMillis() - 86400000, // 1 ngày trước
-            modelType = "Task",
-            details = "Task Y was updated"
-        ),
-        Activity(
-            id = "3",
-            userId = "user789",
-            action = "Completed Task",
-            timestamp = System.currentTimeMillis() - 172800000, // 2 ngày trước
-            modelType = "Task",
-            details = "Task Z was completed"
-        )
-    )
-}
-
