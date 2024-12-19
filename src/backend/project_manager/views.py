@@ -266,6 +266,18 @@ class MemberRoleListView(generics.ListAPIView):
         
         return Role.objects.filter(project=project, users=user).select_related('project')
     
+class RoleNonMembersListView(generics.ListAPIView):
+    serializer_class = UserSerializer
+    
+    def get_queryset(self):
+        project = get_object_or_404(Project, id=self.kwargs['project_id'])
+        role = get_object_or_404(Role, id=self.kwargs['role_id'], project=project)
+        
+        if self.request.user not in project.members.all():
+            raise PermissionDenied({"error": "You must be a project member to view role information."})
+            
+        return project.members.exclude(id__in=role.users.all()).all()
+    
     
 class IssueListCreateView(generics.ListCreateAPIView):
     serializer_class = IssueSerializer

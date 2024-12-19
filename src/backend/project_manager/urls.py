@@ -11,6 +11,7 @@ urlpatterns = [
     path('projects/<int:project_id>/tasks/<int:task_id>/comments/', CommentListCreateView.as_view(), name='comment-list-create'),
     path('projects/<int:project_id>/tasks/<int:task_id>/comments/<int:pk>/', CommentRetrieveUpdateDestroyView.as_view(), name='comment-detail'),
     path('projects/<int:pk>/roles/', RoleListCreateView.as_view(), name='role-list-create'),
+    path('projects/<int:project_id>/roles/<int:role_id>/non-members/', RoleNonMembersListView.as_view(), name='role-non-members-list'),
     path('projects/<int:project_id>/roles/<int:pk>/', RoleRetrieveUpdateDestroyView.as_view(), name='role-retrieve-update-destroy'),
     path('projects/<int:project_id>/roles/<int:pk>/<str:action>/', RoleManagementView.as_view(), name='role-management'),
     path('projects/<int:project_id>/members/<int:pk>/roles/', MemberRoleListView.as_view(), name='member-role-list'),
