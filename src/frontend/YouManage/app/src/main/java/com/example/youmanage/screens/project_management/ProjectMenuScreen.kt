@@ -67,6 +67,7 @@ fun ProjectMenuScreen(
     onActivityLog: () -> Unit = {},
     onDeleteProjectSuccess: () -> Unit = {},
     onDisableAction: () -> Unit = {},
+    onGanttChart: () -> Unit = {},
     id: String,
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
@@ -129,6 +130,12 @@ fun ProjectMenuScreen(
             icon = R.drawable.task_icon,
             color = Color.Black,
             onClick = { onTaskList() }
+        ),
+        ProjectMenuItem(
+            title = "Gantt Chart",
+            icon = R.drawable.gantt_chart_icon,
+            color = Color.Black,
+            onClick = { onGanttChart() }
         ),
         ProjectMenuItem(
             title = "Issue List",
