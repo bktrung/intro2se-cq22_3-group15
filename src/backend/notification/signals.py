@@ -6,7 +6,7 @@ from .utils import send_object_notification, log_notification, send_notification
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.contrib.auth import get_user_model
-from .tasks import get_firebase_access_token, send_fcm_notification, send_batch_fcm_notification
+from .tasks import get_firebase_access_token, send_fcm_notification
 from .models import DeviceToken
 from django.core.cache import cache
 
@@ -103,7 +103,7 @@ def project_members_changed_handler(sender, instance, action, pk_set, **kwargs):
 ### Signal handlers for Firebase Cloud Messaging
 
 @receiver(m2m_changed, sender=Project.members.through)
-def push_notification_to_members(sender, instance, action, pk_set, **kwargs):
+def notify_group_membership(sender, instance, action, pk_set, **kwargs):
     if action in ["post_add", "post_remove"]:
         users = User.objects.filter(pk__in=pk_set)
         title = "Project Membership Update"
@@ -112,16 +112,7 @@ def push_notification_to_members(sender, instance, action, pk_set, **kwargs):
             
             # Log notification
             log_notification(title, body, user)
-            
-            # Get access token from Celery task
-            access_token = get_firebase_access_token.delay().get()
-            
-            # Get all device tokens for the user
-            device_tokens = DeviceToken.objects.filter(user=user)
-            
-            # Send notification to each device
-            for device in device_tokens:
-                send_fcm_notification.delay(access_token, device.token, title, body)
+            send_notification_to_user(title, body, user)
             
 @receiver(post_save, sender=ChatMessage)
 def notify_new_chat_message(sender, instance, created, **kwargs):
@@ -210,3 +201,113 @@ def notify_task_completion_to_host(sender, instance, created, **kwargs):
     
     log_notification(title, body, instance.project.host)
     send_notification_to_user(title, body, instance.project.host)
+    
+@receiver(pre_save, sender=Issue)
+def store_issue_state(sender, instance, **kwargs):
+    if instance.id:
+        try:
+            old_instance = Issue.objects.get(id=instance.id)
+            instance._old_assignee_id = old_instance.assignee_id
+            instance._old_status = old_instance.status
+        except Issue.DoesNotExist:
+            instance._old_assignee_id = None
+            instance._old_status = None
+            
+@receiver(post_save, sender=Issue)
+def notify_issue_assignee(sender, instance, created, **kwargs):
+    """Notify user when they are assigned to an issue"""
+    # Early return if no assignee
+    if not instance.assignee:
+        return
+        
+    # Only notify on creation or assignee change
+    if not created and instance.assignee_id == instance._old_assignee_id:
+        return
+        
+    # Format notification message
+    title = "New Issue Assignment"
+    body = f"You have been assigned to issue: {instance.title} in project {instance.project.name}"
+    
+    # Send notifications
+    log_notification(title, body, instance.assignee)
+    send_notification_to_user(title, body, instance.assignee)
+    
+@receiver(post_save, sender=Issue)
+def notify_issue_completion_to_host(sender, instance, created, **kwargs):
+    """Notify project host when issue is completed"""
+    if not instance.status == "COMPLETED":
+        return
+        
+    title = "Issue Completed"
+    body = f"Issue: {instance.title} has been completed in project {instance.project.name}"
+    
+    log_notification(title, body, instance.project.host)
+    send_notification_to_user(title, body, instance.project.host)
+    
+@receiver(post_save, sender=Issue)
+def notify_issue_creation(sender, instance, created, **kwargs):
+    if not created:
+        return
+        
+    title = "New Issue Created"
+    body = f"New issue: {instance.title} has been created in project {instance.project.name}"
+    
+    log_notification(title, body, instance.project.host)
+    send_notification_to_user(title, body, instance.project.host)
+    
+@receiver(post_save, sender=Comment)
+def notify_comment_creation(sender, instance, created, **kwargs):
+    if not created:
+        return
+        
+    title = "New Comment"
+    body = f"New comment by {instance.author.username} in task: {instance.task.title}"
+    
+    log_notification(title, body, instance.task.assignee)
+    send_notification_to_user(title, body, instance.task.assignee)
+    
+@receiver(post_save, sender=ChangeRequest)
+def notify_change_request_creation(sender, instance, created, **kwargs):
+    if not created:
+        return
+        
+    title = "New Change Request"
+    body = f"New change request by {instance.author.username} in project {instance.project.name}"
+    
+    log_notification(title, body, instance.project.host)
+    send_notification_to_user(title, body, instance.project.host)
+    
+@receiver(post_save, sender=ChangeRequest)
+def notify_change_request_approval(sender, instance, created, **kwargs):
+    if not instance.status == "APPROVED":
+        return
+        
+    title = "Change Request Approved"
+    body = f"Your change request has been approved in project {instance.project.name}"
+    
+    log_notification(title, body, instance.author)
+    send_notification_to_user(title, body, instance.author)
+    
+@receiver(post_save, sender=ChangeRequest)
+def notify_change_request_rejection(sender, instance, created, **kwargs):
+    if not instance.status == "REJECTED":
+        return
+        
+    title = "Change Request Rejected"
+    body = f"Your change request has been rejected in project {instance.project.name}"
+    
+    log_notification(title, body, instance.author)
+    send_notification_to_user(title, body, instance.author)
+    
+@receiver(m2m_changed, sender=Role.users.through)
+def notify_role_assignment(sender, instance, action, pk_set, **kwargs):
+    if action in ["post_add", "post_remove"]:
+        users = User.objects.filter(pk__in=pk_set)
+        title = "Role Assignment"
+        for user in users:
+            body = f"You have been {'assigned to' if action == 'post_add' else 'removed from'} role {instance.role_name} in project {instance.project.name}"
+            
+            # Log notification
+            log_notification(title, body, user)
+            send_notification_to_user(title, body, user)
+            

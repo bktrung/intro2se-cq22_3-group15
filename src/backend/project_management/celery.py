@@ -7,6 +7,12 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'project_management.settings')
 
 app = Celery('project_management')
 
+# Existing broker_connection_retry setting
+app.conf.broker_connection_retry = True  # or your current setting
+
+# Add the new broker_connection_retry_on_startup setting
+app.conf.broker_connection_retry_on_startup = True
+
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.
 # - namespace='CELERY' means all celery-related configuration keys
