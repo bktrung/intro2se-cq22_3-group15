@@ -165,7 +165,10 @@ fun HomeScreen(
                                 team = "",
                                 backgroundColor = Color(randomColor(item)),
                                 onViewProject = {
-                                    onViewProject(projectList[item].id)
+                                    val id = projectList[item].id
+                                    if(id >= 0){
+                                        onViewProject(id)
+                                    }
                                 }
                             )
                         }

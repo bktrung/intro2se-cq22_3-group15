@@ -3,9 +3,13 @@ package com.example.youmanage.screens.project_management
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -86,7 +90,10 @@ fun MainScreen(
     Scaffold(
         bottomBar = {
             BottomNavigationBar(navController = navController)
-        }
+        },
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding())
     ) { paddingValues ->
         ProjectManagementNavGraph(
             paddingValues = paddingValues,
@@ -139,5 +146,3 @@ fun BottomNavigationBar(
         }
     }
 }
-
-

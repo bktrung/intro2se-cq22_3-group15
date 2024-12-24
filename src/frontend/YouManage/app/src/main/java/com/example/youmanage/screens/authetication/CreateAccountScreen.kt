@@ -121,7 +121,7 @@ fun CreateAccountScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 150.dp),
+                    .padding(top = 100.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -251,6 +251,5 @@ fun CreateAccountScreen(
             )
         }
     }
-
 }
 

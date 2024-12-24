@@ -9,10 +9,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -20,6 +24,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -43,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
+import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.taskmanagement.TaskCreate
 import com.example.youmanage.screens.components.AssigneeSelector
 import com.example.youmanage.screens.components.ChooseItemDialog
@@ -56,6 +62,7 @@ import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
+import com.example.youmanage.screens.project_management.TopBar
 
 
 @Preview
@@ -143,60 +150,81 @@ fun CreateTaskScreen(
         mutableStateOf("Unassigned")
     }
 
-    Box(
+    Scaffold(
+        topBar = {
+            TopBar(
+                title = "Create Task",
+                color = Color.Transparent,
+                trailing = {
+                    Box(
+                        modifier = Modifier.size(24.dp)
+                    )
+                },
+                onNavigateBack = { onNavigateBack() }
+            )
+        },
+        bottomBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Button(
+                    onClick = {
+                        taskManagementViewModel.createTask(
+                            projectId = projectId,
+                            TaskCreate(
+                                title = title,
+                                description = description,
+                                startDate = startDate,
+                                endDate = endDate,
+                                assigneeId = if(assignedMemberId == -1) null else assignedMemberId,
+                                priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
+                            ),
+                            authorization = "Bearer ${accessToken.value}"
+                        )
+
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                ) {
+                    Text(
+                        "Create",
+                        fontSize = 20.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+            }
+        },
         modifier = Modifier
             .fillMaxSize()
+            .padding(
+                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
+                bottom = WindowInsets.systemBars
+                    .asPaddingValues()
+                    .calculateBottomPadding()
+            )
             .background(Color.White)
-    ) {
+    ) { paddingValues ->
+
+        val scrollState = rememberScrollState()
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp)
-                .padding(top = 20.dp),
+                .padding(paddingValues)
+                .padding(horizontal = 36.dp)
+                .padding(top = 20.dp)
+                .verticalScroll(scrollState)
+            ,
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 5.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = {
 
-                }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.back_arrow_icon),
-                        contentDescription = "Back",
-                        tint = Color.Black
-                    )
-                }
-
-
-                Text(
-                    "Create Task",
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.size(30.dp))
-
-            }
-
-
-            val scrollState = rememberScrollState()
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .verticalScroll(scrollState),
-                verticalArrangement = Arrangement.spacedBy(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
 
                 Column(
                     modifier = Modifier
@@ -306,41 +334,7 @@ fun CreateTaskScreen(
                         showChooseMember = true
                     }
                 )
-
-
-                Button(
-                    onClick = {
-                        taskManagementViewModel.createTask(
-                            projectId = projectId,
-                            TaskCreate(
-                                title = title,
-                                description = description,
-                                startDate = startDate,
-                                endDate = endDate,
-                                assigneeId = assignedMemberId,
-                                priority = if(priority == -1) null else priorityChoice[priority].uppercase() ,
-                            ),
-                            authorization = "Bearer ${accessToken.value}"
-                        )
-
-                    },
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-
-                ) {
-                    Text(
-                        "Create",
-                        fontSize = 20.sp,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
             }
-        }
     }
 
     if (showDatePicker) {
@@ -359,15 +353,18 @@ fun CreateTaskScreen(
             })
     }
 
+    var memberList = if (members is Resource.Success) members?.data!! else emptyList()
+    memberList = memberList + User(username = "Unassigned", id = -1, email = "")
+
     ChooseItemDialog(
         title = "Choose Member",
         showDialog = showChooseMember,
-        items = if (members is Resource.Success) members?.data!! else emptyList(),
-        displayText = { it.username },
+        items = memberList,
+        displayText = { it.username ?: "Unassigned" },
         onDismiss = { showChooseMember = false },
-        onConfirm = { user ->
-            assignedMemberId = user.id
-            assignedMember = user.username
+        onConfirm = {
+            assignedMemberId = it.id
+            assignedMember = it.username ?: "Unassigned"
             showChooseMember = false
         }
     )

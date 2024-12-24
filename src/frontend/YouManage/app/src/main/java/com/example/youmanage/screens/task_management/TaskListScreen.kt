@@ -1,5 +1,6 @@
 package com.example.youmanage.screens.task_management
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -9,13 +10,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -49,6 +55,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
 import com.example.youmanage.data.remote.taskmanagement.Task
 import com.example.youmanage.utils.Constants.WEB_SOCKET
+import com.example.youmanage.utils.Constants.statusMapping
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
@@ -101,15 +108,15 @@ fun TaskListScreen(
             projectSocket?.data?.content?.id.toString() == projectId
         ) {
             onDisableAction()
-        }
 
-        if (
-            memberSocket is Resource.Success &&
-            memberSocket?.data?.type == "member_removed" &&
-            user is Resource.Success &&
-            memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
-        ) {
-            onDisableAction()
+            if (
+                memberSocket is Resource.Success &&
+                memberSocket?.data?.type == "member_removed" &&
+                user is Resource.Success &&
+                memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
+            ) {
+                onDisableAction()
+            }
         }
     }
 
@@ -131,17 +138,57 @@ fun TaskListScreen(
         key2 = tasks
     ) {
         if (tasks is Resource.Success) {
+            Log.d("TAG", "TaskListScreen: ${statusMapping[isSelectedButton]}")
             filterTasks = tasks?.data?.filter {
                 it.status == statusMapping[isSelectedButton].second
             } ?: emptyList()
         }
+
+        Log.d("TAG", "TaskListScreen: $filterTasks")
     }
 
     Scaffold(
+        modifier = Modifier.padding(
+            bottom = WindowInsets.systemBars.asPaddingValues()
+                .calculateBottomPadding()
+        ),
         topBar = {
             TopBar(
                 onNavigateBack = { onNavigateBack() }
             )
+        },
+        bottomBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Button(
+                    onClick = {
+                        onCreateTask()
+                    },
+                    shape = RoundedCornerShape(30.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Transparent,
+                        contentColor = Color.Black
+                    ),
+                    modifier = Modifier.border(
+                        2.dp,
+                        Color.Black,
+                        RoundedCornerShape(10.dp)
+                    )
+
+                ) {
+                    Text(
+                        "Create Task",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        modifier = Modifier.padding(vertical = 10.dp)
+                    )
+                }
+            }
+
         }
     ) { paddingValues ->
 
@@ -149,7 +196,6 @@ fun TaskListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(backgroundColor)
-                //.background(Color(0xffF26A6A))
                 .padding(paddingValues)
                 .padding(top = 24.dp)
         ) {
@@ -178,7 +224,7 @@ fun TaskListScreen(
                             TaskItem(
                                 title = filterTasks[index].title,
                                 priority = filterTasks[index].priority,
-                                assignee = filterTasks[index].assignee.username,
+                                assignee = filterTasks[index].assignee?.username ?: "No Assignee",
                                 endDate = filterTasks[index].endDate,
                                 comments = filterTasks[index].commentsCount,
                                 onCommentClick = {},
@@ -186,35 +232,12 @@ fun TaskListScreen(
                             )
                         }
                     }
-
-                    Button(
-                        onClick = {
-                            onCreateTask()
-                        },
-                        shape = RoundedCornerShape(30.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Transparent,
-                            contentColor = Color.Black
-                        ),
-                        modifier = Modifier.border(
-                            2.dp,
-                            Color.Black,
-                            RoundedCornerShape(10.dp)
-                        )
-
-                    ) {
-                        Text(
-                            "Create Task",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            modifier = Modifier.padding(vertical = 10.dp)
-                        )
-                    }
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun TaskItem(
@@ -364,15 +387,16 @@ fun ButtonSection(
     status: List<Pair<String, String>>
 ) {
 
-    Row(
+    LazyRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp)
             .padding(bottom = 20.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        status.forEachIndexed { index, name ->
+        itemsIndexed(status){
+            index, name ->
             TaskListButton(
                 name = name.first,
                 contentColor = if (index == isSelectedButton) Color(0xffBAE5F5) else Color.Black,
@@ -389,6 +413,7 @@ fun TaskListButton(
     name: String,
     contentColor: Color,
     containerColor: Color,
+    borderColor: Color = Color.Black,
     onClick: () -> Unit
 ) {
     Button(
@@ -401,7 +426,7 @@ fun TaskListButton(
         modifier = Modifier
             .border(
                 2.dp,
-                Color(0xffBAE5F5),
+                borderColor,
                 RoundedCornerShape(30.dp)
             )
 
@@ -414,4 +439,5 @@ fun TaskListButton(
         )
     }
 }
+
 

@@ -33,6 +33,10 @@ class TaskManagementViewModel @Inject constructor(
     val task: MutableLiveData<Resource<Task>>
         get() = _task
 
+    private val _taskUpdate = MutableLiveData<Resource<Task>>()
+    val taskUpdate: MutableLiveData<Resource<Task>>
+        get() = _taskUpdate
+
     private val _response = MutableLiveData<Resource<String>>()
     val response: LiveData<Resource<String>>
         get() = _response
@@ -88,7 +92,7 @@ class TaskManagementViewModel @Inject constructor(
         authorization: String
     ){
         viewModelScope.launch {
-            _task.value = repository.updateTask(projectId, taskId, task, authorization)
+            _taskUpdate.value = repository.updateTask(projectId, taskId, task, authorization)
         }
     }
 
@@ -99,7 +103,7 @@ class TaskManagementViewModel @Inject constructor(
         authorization: String
     ){
         viewModelScope.launch {
-            _task.value = repository.updateTaskStatusAndAssignee(projectId, taskId, task, authorization)
+            _taskUpdate.value = repository.updateTaskStatusAndAssignee(projectId, taskId, task, authorization)
         }
     }
 

@@ -19,4 +19,10 @@ object Constants {
         "High"
     )
 
+    val statusMapping = listOf(
+        "Pending" to "PENDING",
+        "In Progress" to "IN_PROGRESS",
+        "Completed" to "COMPLETED"
+    )
+
 }

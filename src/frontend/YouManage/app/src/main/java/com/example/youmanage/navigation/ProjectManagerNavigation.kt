@@ -48,7 +48,7 @@ fun ProjectManagementNavGraph(
                     rootNavController.navigate(ProjectManagementRouteScreen.AddProject.route)
                 },
                 onViewProject = {
-                    id->
+                        id->
                     rootNavController.navigate("project_detail/${id}")
                 }
             )
@@ -167,7 +167,7 @@ fun NavGraphBuilder.projectManagementNavGraph(
                     rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
                 },
                 onRoles = {
-                  rootNavController.navigate("roles/${id}")
+                    rootNavController.navigate("roles/${id}")
                 },
                 id = id.toString()
             )

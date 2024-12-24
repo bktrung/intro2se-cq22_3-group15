@@ -18,7 +18,6 @@ import com.example.youmanage.screens.task_management.TaskListScreen
 fun NavGraphBuilder.taskManagementNavGraph(
     rootNavController: NavHostController
 ) {
-
     navigation(
         route = Graph.TASK_MANAGEMENT,
         startDestination = "temp"

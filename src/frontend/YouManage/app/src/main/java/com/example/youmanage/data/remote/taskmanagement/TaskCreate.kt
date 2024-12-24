@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName
 
 data class TaskCreate(
     @SerializedName("assignee_id")
-    val assigneeId: Int,
+    val assigneeId: Int? = null,
     @SerializedName("end_date")
     val endDate: String,
     val description: String? = null,

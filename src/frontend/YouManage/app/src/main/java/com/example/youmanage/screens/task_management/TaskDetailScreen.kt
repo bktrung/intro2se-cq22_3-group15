@@ -13,12 +13,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -29,6 +33,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -77,6 +82,7 @@ import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.ui.theme.fontFamily
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Constants.priorityChoice
+import com.example.youmanage.utils.Constants.statusMapping
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.formatToRelativeTime
 import com.example.youmanage.viewmodel.AuthenticationViewModel
@@ -86,11 +92,18 @@ import kotlinx.coroutines.delay
 
 val primaryColor = Color.Black.copy(alpha = 0.1f)
 
-val statusMapping = listOf(
-    "Pending" to "PENDING",
-    "In Progress" to "IN_PROGRESS",
-    "Done" to "COMPLETED"
+data class TaskState(
+    val title: String = "",
+    val editTitle: String = "",
+    val description: String = "Your Description",
+    val status: String = "",
+    val username: String = "",
+    val memberId: Int = -1,
+    val startDate: String = "",
+    val endDate: String = "",
+    val priority: Int = -1
 )
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -105,16 +118,17 @@ fun TaskDetailScreen(
 ) {
 
     val task by taskManagementViewModel.task.observeAsState()
+    val taskUpdate by taskManagementViewModel.taskUpdate.observeAsState()
     val members by projectManagementViewModel.members.observeAsState()
     val comments by taskManagementViewModel.comments.observeAsState()
     val comment by taskManagementViewModel.comment.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     val response by taskManagementViewModel.response.observeAsState()
-    val taskSocket by taskManagementViewModel.taskSocket.observeAsState()
     val commentDelete by taskManagementViewModel.deleteCommentResponse.observeAsState()
     val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
     val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
     val user by authenticationViewModel.user.observeAsState()
+    var update by remember { mutableStateOf(false) }
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
@@ -155,20 +169,6 @@ fun TaskDetailScreen(
         }
     }
 
-
-    LaunchedEffect(taskSocket) {
-        if (
-            taskSocket is Resource.Success &&
-            taskSocket?.data?.modelType == "task"
-        ) {
-            accessToken.value?.let { token ->
-                taskManagementViewModel.getTask(projectId, taskId, "Bearer $token")
-                taskManagementViewModel.getComments(projectId, taskId, "Bearer $token")
-                projectManagementViewModel.getMembers(projectId, "Bearer $token")
-            }
-        }
-    }
-
     val scrollable = rememberScrollState()
     var showStatusDialog by remember { mutableStateOf(false) }
     var showMemberDialog by rememberSaveable { mutableStateOf(false) }
@@ -178,16 +178,9 @@ fun TaskDetailScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showCommentEditor by remember { mutableStateOf(false) }
 
-    var status by rememberSaveable { mutableStateOf("") }
-    var title by rememberSaveable { mutableStateOf("") }
-    var editTitle by rememberSaveable { mutableStateOf(title) }
-    var username by rememberSaveable { mutableStateOf("") }
-    var memberId by rememberSaveable { mutableIntStateOf(-1) }
-    var startDate by rememberSaveable { mutableStateOf("") }
-    var endDate by rememberSaveable { mutableStateOf("") }
+    var taskState by remember { mutableStateOf(TaskState()) }
+    var newTask by remember { mutableStateOf(TaskUpdate()) }
     var isTime by rememberSaveable { mutableIntStateOf(0) }
-    var description by rememberSaveable { mutableStateOf("Your Description") }
-    var priority by rememberSaveable { mutableIntStateOf(-1) }
 
     var currentComment by remember {
         mutableStateOf(
@@ -207,6 +200,18 @@ fun TaskDetailScreen(
         }
     }
 
+    LaunchedEffect(update) {
+        if (update) {
+            taskManagementViewModel.updateTask(
+                projectId,
+                taskId,
+                newTask,
+                "Bearer ${accessToken.value}"
+            )
+            update = false
+        }
+    }
+
     LaunchedEffect(
         key1 = comment,
         key2 = commentDelete
@@ -220,69 +225,95 @@ fun TaskDetailScreen(
         }
     }
 
-    LaunchedEffect(task) {
-        if (task is Resource.Success) {
-            title = task?.data?.title ?: "My Task"
-            editTitle = title
-            description = task?.data?.description ?: "Your Description"
-            status = statusMapping.firstOrNull {
-                it.second == (task?.data?.status ?: "PENDING")
-            }?.first.toString()
-            username = task?.data?.assignee?.username ?: ""
-            startDate = task?.data?.startDate ?: ""
-            endDate = task?.data?.endDate ?: ""
-            memberId = task?.data?.assignee?.id ?: -1
 
-            val priorityValue = task?.data?.priority?.lowercase()
-                .toString()
-                .replaceFirstChar { char ->
-                    char.uppercase()
-                }
-            priority = priorityChoice.indexOf(priorityValue)
+    LaunchedEffect(taskUpdate) {
+        if (taskUpdate is Resource.Success) {
+            taskManagementViewModel.getTask(
+                projectId,
+                taskId,
+                "Bearer ${accessToken.value}"
+            )
         }
     }
 
-    Scaffold(
+    LaunchedEffect(task) {
+        if (task is Resource.Success) {
+            task?.data?.let {
+                taskState = taskState.copy(
+                    title = it.title,
+                    editTitle = it.title,
+                    description = it.description ?: "Your Description",
+                    status = statusMapping.firstOrNull { item ->
+                        item.second == it.status
+                    }?.first.toString(),
+                    username = it.assignee?.username ?: "Unassigned",
+                    startDate = it.startDate,
+                    endDate = it.endDate,
+                    memberId = it.assignee?.id ?: -1,
+                    priority = priorityChoice.indexOf(
+                        it.priority?.lowercase()?.replaceFirstChar { char -> char.uppercase() }
+                    )
+                )
+            }
+        }
+    }
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = 24.dp),
-        topBar = {
-            TopBar(
-                title = "Task Detail",
-                trailing = {
-                    Spacer(modifier = Modifier.size(24.dp))
-                },
-                color = Color.Transparent,
-                onNavigateBack = { onNavigateBack() }
-            )
-        },
-        bottomBar = {
-            TaskBottomBar(
-                onSaveClick = {
-                    showSaveDialog = true
-                },
-                onDeleteClick = {
-                    showDeleteDialog = true
-                }
-            )
-        }
-    ) { paddingValues ->
-
-        Box(
+            .background(Color.White)
+    ) {
+        Scaffold(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 32.dp)
-        ) {
+                .background(Color.White)
+                .padding(
+                    top = WindowInsets.statusBars
+                        .asPaddingValues()
+                        .calculateTopPadding(),
+                    bottom = WindowInsets.systemBars
+                        .asPaddingValues()
+                        .calculateBottomPadding()
+                ),
+            topBar = {
+                TopBar(
+                    title = "Task Detail",
+                    trailing = {
+                        Spacer(modifier = Modifier.size(24.dp))
+                    },
+                    color = Color.Transparent,
+                    onNavigateBack = { onNavigateBack() }
+                )
+            },
+            bottomBar = {
+                TaskBottomBar(
+                    onSaveClick = {
+                        newTask = TaskUpdate(
+                            title = taskState.editTitle,
+                            description = taskState.description,
+                            startDate = taskState.startDate,
+                            endDate = taskState.endDate,
+                            priority = if (taskState.priority == -1) null else priorityChoice[taskState.priority].uppercase()
+                        )
+                        showSaveDialog = true
+                    },
+                    onDeleteClick = {
+                        showDeleteDialog = true
+                    }
+                )
+            }
+        ) { paddingValues ->
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(paddingValues)
+                    .padding(horizontal = 32.dp)
                     .verticalScroll(scrollable),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 Text(
-                    text = title,
+                    text = taskState.title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 25.sp,
                     color = Color.Black,
@@ -293,7 +324,7 @@ fun TaskDetailScreen(
 
                 AnimatedVisibility(visible = showTitleEditor) {
                     TextField(
-                        value = editTitle,
+                        value = taskState.editTitle,
                         textStyle = TextStyle(fontSize = 20.sp, fontFamily = fontFamily),
                         leadingIcon = {
                             Icon(
@@ -301,7 +332,7 @@ fun TaskDetailScreen(
                                 contentDescription = ""
                             )
                         },
-                        onValueChange = { editTitle = it },
+                        onValueChange = { taskState = taskState.copy(editTitle = it) },
                         placeholder = {
                             Text(
                                 text = "Enter project title",
@@ -321,15 +352,15 @@ fun TaskDetailScreen(
                 }
 
                 DropdownStatusSelector(
-                    text = status,
+                    text = taskState.status,
                     onClick = { showStatusDialog = true },
                     backgroundColor = primaryColor
                 )
 
                 LabeledTextField(
                     label = "Description",
-                    value = description,
-                    onValueChange = { description = it },
+                    value = taskState.description,
+                    onValueChange = { taskState = taskState.copy(description = it) },
                     placeholder = "Enter project description",
                     leadingIconRes = R.drawable.description_icon,
                     backgroundColor = primaryColor
@@ -337,16 +368,16 @@ fun TaskDetailScreen(
 
                 PrioritySelector(
                     priorityChoice = priorityChoice,
-                    priority = priority,
+                    priority = taskState.priority,
                     onPrioritySelected = {
-                        priority = it
+                        taskState = taskState.copy(priority = it)
                     }
                 )
 
                 AssigneeSelector(
                     label = "Assignee",
                     avatarRes = R.drawable.avatar,
-                    username = username,
+                    username = taskState.username,
                     onClick = {
                         showMemberDialog = true
                     }
@@ -354,7 +385,7 @@ fun TaskDetailScreen(
 
                 DatePickerField(
                     label = "Start date",
-                    date = startDate,
+                    date = taskState.startDate,
                     onDateClick = {
                         isTime = 1
                         showDatePicker = true
@@ -366,7 +397,7 @@ fun TaskDetailScreen(
 
                 DatePickerField(
                     label = "End date",
-                    date = endDate,
+                    date = taskState.endDate,
                     onDateClick = {
                         isTime = 2
                         showDatePicker = true
@@ -388,7 +419,10 @@ fun TaskDetailScreen(
                     },
                     onClick = { comment ->
                         currentComment = comment
-                        showCommentEditor = true
+
+                        if (currentComment.author.id == user?.data?.id) {
+                            showCommentEditor = true
+                        }
                     }
                 )
             }
@@ -396,24 +430,30 @@ fun TaskDetailScreen(
             ChooseItemDialog(
                 title = "Choose Status",
                 showDialog = showStatusDialog,
-                items = listOf("Pending", "In Progress", "Done"),
+                items = listOf("Pending", "In Progress", "Completed"),
                 displayText = { it },
                 onDismiss = { showStatusDialog = false },
                 onConfirm = {
-                    status = it
+
+                    taskState = taskState.copy(status = it)
                     showStatusDialog = false
                 }
             )
 
+            val memberList = if (members is Resource.Success) members?.data!! else emptyList()
+
             ChooseItemDialog(
                 title = "Choose Member",
                 showDialog = showMemberDialog,
-                items = if (members is Resource.Success) members?.data!! else emptyList(),
-                displayText = { it.username },
+                items = memberList,
+                displayText = { it.username ?: "Unknown" },
                 onDismiss = { showMemberDialog = false },
                 onConfirm = { user ->
-                    memberId = user.id
-                    username = user.username
+                    taskState = taskState.copy(
+                        username = user.username ?: "Unknown",
+                        memberId = user.id
+                    )
+
                     showMemberDialog = false
                 }
             )
@@ -422,9 +462,9 @@ fun TaskDetailScreen(
                 DatePickerModal(
                     onDateSelected = {
                         if (isTime == 1) {
-                            startDate = it
+                            taskState = taskState.copy(startDate = it)
                         } else if (isTime == 2) {
-                            endDate = it
+                            taskState = taskState.copy(endDate = it)
                         }
                         isTime = 0
                     },
@@ -460,7 +500,28 @@ fun TaskDetailScreen(
                     showCommentEditor = false
                 }
             )
+
+
+            AlertDialog(
+                title = "Delete task?",
+                content = "Are you sure you want to delete this task?",
+                showDialog = showDeleteDialog,
+                onDismiss = {
+                    showDeleteDialog = false
+                },
+                onConfirm = {
+                    taskManagementViewModel.deleteTask(
+                        projectId,
+                        taskId,
+                        "Bearer ${accessToken.value}"
+                    )
+                    showDeleteDialog = false
+                    onNavigateBack()
+                }
+            )
+
         }
+
     }
 
     AlertDialog(
@@ -476,50 +537,18 @@ fun TaskDetailScreen(
                 projectId,
                 taskId,
                 TaskUpdateStatus(
-                    status = statusMapping.firstOrNull { it.first == status }?.second
+                    status = statusMapping.firstOrNull { it.first == taskState.status }?.second
                         ?: "PENDING",
-                    assigneeId = memberId
+                    assigneeId = taskState.memberId
                 ),
                 "Bearer ${accessToken.value}"
             )
-
-            taskManagementViewModel.updateTask(
-                projectId,
-                taskId,
-                TaskUpdate(
-                    title = editTitle,
-                    description = description,
-                    startDate = startDate,
-                    endDate = endDate,
-                    priority = if (priority == -1) null else priorityChoice[priority].uppercase()
-                ),
-                authorization = "Bearer ${accessToken.value}"
-            )
-
+            update = true
             showTitleEditor = false
             showSaveDialog = false
         })
 
-    AlertDialog(
-        title = "Delete task?",
-        content = "Are you sure you want to delete this task?",
-        showDialog = showDeleteDialog,
-        onDismiss = {
-            showDeleteDialog = false
-        },
-        onConfirm = {
-            taskManagementViewModel.deleteTask(
-                projectId,
-                taskId,
-                "Bearer ${accessToken.value}"
-            )
-            showDeleteDialog = false
-            onNavigateBack()
-        }
-    )
-
 }
-
 
 
 @Composable
@@ -604,7 +633,7 @@ fun CommentSection(
         ) {
             items(comments.size) { index ->
                 CommentItem(
-                    comments[index].author.username,
+                    comments[index].author.username ?: "Unknown",
                     comments[index].content,
                     comments[index].createdAt,
                     onClick = { onClick(comments[index]) }
@@ -709,11 +738,8 @@ fun CommentItem(
                 }
 
             }
-
-
         }
     }
-
 }
 
 @Composable
@@ -731,8 +757,7 @@ fun TaskBottomBar(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 15.dp)
-                .padding(bottom = 10.dp)
+                .padding(vertical = 10.dp)
         ) {
             Button(
                 onClick = onSaveClick,

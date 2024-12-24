@@ -328,7 +328,7 @@ fun RolesScreen(
         title = "Assign to",
         isReset = true,
         items = members?.flatMap { it.keys }?.toList() ?: emptyList(),
-        displayText = { it.username },
+        displayText = { it.username ?: "Unknown" },
         checkItems = members?.flatMap { it.values }?.toList() ?: emptyList(),
         onDismiss = { showAssignRoleDialog = false },
         onConfirm = {

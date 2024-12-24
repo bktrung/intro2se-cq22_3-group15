@@ -1,7 +1,5 @@
 package com.example.youmanage.data.remote.activitylogs
 
-import com.google.gson.annotations.SerializedName
-
 data class Activity(
     val id: Int,
     val project: Int,
@@ -24,67 +22,3 @@ data class Changes(
     val role_name: String? = null, // Tên role
     val action: String? = null // Hành động (assigned/removed)
 )
-// Project Update
-data class ProjectUpdateChanges(
-    val name: ChangeDetail,
-    val description: ChangeDetail,
-    @SerializedName("duedate")
-    val dueDate: ChangeDetail
-)
-
-data class MemberChanges(
-    val users: List<String>
-)
-
-data class TaskUpdateChange(
-    val title: ChangeDetail,
-    val description: ChangeDetail,
-    val status: ChangeDetail,
-    val priority: ChangeDetail
-)
-
-data class TaskDeleteChange(
-    val title: String,
-    val description: String,
-    val status: String,
-    val priority: String,
-    val assignee: String?, // Có thể null nếu không có người được gán
-    val startDate: String?, // Dữ liệu ISO 8601, nullable nếu không có giá trị
-    val endDate: String? // Dữ liệu ISO 8601, nullable nếu không có giá trị
-)
-
-data class CommentChange(
-    val content: String
-)
-
-data class IssueUpdateChanges(
-    val title: ChangeDetail?,
-    val status: ChangeDetail?
-)
-
-data class IssueDeleteChanges(
-    val title: ChangeDetail,
-    val description: ChangeDetail,
-    val status: ChangeDetail
-)
-
-data class RoleChanges(
-    @SerializedName("role_name")
-    val name: ChangeDetail,
-    val description: ChangeDetail
-)
-
-data class ChangeDetail(
-    val old: String,
-    val new: String
-)
-
-data class TaskUpdateChanges(
-    val status: ChangeDetail
-)
-
-data class MemberAddChanges(
-    val users: List<String>
-)
-
-

@@ -9,7 +9,7 @@ data class Task(
     val actualEndDate: String? = null,
     @SerializedName("actual_start_date")
     val actualStartDate: String? = null,
-    val assignee: User = User(),
+    val assignee: User? = null,
     @SerializedName("create_at")
     val createdAt: String = "",
     val description: String? = null,

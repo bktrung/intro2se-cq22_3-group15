@@ -6,9 +6,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -57,6 +60,7 @@ fun AddIssueScreen(
     projectId: String = "",
     onIssueCreated: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
+    onDisableAction: () -> Unit = {},
     issueManagementViewModel: IssuesViewModel = hiltViewModel(),
     taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
@@ -67,6 +71,9 @@ fun AddIssueScreen(
     val tasks by taskManagementViewModel.tasks.observeAsState()
     val issue by issueManagementViewModel.issue.observeAsState()
     var openErrorDialog by remember { mutableStateOf(false) }
+    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
+    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
+    val user by authenticationViewModel.user.observeAsState()
 
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
@@ -95,12 +102,77 @@ fun AddIssueScreen(
         }
     }
 
+    LaunchedEffect(
+        key1 = memberSocket,
+        key2 = projectSocket
+    ) {
+        if (
+            projectSocket is Resource.Success &&
+            projectSocket?.data?.type == "project_deleted" &&
+            projectSocket?.data?.content?.id.toString() == projectId
+        ) {
+            onDisableAction()
+        }
+
+        if (
+            memberSocket is Resource.Success &&
+            memberSocket?.data?.type == "member_removed" &&
+            user is Resource.Success &&
+            memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
+        ) {
+            onDisableAction()
+        }
+    }
+
     Scaffold(
+        modifier = Modifier
+            .padding(
+                bottom = WindowInsets.systemBars
+                    .asPaddingValues()
+                    .calculateBottomPadding()
+            ),
         topBar = {
             TopBar(
                 title = "Create Issue",
                 onNavigateBack = { onNavigateBack() }
             )
+        },
+        bottomBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Button(
+                    onClick = {
+                        accessToken.value?.let { token ->
+                            issueManagementViewModel.createIssue(
+                                projectId = projectId,
+                                IssueCreate(
+                                    title = title,
+                                    description = description,
+                                    project = projectId.toInt(),
+                                    assignee = if (assignedMemberId != -1) assignedMemberId else null,
+                                    task = selectedTask?.id
+                                ),
+                                authorization = "Bearer $token"
+                            )
+                        }
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+
+                ) {
+                    Text(
+                        "Create Issue",
+                        fontSize = 20.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+            }
         }
     ) { paddingValues ->
         Box(
@@ -112,12 +184,14 @@ fun AddIssueScreen(
         ) {
             val scrollState = rememberScrollState()
 
-            Column(modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .verticalScroll(scrollState),
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .verticalScroll(scrollState),
                 verticalArrangement = Arrangement.spacedBy(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally) {
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
 
                 Column(
                     modifier = Modifier
@@ -168,7 +242,6 @@ fun AddIssueScreen(
                 }
 
 
-
 //             Choose Task
                 TaskSelector(
                     label = "Task",
@@ -184,38 +257,7 @@ fun AddIssueScreen(
                     onClick = { showChooseMember.value = true }
                 )
 
-                Button(
-                    onClick = {
-                        accessToken.value?.let { token ->
-                            issueManagementViewModel.createIssue(
-                                projectId = projectId,
-                                IssueCreate(
-                                    title = title,
-                                    description = description,
-                                    project = projectId.toInt(),
-                                    assignee = if (assignedMemberId != -1) assignedMemberId else null,
-                                    task = selectedTask?.id
-                                ),
-                                authorization = "Bearer $token"
-                            )
-                        }
-                    },
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-                    modifier = Modifier
-                        .fillMaxWidth()
 
-
-                ) {
-                    Text(
-                        "Create Issue",
-                        fontSize = 20.sp,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-
-                }
             }
         }
     }
@@ -241,11 +283,11 @@ fun AddIssueScreen(
             title = "Choose Member",
             showDialog = showChooseMember.value,
             items = members?.data ?: emptyList(),
-            displayText = { it.username },
+            displayText = { it.username ?: "Unknown" },
             onDismiss = { showChooseMember.value = false },
             onConfirm = { user ->
                 assignedMemberId = user.id
-                assignedMember = user.username
+                assignedMember = user.username ?: "Unknown"
                 showChooseMember.value = false
             }
         )

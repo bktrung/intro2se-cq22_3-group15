@@ -11,11 +11,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -27,6 +30,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -85,45 +89,29 @@ fun AddProjectScreen(
 
     val access = authenticationViewModel.accessToken.collectAsState(initial = null)
 
-    Box(
+    Scaffold(
+        topBar = {
+            TopBar(
+                title = "Create Project",
+                onNavigateBack = onNavigateBack,
+                trailing = {
+                    Box(modifier = Modifier.size(24.dp))
+                },
+                color = Color.Transparent
+            )
+        },
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
+            .padding(WindowInsets.statusBars.asPaddingValues())
 
-    ) {
-
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp)
-                .padding(top = 20.dp),
+                .padding(paddingValues),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 5.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = {
-                    onNavigateBack()
-                }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.back_arrow_icon),
-                        contentDescription = "",
-                        tint = Color.Black
-                    )
-                }
-                Spacer(modifier = Modifier.width(32.dp))
-                Text(
-                    "Create Project",
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(40.dp))
 
             val scrollState = rememberScrollState()
 
@@ -276,55 +264,6 @@ fun AddProjectScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
 
-//                    Text(
-//                        "Members",
-//                        color = Color.Black,
-//                        fontWeight = FontWeight.Bold,
-//                        fontSize = 20.sp
-//                    )
-//
-//                    Row(
-//                        modifier = Modifier.fillMaxWidth(),
-//                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-//                        verticalAlignment = Alignment.CenterVertically
-//                    ) {
-//
-//                        Button(
-//                            onClick = { showAddMemberDialog = true },
-//                            colors = ButtonDefaults.buttonColors(
-//                                contentColor = Color.Black,
-//                                containerColor = Color(0xFFF5F5F5)
-//                            ),
-//                            modifier = Modifier.size(50.dp),
-//                            shape = RoundedCornerShape(10.dp)
-//
-//                        ) {
-//                            Text(
-//                                "+",
-//                                fontSize = 20.sp,
-//                                textAlign = TextAlign.Center,
-//                                fontWeight = FontWeight.Bold,
-//
-//                                )
-//                        }
-//
-//                        LazyRow(
-//                            modifier = Modifier.weight(1f),
-//                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-//                        ) {
-//
-//                            items(members.size) { index ->
-//                                MemberItem(
-//                                    members[index],
-//                                    onDelete = {
-//                                        members = members.filter { i -> i.username != it }
-//                                    }
-//                                )
-//                            }
-//                        }
-//
-//                    }
-
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Button(
@@ -362,7 +301,6 @@ fun AddProjectScreen(
             }
         }
     }
-
     if (showDatePicker) {
         DatePickerModal(
             onDateSelected = {
@@ -387,6 +325,7 @@ fun AddProjectScreen(
         )
     }
 }
+
 
 @Composable
 fun AddMemberDialog(
