@@ -272,7 +272,7 @@ def notify_change_request_creation(sender, instance, created, **kwargs):
         return
         
     title = "New Change Request"
-    body = f"New change request by {instance.author.username} in project {instance.project.name}"
+    body = f"New change request by {instance.requester.username} in project {instance.project.name}"
     
     log_notification(title, body, instance.project.host)
     send_notification_to_user(title, body, instance.project.host)
@@ -285,8 +285,8 @@ def notify_change_request_approval(sender, instance, created, **kwargs):
     title = "Change Request Approved"
     body = f"Your change request has been approved in project {instance.project.name}"
     
-    log_notification(title, body, instance.author)
-    send_notification_to_user(title, body, instance.author)
+    log_notification(title, body, instance.requester)
+    send_notification_to_user(title, body, instance.requester)
     
 @receiver(post_save, sender=ChangeRequest)
 def notify_change_request_rejection(sender, instance, created, **kwargs):
@@ -296,8 +296,8 @@ def notify_change_request_rejection(sender, instance, created, **kwargs):
     title = "Change Request Rejected"
     body = f"Your change request has been rejected in project {instance.project.name}"
     
-    log_notification(title, body, instance.author)
-    send_notification_to_user(title, body, instance.author)
+    log_notification(title, body, instance.requester)
+    send_notification_to_user(title, body, instance.requester)
     
 @receiver(m2m_changed, sender=Role.users.through)
 def notify_role_assignment(sender, instance, action, pk_set, **kwargs):
