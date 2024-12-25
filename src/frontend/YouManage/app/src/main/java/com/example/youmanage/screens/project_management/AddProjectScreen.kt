@@ -26,10 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -44,21 +41,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
+import com.example.youmanage.screens.components.AddMemberDialog
 import com.example.youmanage.screens.components.DatePickerModal
 import com.example.youmanage.screens.components.LeadingTextFieldComponent
-import com.example.youmanage.utils.randomVibrantLightColor
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 
@@ -326,112 +320,6 @@ fun AddProjectScreen(
     }
 }
 
-
-@Composable
-fun AddMemberDialog(
-    title: String,
-    showDialog: Boolean,
-    onDismiss: () -> Unit,
-    onConfirm: (MemberItem) -> Unit
-) {
-    if (showDialog) {
-
-        var username by remember {
-            mutableStateOf("")
-        }
-
-        Dialog(
-            onDismissRequest = onDismiss,
-            properties = DialogProperties(
-                dismissOnBackPress = true,
-                dismissOnClickOutside = true
-            )
-        ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .shadow(
-                        elevation = 8.dp,
-                        shape = RoundedCornerShape(10.dp)
-                    ),
-                shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
-
-                ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-
-                    Text(
-                        text = title,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp),
-                        horizontalAlignment = Alignment.Start,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-
-                        Text(
-                            "Username",
-                            color = Color.Black,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        LeadingTextFieldComponent(
-                            content = username,
-                            onChangeValue = { username = it },
-                            placeholderContent = "Username",
-                            placeholderColor = Color.Gray,
-                            containerColor = Color(0x1A000000),
-                            icon = R.drawable.member_icon
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Button(
-                        onClick = {
-                            onConfirm(
-                                MemberItem(
-                                    username,
-                                    randomVibrantLightColor(),
-                                    R.drawable.avatar
-                                )
-                            )
-                        },
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp)
-                    ) {
-                        Text(
-                            "Add",
-                            fontSize = 16.sp,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                    }
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun MemberItem(

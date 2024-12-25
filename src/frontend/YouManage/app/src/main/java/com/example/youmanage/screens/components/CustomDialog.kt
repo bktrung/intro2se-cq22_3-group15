@@ -57,7 +57,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.youmanage.R
 import com.example.youmanage.data.remote.projectmanagement.User
+import com.example.youmanage.screens.project_management.MemberItem
 import com.example.youmanage.ui.theme.fontFamily
+import com.example.youmanage.utils.randomVibrantLightColor
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -583,6 +585,112 @@ fun ChangeRequestDialog(
                         ) {
                             Text("OK", color = Color.White, fontFamily = fontFamily)
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AddMemberDialog(
+    title: String,
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (MemberItem) -> Unit
+) {
+    if (showDialog) {
+
+        var username by remember {
+            mutableStateOf("")
+        }
+
+        Dialog(
+            onDismissRequest = onDismiss,
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true
+            )
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .shadow(
+                        elevation = 8.dp,
+                        shape = RoundedCornerShape(10.dp)
+                    ),
+                shape = RoundedCornerShape(10.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
+
+                ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    Text(
+                        text = title,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+
+                        Text(
+                            "Username",
+                            color = Color.Black,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        LeadingTextFieldComponent(
+                            content = username,
+                            onChangeValue = { username = it },
+                            placeholderContent = "Username",
+                            placeholderColor = Color.Gray,
+                            containerColor = Color(0x1A000000),
+                            icon = R.drawable.member_icon
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Button(
+                        onClick = {
+                            onConfirm(
+                                MemberItem(
+                                    username,
+                                    randomVibrantLightColor(),
+                                    R.drawable.avatar
+                                )
+                            )
+                        },
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp)
+                    ) {
+                        Text(
+                            "Add",
+                            fontSize = 16.sp,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+
                     }
                 }
             }

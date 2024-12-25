@@ -60,13 +60,12 @@ sealed class ProjectManagementRouteScreen(
     data object Calender : ProjectManagementRouteScreen("calender")
     data object Issue : ProjectManagementRouteScreen("issue")
     data object AddProject : ProjectManagementRouteScreen("add_project")
+    data object UpdateProject : ProjectManagementRouteScreen("update_project/{id}")
     data object ProjectDetail : ProjectManagementRouteScreen("project_detail/{id}")
     data object ProjectMenu : ProjectManagementRouteScreen("project_menu/{id}")
     data object ActivityLogs : ProjectManagementRouteScreen("activity_logs/{projectId}")
     data object Roles : ProjectManagementRouteScreen("roles/{projectId}")
     data object GanttChart : ProjectManagementRouteScreen("gantt_chart/{projectId}")
-
-
 }
 
 sealed class TaskManagementRouteScreen(
@@ -105,7 +104,7 @@ fun RootNavGraph(
     LaunchedEffect(snackBarMessage) {
         snackBarMessage?.let {
             snackBarHostState.showSnackbar(
-                it.toString(),
+                it,
                 withDismissAction = true
             )
         }
@@ -172,7 +171,7 @@ fun RootNavGraph(
                     }
                 }
             }
-            // Update destination only if tokens are not valid anymore
+
             if (!stayedLogIn()) {
                 startDestination = Graph.AUTHENTICATION
             }
