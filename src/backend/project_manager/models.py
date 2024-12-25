@@ -140,6 +140,74 @@ class ChangeRequest(models.Model):
     reviewed_at = models.DateTimeField(blank=True, null=True)
     declined_reason = models.TextField(blank=True, null=True)
     
+    @property
+    def system_description(self):
+        requester_name = self.requester.username
+        action = self.request_type.lower()
+        target = self.target_table.lower()
+        
+        if self.target_table == 'TASK':
+            if self.request_type == 'CREATE':
+                title = self.new_data.get('title', 'Unknown Task')
+                return f"{requester_name} wants to create a new task: '{title}'"
+            elif self.request_type == 'DELETE':
+                task = Task.objects.filter(id=self.target_table_id).first()
+                title = task.title if task else 'Unknown Task'
+                return f"{requester_name} wants to delete task: '{title}'"
+            else:  # UPDATE
+                task = Task.objects.filter(id=self.target_table_id).first()
+                title = task.title if task else 'Unknown Task'
+                changes = []
+                
+                if self.new_data:
+                    if 'title' in self.new_data:
+                        changes.append(f"title to '{self.new_data['title']}'")
+                    if 'description' in self.new_data:
+                        changes.append("description")
+                    if 'status' in self.new_data:
+                        changes.append(f"status to {self.new_data['status']}")
+                    if 'priority' in self.new_data:
+                        changes.append(f"priority to {self.new_data['priority']}")
+                    if 'start_date' in self.new_data:
+                        changes.append("start date")
+                    if 'end_date' in self.new_data:
+                        changes.append("end date")
+                    if 'assignee_id' in self.new_data:
+                        try:
+                            new_assignee = User.objects.get(id=self.new_data['assignee_id'])
+                            changes.append(f"assignee to {new_assignee.username}")
+                        except User.DoesNotExist:
+                            changes.append("assignee")
+                
+                changes_text = ", ".join(changes)
+                return f"{requester_name} wants to update {changes_text} for task: '{title}'"
+                
+        elif self.target_table == 'ROLE':
+            if self.request_type == 'CREATE':
+                role_name = self.new_data.get('role_name', 'Unknown Role')
+                return f"{requester_name} wants to create a new role: '{role_name}'"
+            elif self.request_type == 'DELETE':
+                role = Role.objects.filter(id=self.target_table_id).first()
+                role_name = role.role_name if role else 'Unknown Role'
+                return f"{requester_name} wants to delete role: '{role_name}'"
+            else:  # UPDATE
+                role = Role.objects.filter(id=self.target_table_id).first()
+                role_name = role.role_name if role else 'Unknown Role'
+                changes = []
+                
+                if self.new_data:
+                    if 'role_name' in self.new_data:
+                        changes.append(f"name to '{self.new_data['role_name']}'")
+                    if 'description' in self.new_data:
+                        changes.append("description")
+                    if 'users' in self.new_data:
+                        changes.append("assigned users")
+                
+                changes_text = ", ".join(changes)
+                return f"{requester_name} wants to update {changes_text} for role: '{role_name}'"
+        
+        return f"{requester_name} wants to {action} a {target}"
+    
     def clean(self):
         if self.status != 'REJECTED' and self.declined_reason:
             self.declined_reason = None

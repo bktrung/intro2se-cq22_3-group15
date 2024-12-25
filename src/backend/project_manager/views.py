@@ -429,13 +429,16 @@ class ChangeRequestActionView(generics.GenericAPIView):
         change_request.reviewed_at = timezone.now()
         change_request.save()
         return Response({"message": "Request has been declined."}, status=status.HTTP_200_OK)
-    
+
     def generic_create(self, request, change_request, model_class):
         try:
             data = change_request.new_data.copy()
             data['project'] = change_request.project
 
-            # Create the object
+            assignee_id = data.pop('assignee_id', None)
+            if assignee_id and model_class == Task:
+                data['assignee'] = User.objects.get(id=assignee_id)
+
             obj = model_class.objects.create(**data)
             if model_class == Task:
                 serializer_class = TaskSerializer
@@ -459,7 +462,6 @@ class ChangeRequestActionView(generics.GenericAPIView):
             change_request.save()
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Equivalent to patch method
     def generic_update(self, request, change_request, model_class):
         try:
             obj = model_class.objects.get(
@@ -469,7 +471,10 @@ class ChangeRequestActionView(generics.GenericAPIView):
 
             update_data = change_request.new_data.copy()
             
-            # Update object fields
+            assignee_id = update_data.pop('assignee_id', None)
+            if assignee_id is not None and model_class == Task:
+                update_data['assignee'] = User.objects.get(id=assignee_id)
+            
             for key, value in update_data.items():
                 setattr(obj, key, value)
             obj.save()
