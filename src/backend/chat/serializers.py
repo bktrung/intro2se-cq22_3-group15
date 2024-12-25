@@ -12,8 +12,12 @@ class UserSerializer(serializers.ModelSerializer):
 
 class ChatMessageSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
+    image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = ChatMessage
-        fields = ['id', 'project', 'author', 'content', 'timestamp']
+        fields = ['id', 'project', 'author', 'content', 'image_url', 'timestamp']
         read_only_fields = ['project', 'timestamp']
+
+    def get_image_url(self, obj):
+        return obj.get_image_url()

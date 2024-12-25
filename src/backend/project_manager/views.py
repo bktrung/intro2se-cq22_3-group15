@@ -178,13 +178,26 @@ class CommentRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         
 class RoleListCreateView(generics.ListCreateAPIView):
     serializer_class = RoleSerializer
-    permission_classes = [IsProjectHostOrReadOnly]
     
     def get_queryset(self):
+        project_id = self.kwargs['pk']
+        project = get_object_or_404(Project, id=project_id)
+
+        if self.request.user not in project.members.all():
+            raise PermissionDenied({"error": "You must be a project member to view roles."})
+        
         return Role.objects.filter(project_id=self.kwargs['pk']).select_related('project')
     
     def perform_create(self, serializer):
-        project = get_object_or_404(Project, id=self.kwargs['pk'])
+        project_id = self.kwargs['pk']
+        project = get_object_or_404(Project, id=project_id)
+        
+        if self.request.user != project.host:
+            raise PermissionDenied({"error": "Only the project host can create roles."})
+        
+        new_role_name = serializer.validated_data.get('role_name')
+        if Role.objects.filter(project=project, role_name__iexact=new_role_name).exists():
+            raise ValidationError({"error": "A role with this name already exists in the project."})
         serializer.save(project=project)
         
         
@@ -240,6 +253,30 @@ class RoleManagementView(generics.GenericAPIView):
         
         role.users.remove(user)
         return Response({"detail": "User unassigned from role successfully."}, status=status.HTTP_200_OK)
+    
+class MemberRoleListView(generics.ListAPIView):
+    serializer_class = RoleSerializer
+    
+    def get_queryset(self):
+        project = get_object_or_404(Project, id=self.kwargs['project_id'])
+        user = get_object_or_404(User, id=self.kwargs['pk'])
+        
+        if user not in project.members.all():
+            raise PermissionDenied({"error": "User must be a project member to view roles."})
+        
+        return Role.objects.filter(project=project, users=user).select_related('project')
+    
+class RoleNonMembersListView(generics.ListAPIView):
+    serializer_class = UserSerializer
+    
+    def get_queryset(self):
+        project = get_object_or_404(Project, id=self.kwargs['project_id'])
+        role = get_object_or_404(Role, id=self.kwargs['role_id'], project=project)
+        
+        if self.request.user not in project.members.all():
+            raise PermissionDenied({"error": "You must be a project member to view role information."})
+            
+        return project.members.exclude(id__in=role.users.all()).all()
     
     
 class IssueListCreateView(generics.ListCreateAPIView):
@@ -307,7 +344,7 @@ class ChangeRequestListCreateView(generics.ListCreateAPIView):
         project = get_object_or_404(Project, id=project_id)
 
         if self.request.user not in project.members.all():
-            raise PermissionDenied("You must be a project member to view change requests.")
+            raise PermissionDenied({"error": "You must be a project member to view change requests."})
 
         return ChangeRequest.objects.filter(project=project)
 
@@ -322,7 +359,7 @@ class ChangeRequestListCreateView(generics.ListCreateAPIView):
         project = get_object_or_404(Project, id=project_id)
         
         if user not in project.members.all():
-            raise PermissionDenied("You must be a project member to create a change request.")
+            raise PermissionDenied({"error": "You must be a project member to create a change request."})
         
         # save method does not automatically call the clean method, so we need to call it manually using full_clean
         change_request = ChangeRequest(
@@ -334,6 +371,10 @@ class ChangeRequestListCreateView(generics.ListCreateAPIView):
             description=serializer.validated_data.get('description'),
             new_data=serializer.validated_data.get('new_data'),
         )
+        
+        target_table_id = serializer.validated_data.get('target_table_id')
+        if target_table_id is not None:
+            change_request.target_table_id = target_table_id
 
         try:
             change_request.full_clean()  
@@ -349,7 +390,7 @@ class ChangeRequestActionView(generics.GenericAPIView):
         change_request = get_object_or_404(ChangeRequest, pk=pk)
         project = get_object_or_404(Project, id=project_id)
         if request.user != project.host:
-            raise PermissionDenied("Only the project host can approve or reject change requests.")
+            raise PermissionDenied({"error": "Only the project host can approve or reject change requests."})
         if change_request.status != RequestStatus.PENDING:
             return Response({"error": "Request has already been reviewed."}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -396,7 +437,10 @@ class ChangeRequestActionView(generics.GenericAPIView):
 
             # Create the object
             obj = model_class.objects.create(**data)
-            serializer_class = TaskSerializer if model_class == Task else RoleSerializer
+            if model_class == Task:
+                serializer_class = TaskSerializer
+            elif model_class == Role:
+                serializer_class = RoleSerializer
             serializer = serializer_class(obj)
             
             change_request.status = RequestStatus.APPROVED
@@ -415,13 +459,14 @@ class ChangeRequestActionView(generics.GenericAPIView):
             change_request.save()
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Equivalent to patch method
     def generic_update(self, request, change_request, model_class):
         try:
             obj = model_class.objects.get(
                 id=change_request.target_table_id, 
                 project=change_request.project
             )
-    
+
             update_data = change_request.new_data.copy()
             
             # Update object fields
@@ -429,12 +474,18 @@ class ChangeRequestActionView(generics.GenericAPIView):
                 setattr(obj, key, value)
             obj.save()
             
+            if model_class == Task:
+                serializer_class = TaskSerializer
+            elif model_class == Role:
+                serializer_class = RoleSerializer
+            serializer = serializer_class(obj)
+            
             change_request.status = RequestStatus.APPROVED
             change_request.reviewed_by = request.user
             change_request.reviewed_at = timezone.now()
             change_request.save()
             
-            return Response({"message": f"{model_class.__name__} updated successfully."}, status=status.HTTP_200_OK)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         
         except Exception as e:
             change_request.reviewed_by = request.user
@@ -443,6 +494,7 @@ class ChangeRequestActionView(generics.GenericAPIView):
             change_request.declined_reason = str(e)
             change_request.save()
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
     def generic_delete(self, request, change_request, model_class):
         try:
@@ -455,7 +507,7 @@ class ChangeRequestActionView(generics.GenericAPIView):
             change_request.reviewed_at = timezone.now()
             change_request.save()
             
-            return Response({"message": f"{model_class.__name__} deleted successfully."}, status=status.HTTP_200_OK)
+            return Response({"message": f"{model_class.__name__} deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
         
         except Exception as e:
             change_request.reviewed_by = request.user
