@@ -54,6 +54,7 @@ import com.example.youmanage.data.remote.projectmanagement.RoleRequest
 import com.example.youmanage.screens.components.AlertDialog
 import com.example.youmanage.screens.components.ChooseItemDialog
 import com.example.youmanage.screens.components.CreateRoleDialog
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
@@ -71,21 +72,24 @@ fun RolesScreen(
 ) {
 
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
-    val user by authenticationViewModel.user.observeAsState()
-    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
-    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
     val roles by roleViewmodel.roles.observeAsState()
     val response by roleViewmodel.response.observeAsState()
     val deleteResponse by roleViewmodel.deleteResponse.observeAsState()
     val members by roleViewmodel.members.observeAsState()
+
+    // WebSocket
+    val user by authenticationViewModel.user.observeAsState()
+    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
+    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
 
     var showCreateRoleDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showUpdateRoleDialog by remember { mutableStateOf(false) }
     var showAssignRoleDialog by remember { mutableStateOf(false) }
 
-
-    val context = LocalContext.current
+    var roleName by rememberSaveable { mutableStateOf("") }
+    var roleDescription by rememberSaveable { mutableStateOf("") }
+    var selectedRole by rememberSaveable { mutableIntStateOf(-1) }
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
@@ -115,32 +119,13 @@ fun RolesScreen(
         }
     }
 
-    LaunchedEffect(
-        key1 = memberSocket,
-        key2 = projectSocket
-    ) {
-        if (
-            projectSocket is Resource.Success &&
-            projectSocket?.data?.type == "project_deleted" &&
-            projectSocket?.data?.content?.id.toString() == projectId
-        ) {
-            onDisableAction()
-        }
-
-        if (
-            memberSocket is Resource.Success &&
-            memberSocket?.data?.type == "member_removed" &&
-            user is Resource.Success &&
-            memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
-        ) {
-            onDisableAction()
-        }
-    }
-
-
-    var roleName by rememberSaveable { mutableStateOf("") }
-    var roleDescription by rememberSaveable { mutableStateOf("") }
-    var selectedRole by rememberSaveable { mutableIntStateOf(-1) }
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = projectId,
+        onDisableAction = onDisableAction
+    )
 
     Scaffold(
         modifier = Modifier

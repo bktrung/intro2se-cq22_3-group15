@@ -58,6 +58,7 @@ import com.example.youmanage.screens.components.PieChart
 import com.example.youmanage.screens.components.PieChartInput
 import com.example.youmanage.screens.components.pieChartInput
 import com.example.youmanage.utils.Constants.WEB_SOCKET
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
@@ -81,7 +82,6 @@ fun ProjectDetailScreen(
     val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
     val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
     val user by authenticationViewModel.user.observeAsState()
-    val members by projectManagementViewModel.members.observeAsState()
 
     var pieChartInputList by remember { mutableStateOf<List<PieChartInput>>(emptyList()) }
 
@@ -123,7 +123,6 @@ fun ProjectDetailScreen(
                 authorization = "Bearer ${accessToken.value}"
             )
         }
-
     }
 
     LaunchedEffect(removeMemberResponse) {
@@ -149,28 +148,13 @@ fun ProjectDetailScreen(
         }
     }
 
-    LaunchedEffect(
-        key1 = memberSocket,
-        key2 = projectSocket
-    ) {
-        if (
-            projectSocket is Resource.Success &&
-            projectSocket?.data?.type == "project_deleted" &&
-            projectSocket?.data?.content?.id.toString() == id.toString()
-        ) {
-            onDisableAction()
-        }
-
-        if (
-            memberSocket is Resource.Success &&
-            memberSocket?.data?.type == "member_removed" &&
-            user is Resource.Success &&
-            memberSocket?.data?.content?.affectedMembers?.
-            contains(user?.data) == true
-        ) {
-            onDisableAction()
-        }
-    }
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = id.toString(),
+        onDisableAction = onDisableAction
+    )
 
     LaunchedEffect(projectProgress) {
         if (projectProgress is Resource.Success) {

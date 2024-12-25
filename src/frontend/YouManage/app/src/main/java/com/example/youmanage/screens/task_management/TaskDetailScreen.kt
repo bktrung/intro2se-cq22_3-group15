@@ -83,6 +83,7 @@ import com.example.youmanage.ui.theme.fontFamily
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Constants.priorityChoice
 import com.example.youmanage.utils.Constants.statusMapping
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.formatToRelativeTime
 import com.example.youmanage.viewmodel.AuthenticationViewModel
@@ -147,27 +148,13 @@ fun TaskDetailScreen(
         taskManagementViewModel.connectToTaskWebSocket(webSocketUrl)
     }
 
-    LaunchedEffect(
-        key1 = memberSocket,
-        key2 = projectSocket
-    ) {
-        if (
-            projectSocket is Resource.Success &&
-            projectSocket?.data?.type == "project_deleted" &&
-            projectSocket?.data?.content?.id.toString() == projectId
-        ) {
-            onDisableAction()
-        }
-
-        if (
-            memberSocket is Resource.Success &&
-            memberSocket?.data?.type == "member_removed" &&
-            user is Resource.Success &&
-            memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
-        ) {
-            onDisableAction()
-        }
-    }
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = projectId,
+        onDisableAction = onDisableAction
+    )
 
     val scrollable = rememberScrollState()
     var showStatusDialog by remember { mutableStateOf(false) }
@@ -224,7 +211,6 @@ fun TaskDetailScreen(
             )
         }
     }
-
 
     LaunchedEffect(taskUpdate) {
         if (taskUpdate is Resource.Success) {

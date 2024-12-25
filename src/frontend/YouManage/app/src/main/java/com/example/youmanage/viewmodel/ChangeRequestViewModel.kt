@@ -8,6 +8,7 @@ import com.example.youmanage.data.remote.changerequest.ChangeRequest
 import com.example.youmanage.data.remote.changerequest.Reply
 import com.example.youmanage.data.remote.changerequest.SendChangeRequest
 import com.example.youmanage.repository.ChangeRequestRepository
+import com.example.youmanage.repository.WebSocketRepository
 import com.example.youmanage.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -15,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ChangeRequestViewModel @Inject constructor(
-    private val repository: ChangeRequestRepository
+    private val repository: ChangeRequestRepository,
+    private val webSocketRepository: WebSocketRepository
 ) : ViewModel() {
 
     private val _requests = MutableLiveData<Resource<List<ChangeRequest>>>()
@@ -55,6 +57,14 @@ class ChangeRequestViewModel @Inject constructor(
         viewModelScope.launch {
             _reply.value = repository.replyChangeRequest(projectId, reply, requestId, authorization)
         }
+
+    }
+
+    fun connectWebSocket(
+        projectId: Int,
+        authorization: String,
+        view: View
+    ){
 
     }
 

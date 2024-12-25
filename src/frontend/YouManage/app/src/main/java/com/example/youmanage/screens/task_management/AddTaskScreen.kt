@@ -1,6 +1,7 @@
 package com.example.youmanage.screens.task_management
 
 import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
@@ -68,7 +69,9 @@ import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
 import com.example.youmanage.screens.project_management.TopBar
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.viewmodel.ChangeRequestViewModel
+import com.example.youmanage.viewmodel.SnackBarViewModel
 
 
 @Preview
@@ -82,18 +85,24 @@ fun CreateTaskScreen(
     taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
-    changeRequestViewModel: ChangeRequestViewModel = hiltViewModel()
+    changeRequestViewModel: ChangeRequestViewModel = hiltViewModel(),
+    showSnackBarViewModel: SnackBarViewModel = hiltViewModel()
 ) {
+
+    // Data from API
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     val user by authenticationViewModel.user.observeAsState()
     val members by projectManagementViewModel.members.observeAsState()
     val task by taskManagementViewModel.task.observeAsState()
     val project by projectManagementViewModel.project.observeAsState()
     val changeRequestResponse by changeRequestViewModel.response.observeAsState()
-    var openErrorDialog by remember { mutableStateOf(false) }
 
+    // WebSocket
     val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
     val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
+
+    var send by remember { mutableStateOf(false) }
+    var openErrorDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(task) {
         if (task is Resource.Success) {
@@ -115,27 +124,13 @@ fun CreateTaskScreen(
         }
     }
 
-    LaunchedEffect(
-        key1 = memberSocket,
-        key2 = projectSocket
-    ) {
-        if (
-            projectSocket is Resource.Success &&
-            projectSocket?.data?.type == "project_deleted" &&
-            projectSocket?.data?.content?.id.toString() == projectId
-        ) {
-            onDisableAction()
-        }
-
-        if (
-            memberSocket is Resource.Success &&
-            memberSocket?.data?.type == "member_removed" &&
-            user is Resource.Success &&
-            memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
-        ) {
-            onDisableAction()
-        }
-    }
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = projectId,
+        onDisableAction = onDisableAction
+    )
 
     var showDatePicker by remember { mutableStateOf(false) }
     val textFieldColor = Color(0xFFF5F5F5)
@@ -173,6 +168,35 @@ fun CreateTaskScreen(
         }
     }
 
+    var requestDescription by remember { mutableStateOf("") }
+
+    LaunchedEffect(send){
+        if(send){
+            changeRequestViewModel.createChangeRequest(
+                projectId = projectId.toInt(),
+                SendChangeRequest(
+                    requestType = "CREATE",
+                    targetTable = "TASK",
+                    targetTableId = null,
+                    description = requestDescription,
+                    newData = TaskCreate(
+                        title = title,
+                        description = description,
+                        startDate = startDate,
+                        endDate = endDate,
+                        assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
+                        priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
+                    )
+                ),
+                "Bearer ${accessToken.value}"
+            )
+
+            showSnackBarViewModel.showSnackBar(
+                "Check your inbox to see the request!"
+            )
+        }
+    }
+
     Scaffold(
         topBar = {
             TopBar(
@@ -201,7 +225,6 @@ fun CreateTaskScreen(
                         if(currentUserId != null && hostId != null) {
                             if (currentUserId != hostId) {
                                 showChangeRequestDialog = true
-                                return@Button
                             } else{
                                 taskManagementViewModel.createTask(
                                     projectId = projectId,
@@ -387,7 +410,7 @@ fun CreateTaskScreen(
             })
     }
 
-    var requestDescription by remember { mutableStateOf("") }
+
     ChangeRequestDialog(
         title = "Send Request?",
         content = "Send request to host to create this task?",
@@ -395,24 +418,7 @@ fun CreateTaskScreen(
         onDismiss = { showChangeRequestDialog = false },
         onDescriptionChange = { requestDescription = it },
         onConfirm = {
-            changeRequestViewModel.createChangeRequest(
-                projectId = projectId.toInt(),
-                SendChangeRequest(
-                    requestType = "CREATE",
-                    targetTable = "TASK",
-                    targetTableId = null,
-                    description = requestDescription,
-                    newData = TaskCreate(
-                        title = title,
-                        description = description,
-                        startDate = startDate,
-                        endDate = endDate,
-                        assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
-                        priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
-                    )
-                ),
-                "Bearer ${accessToken.value}"
-            )
+            send = true
 
             showChangeRequestDialog = false
         }

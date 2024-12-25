@@ -1,5 +1,6 @@
 package com.example.youmanage.data.remote
 
+import com.example.youmanage.data.remote.authentication.AccessToken
 import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
 import com.example.youmanage.data.remote.authentication.Email
 import com.example.youmanage.data.remote.authentication.Message
@@ -51,7 +52,7 @@ interface AuthenticateAPI {
     suspend fun refreshAccessToken(
         @Body logout: RefreshToken,
         @Header("Authorization") authorization: String
-    ): UserLogInResponse
+    ): AccessToken
 
     @POST("/auth/forgot_password/check_email/")
     suspend fun checkEmail(

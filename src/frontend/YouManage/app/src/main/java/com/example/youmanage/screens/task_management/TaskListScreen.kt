@@ -56,6 +56,7 @@ import com.example.youmanage.R
 import com.example.youmanage.data.remote.taskmanagement.Task
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Constants.statusMapping
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
@@ -98,27 +99,13 @@ fun TaskListScreen(
         projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
     }
 
-    LaunchedEffect(
-        key1 = memberSocket,
-        key2 = projectSocket
-    ) {
-        if (
-            projectSocket is Resource.Success &&
-            projectSocket?.data?.type == "project_deleted" &&
-            projectSocket?.data?.content?.id.toString() == projectId
-        ) {
-            onDisableAction()
-
-            if (
-                memberSocket is Resource.Success &&
-                memberSocket?.data?.type == "member_removed" &&
-                user is Resource.Success &&
-                memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
-            ) {
-                onDisableAction()
-            }
-        }
-    }
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = projectId,
+        onDisableAction = onDisableAction
+    )
 
     var isSelectedButton by rememberSaveable { mutableIntStateOf(0) }
 

@@ -45,6 +45,7 @@ import com.example.youmanage.R
 import com.example.youmanage.data.remote.activitylogs.Activity
 import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.utils.Constants.WEB_SOCKET
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.formatToRelativeTime
 import com.example.youmanage.viewmodel.ActivityLogsViewModel
@@ -55,12 +56,12 @@ import com.example.youmanage.viewmodel.ProjectManagementViewModel
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ActivityLogScreen(
-    authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    activityLogViewModel: ActivityLogsViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
     projectId: String = "",
     onNavigateBack: () -> Unit = {},
     onDisableAction: () -> Unit = {},
+    authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
+    activityLogViewModel: ActivityLogsViewModel = hiltViewModel(),
+    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel()
 ) {
     val accessToken = authenticationViewModel.accessToken.collectAsState(null)
     val activityLogs by activityLogViewModel.activityLogs.collectAsState()
@@ -69,6 +70,8 @@ fun ActivityLogScreen(
     val user by authenticationViewModel.user.observeAsState()
     val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
     val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
+
+    val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
 
     // Only trigger API call when accessToken is updated and activityLogs are empty
     LaunchedEffect(accessToken.value) {
@@ -79,34 +82,19 @@ fun ActivityLogScreen(
                     authorization = "Bearer $it"
                 )
 
-                projectManagementViewModel.connectToMemberWebsocket(url = "${WEB_SOCKET}project/$projectId/")
-                projectManagementViewModel.connectToProjectWebsocket(url = "${WEB_SOCKET}project/$projectId/")
+                projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+                projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
             }
         }
     }
 
-    LaunchedEffect(
-        key1 = memberSocket,
-        key2 = projectSocket
-    ) {
-        if (
-            projectSocket is Resource.Success &&
-            projectSocket?.data?.type == "project_deleted" &&
-            projectSocket?.data?.content?.id.toString() == projectId
-        ) {
-            onDisableAction()
-        }
-
-        if (
-            memberSocket is Resource.Success &&
-            memberSocket?.data?.type == "member_removed" &&
-            user is Resource.Success &&
-            memberSocket?.data?.content?.affectedMembers?.
-            contains(user?.data) == true
-        ) {
-            onDisableAction()
-        }
-    }
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = projectId,
+        onDisableAction = onDisableAction
+    )
 
     Scaffold(
         modifier = Modifier
