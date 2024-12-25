@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -110,7 +111,7 @@ fun BottomNavigationBar(
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 16.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFFF0F0F0)),
+            .background(MaterialTheme.colorScheme.onSurface),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {

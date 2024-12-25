@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -127,43 +128,43 @@ fun ProjectMenuScreen(
         ProjectMenuItem(
             title = "Task List",
             icon = R.drawable.task_icon,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.primary,
             onClick = { onTaskList() }
         ),
         ProjectMenuItem(
             title = "Issue List",
             icon = R.drawable.bug_icon,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.primary,
             onClick = { onIssueList() }
         ),
         ProjectMenuItem(
             title = "Member",
             icon = R.drawable.user_icon,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.primary
         ),
         ProjectMenuItem(
             title = "Activity Logs",
             icon = R.drawable.activity_logs,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.primary,
             onClick = { onActivityLog() }
         ),
         ProjectMenuItem(
             title = "Project Setting",
             icon = R.drawable.setting_icon,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.primary
         ),
 
         ProjectMenuItem(
             title = "Roles",
             icon = R.drawable.task_icon,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.primary,
             onClick = { onRoles() }
         ),
 
         ProjectMenuItem(
             title = "Chat Room",
             icon = R.drawable.bubble_chat,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.primary,
             onClick = {
                 onChatRoom()
             }
@@ -171,7 +172,7 @@ fun ProjectMenuScreen(
         ProjectMenuItem(
             title = "Delete Project",
             icon = R.drawable.trash_icon,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.primary,
             onClick = { showDeleteDialog = true }
         )
     )
@@ -183,7 +184,7 @@ fun ProjectMenuScreen(
                 trailing = {
                     Spacer(modifier = Modifier.size(24.dp))
                 },
-                color = Color.Transparent,
+                color = MaterialTheme.colorScheme.primaryContainer,
                 onNavigateBack = { onNavigateBack() }
             )
         },
@@ -262,7 +263,7 @@ fun MenuItem(
             .fillMaxWidth()
             .padding(horizontal = 25.dp)
             .clip(RoundedCornerShape(5.dp))
-            .background(Color(0x0D000000))
+            .background(MaterialTheme.colorScheme.surface)
             .clickable { onClick() }
     ) {
         Row(

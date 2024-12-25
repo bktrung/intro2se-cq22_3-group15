@@ -24,6 +24,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -67,7 +68,7 @@ fun TaskListScreen(
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
 ) {
 
-    val backgroundColor = Color(0xffBAE5F5)
+    val backgroundColor = MaterialTheme.colorScheme.background
 
     val tasks by taskManagementViewModel.tasks.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
@@ -193,13 +194,13 @@ fun TaskListScreen(
                         },
                         shape = RoundedCornerShape(30.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Transparent,
-                            contentColor = Color.Black
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
                         modifier = Modifier.border(
                             2.dp,
                             Color.Black,
-                            RoundedCornerShape(10.dp)
+                            RoundedCornerShape(30.dp)
                         )
 
                     ) {
@@ -230,7 +231,7 @@ fun TaskItem(
         onClick = { onTaskClick() },
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
         ),
         modifier = Modifier
             .fillMaxWidth()
@@ -263,7 +264,7 @@ fun TaskItem(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(5.dp))
-                        .background(Color.LightGray)
+                        .background(MaterialTheme.colorScheme.primary)
                         .then(
                             if (priority.isNullOrBlank()) Modifier
                                 .size(10.dp)
@@ -275,7 +276,8 @@ fun TaskItem(
                             text = it,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(vertical = 5.dp, horizontal = 10.dp)
+                            modifier = Modifier.padding(vertical = 5.dp, horizontal = 10.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 }
@@ -335,7 +337,7 @@ fun TopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.Transparent)
+            .background(MaterialTheme.colorScheme.primaryContainer)
             .padding(24.dp)
             .padding(top = 24.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -344,13 +346,15 @@ fun TopBar(
         IconButton(onClick = { onNavigateBack() }) {
             Icon(
                 painter = painterResource(id = R.drawable.back_arrow_icon),
-                contentDescription = "Back"
+                contentDescription = "Back",
+                tint = MaterialTheme.colorScheme.primary
             )
         }
         Text(
             text = "Task List",
             fontSize = 30.sp,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
         )
 
         Spacer(modifier = Modifier.size(30.dp))
@@ -375,8 +379,8 @@ fun ButtonSection(
         status.forEachIndexed { index, name ->
             TaskListButton(
                 name = name.first,
-                contentColor = if (index == isSelectedButton) Color(0xffBAE5F5) else Color.Black,
-                containerColor = if (index == isSelectedButton) Color.Black else Color.Transparent,
+                contentColor = if (index == isSelectedButton) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+                containerColor = if (index == isSelectedButton) MaterialTheme.colorScheme.primary else Color.Transparent,
                 onClick = { onClick(index) }
             )
         }
@@ -401,7 +405,7 @@ fun TaskListButton(
         modifier = Modifier
             .border(
                 2.dp,
-                Color(0xffBAE5F5),
+                MaterialTheme.colorScheme.primary,
                 RoundedCornerShape(30.dp)
             )
 
@@ -410,7 +414,7 @@ fun TaskListButton(
             name,
             fontWeight = FontWeight.Bold,
             fontSize = 15.sp,
-            modifier = Modifier.padding(vertical = 10.dp)
+            modifier = Modifier.padding(vertical = 10.dp),
         )
     }
 }

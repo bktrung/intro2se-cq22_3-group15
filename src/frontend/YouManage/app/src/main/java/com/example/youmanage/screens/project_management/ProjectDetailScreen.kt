@@ -25,6 +25,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -218,11 +219,12 @@ fun ProjectDetailScreen(
                         IconButton(onClick = { onClickMenu() }) {
                             Icon(
                                 imageVector = Icons.Default.Menu,
-                                contentDescription = "Menu"
+                                contentDescription = "Menu",
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     },
-                    color = Color(0xffBAE5F5),
+                    color = MaterialTheme.colorScheme.primaryContainer,
                     onNavigateBack = { onNavigateBack() }
                 )
             },
@@ -239,7 +241,7 @@ fun ProjectDetailScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .background(backgroundColor)
+                    .background(MaterialTheme.colorScheme.background)
 
             ) {
                 Column(
@@ -358,13 +360,15 @@ fun TopBar(
         IconButton(onClick = { onNavigateBack() }) {
             Icon(
                 painter = painterResource(id = R.drawable.back_arrow_icon),
-                contentDescription = "Back"
+                contentDescription = "Back",
+                tint = MaterialTheme.colorScheme.primary
             )
         }
         Text(
             text = title,
             fontSize = 30.sp,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
         )
 
         trailing?.invoke()
@@ -383,7 +387,8 @@ fun DescriptionSection(
         Text(
             text = "Description",
             fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -392,7 +397,7 @@ fun DescriptionSection(
             text = description,
             fontWeight = FontWeight.Medium,
             fontSize = 15.sp,
-            color = Color.Black.copy(alpha = 0.6f)
+            color = MaterialTheme.colorScheme.onBackground
         )
     }
 }
@@ -418,23 +423,24 @@ fun MembersSection(
             Text(
                 text = "Members",
                 fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
             )
 
             Button(
                 onClick = { onAddNewMember() },
                 shape = RoundedCornerShape(30.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent,
-                    contentColor = Color.Black
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
-                modifier = Modifier.border(
-                    1.dp,
-                    Color.Black,
-                    RoundedCornerShape(30.dp)
-                )
+//                modifier = Modifier.border(
+//                    1.dp,
+//                    Color.Black,
+//                    RoundedCornerShape(30.dp)
+//                )
             ) {
-                Text(text = "+ Add", fontSize = 16.sp, color = Color.Black)
+                Text(text = "+ Add", fontSize = 16.sp)
             }
 
         }
