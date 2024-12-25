@@ -6,7 +6,10 @@ services:
         restart: unless-stopped
         container_name: only-app
         ports:
+        - 6969:8000
+        - 7000:8000
         - 8000:8000
+        - 9000:8000
         depends_on:
             - redis
         

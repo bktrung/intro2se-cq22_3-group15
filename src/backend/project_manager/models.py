@@ -20,6 +20,22 @@ class Project(TimeStampedModel):
     host = models.ForeignKey(User, on_delete=models.CASCADE, related_name='hosted_projects')
     members = models.ManyToManyField(User, related_name='projects')
     
+    def delete(self, *args, **kwargs):
+        # Delete tasks first since they may have related issues
+        self.tasks.all().delete()
+        
+        # Delete issues not related to tasks
+        self.issues.filter(task__isnull=True).delete()
+        
+        # Delete roles
+        self.roles.all().delete()
+        
+        # Clear members
+        self.members.clear()
+        
+        # Finally delete project
+        super().delete(*args, **kwargs)
+    
     def remove_member(self, user):
         """Remove member and reassign their tasks"""
         if user in self.members.all():
@@ -115,7 +131,7 @@ class ChangeRequest(models.Model):
     requester = models.ForeignKey(User, on_delete=models.CASCADE, related_name='requests_sent')
     request_type = models.CharField(choices=RequestType.choices, max_length=6)
     target_table = models.CharField(choices=TargetTable.choices, max_length=4)
-    target_table_id = models.IntegerField()
+    target_table_id = models.IntegerField(blank=True, null=True)
     status = models.CharField(choices=RequestStatus.choices, max_length=8, default=RequestStatus.PENDING)
     description = models.TextField(blank=True, null=True)
     new_data = models.JSONField(blank=True, null=True)
@@ -127,13 +143,27 @@ class ChangeRequest(models.Model):
     def clean(self):
         if self.status != 'REJECTED' and self.declined_reason:
             self.declined_reason = None
+            
         if (self.request_type == 'CREATE' or self.request_type == 'UPDATE') and (not self.new_data or self.new_data == {}):
             raise ValidationError("Creation/Updation requests should include new data.")
-        if self.request_type == 'DELETE' and self.new_data:
+        elif self.request_type == 'DELETE' and self.new_data:
             raise ValidationError("Deletion requests should not include new data.")
         
+        if self.request_type == 'CREATE' and self.target_table_id:
+            raise ValidationError("Creation requests should not include target_table_id.")
+        elif (self.request_type == 'UPDATE' or self.request_type == 'DELETE') and (not self.target_table_id or self.target_table_id == {}):
+            raise ValidationError("Updation/Deletion requests should include target_table_id.")
+        
         if self.target_table == 'TASK':
-            allowed_fields = ['title', 'description', 'start_date', 'end_date', 'status', 'priority']
+            allowed_fields = ['title', 'description', 'start_date', 'end_date', 'status', 'priority', 'assignee_id']
+            if self.new_data and 'assignee_id' in self.new_data:
+                try:
+                    assignee = User.objects.get(id=self.new_data['assignee_id'])
+                    if assignee not in self.project.members.all():
+                        raise ValidationError({'assignee_id': 'Assignee must be a member of the project.'})
+                except User.DoesNotExist:
+                    raise ValidationError({'assignee_id': 'Invalid user ID provided.'})
+                
         elif self.target_table == 'ROLE':
             allowed_fields = ['role_name', 'description', 'users']
         else:
