@@ -19,6 +19,7 @@ import com.example.youmanage.screens.activity_logs.ActivityLogScreen
 
 import com.example.youmanage.screens.chat.ChatScreenWithViewModel
 import com.example.youmanage.screens.project_management.AddProjectScreen
+import com.example.youmanage.screens.project_management.GanttChartScreen
 import com.example.youmanage.screens.project_management.HomeScreen
 import com.example.youmanage.screens.project_management.MainScreen
 import com.example.youmanage.screens.project_management.ProjectDetailScreen
@@ -169,6 +170,9 @@ fun NavGraphBuilder.projectManagementNavGraph(
                 onRoles = {
                     rootNavController.navigate("roles/${id}")
                 },
+                onGanttChart = {
+                    rootNavController.navigate("gantt_chart/${id}")
+                },
                 id = id.toString()
             )
         }
@@ -203,6 +207,16 @@ fun NavGraphBuilder.projectManagementNavGraph(
             RolesScreen(
                 projectId = projectId ?: "",
                 onNavigateBack = { rootNavController.navigateUp() }
+            )
+        }
+
+        composable(ProjectManagementRouteScreen.GanttChart.route) { backStackEntry ->
+            val projectId = backStackEntry.arguments?.getString("projectId")
+            GanttChartScreen(
+                projectId = projectId ?: "",
+                onNavigateBack = {
+                    rootNavController.navigateUp()
+                }
             )
         }
 
