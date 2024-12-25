@@ -23,4 +23,5 @@ urlpatterns = [
     path('', include('project_manager.urls')),
     path('', include('chat.urls')),
     path('', include('activity_log.urls')),
+    path('', include('notification.urls')),
 ]

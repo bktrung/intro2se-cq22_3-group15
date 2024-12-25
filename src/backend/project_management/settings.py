@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'notification',
     'chat',
     'activity_log',
+    'django_celery_results',
 ]
 
 AUTH_USER_MODEL = 'custom_auth.CustomUser'
@@ -168,6 +169,25 @@ EMAIL_USE_TLS = True
 # If the Outlook account cant be used, contact C0smic for the email and password
 EMAIL_HOST_USER = 'vvtung2004@gmail.com'
 EMAIL_HOST_PASSWORD = 'irqa vavd buzv brlc'
+
+CELERY_BROKER_URL = 'redis://localhost:6379/1'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/1'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/2',  # Redis server location (localhost and DB 2)
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+        'TIMEOUT': 60 * 60,  # Default timeout is 1 hour
+    }
+}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
