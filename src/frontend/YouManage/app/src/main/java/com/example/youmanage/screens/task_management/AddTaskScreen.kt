@@ -1,6 +1,7 @@
 package com.example.youmanage.screens.task_management
 
 import android.os.Build
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -41,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -48,9 +50,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
+import com.example.youmanage.data.remote.changerequest.SendChangeRequest
 import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.taskmanagement.TaskCreate
+import com.example.youmanage.screens.components.AlertDialog
 import com.example.youmanage.screens.components.AssigneeSelector
+import com.example.youmanage.screens.components.ChangeRequestDialog
 import com.example.youmanage.screens.components.ChooseItemDialog
 import com.example.youmanage.screens.components.DatePickerField
 import com.example.youmanage.screens.components.DatePickerModal
@@ -63,6 +68,7 @@ import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
 import com.example.youmanage.screens.project_management.TopBar
+import com.example.youmanage.viewmodel.ChangeRequestViewModel
 
 
 @Preview
@@ -75,15 +81,17 @@ fun CreateTaskScreen(
     onDisableAction: () -> Unit = {},
     taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel()
+    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
+    changeRequestViewModel: ChangeRequestViewModel = hiltViewModel()
 ) {
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     val user by authenticationViewModel.user.observeAsState()
     val members by projectManagementViewModel.members.observeAsState()
     val task by taskManagementViewModel.task.observeAsState()
+    val project by projectManagementViewModel.project.observeAsState()
+    val changeRequestResponse by changeRequestViewModel.response.observeAsState()
     var openErrorDialog by remember { mutableStateOf(false) }
 
-    val taskSocket by taskManagementViewModel.taskSocket.observeAsState()
     val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
     val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
 
@@ -100,6 +108,7 @@ fun CreateTaskScreen(
             val webSocketUrl = "${WEB_SOCKET}project/${projectId}/"
             projectManagementViewModel.getMembers(projectId, "Bearer $token")
             authenticationViewModel.getUser("Bearer $token")
+            projectManagementViewModel.getProject(projectId, "Bearer $token")
             taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
             projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
             projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
@@ -135,6 +144,10 @@ fun CreateTaskScreen(
         mutableStateOf(false)
     }
 
+    var showChangeRequestDialog by remember {
+        mutableStateOf(false)
+    }
+
     var isTime by rememberSaveable { mutableIntStateOf(0) }
 
     var title by rememberSaveable { mutableStateOf("") }
@@ -148,6 +161,16 @@ fun CreateTaskScreen(
     }
     var assignedMember by remember {
         mutableStateOf("Unassigned")
+    }
+
+    val context = LocalContext.current
+
+    LaunchedEffect(changeRequestResponse){
+        if (changeRequestResponse is Resource.Success) {
+            Toast.makeText(context, "Request sent successfully!", Toast.LENGTH_SHORT).show()
+        } else{
+            Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show()
+        }
     }
 
     Scaffold(
@@ -172,18 +195,29 @@ fun CreateTaskScreen(
             ) {
                 Button(
                     onClick = {
-                        taskManagementViewModel.createTask(
-                            projectId = projectId,
-                            TaskCreate(
-                                title = title,
-                                description = description,
-                                startDate = startDate,
-                                endDate = endDate,
-                                assigneeId = if(assignedMemberId == -1) null else assignedMemberId,
-                                priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
-                            ),
-                            authorization = "Bearer ${accessToken.value}"
-                        )
+                        val currentUserId = user?.data?.id
+                        val hostId = project?.data?.host?.id
+
+                        if(currentUserId != null && hostId != null) {
+                            if (currentUserId != hostId) {
+                                showChangeRequestDialog = true
+                                return@Button
+                            } else{
+                                taskManagementViewModel.createTask(
+                                    projectId = projectId,
+                                    TaskCreate(
+                                        title = title,
+                                        description = description,
+                                        startDate = startDate,
+                                        endDate = endDate,
+                                        assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
+                                        priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
+                                    ),
+                                    authorization = "Bearer ${accessToken.value}"
+                                )
+                            }
+
+                        }
 
                     },
                     shape = RoundedCornerShape(8.dp),
@@ -352,6 +386,37 @@ fun CreateTaskScreen(
                 isTime = 0
             })
     }
+
+    var requestDescription by remember { mutableStateOf("") }
+    ChangeRequestDialog(
+        title = "Send Request?",
+        content = "Send request to host to create this task?",
+        showDialog = showChangeRequestDialog,
+        onDismiss = { showChangeRequestDialog = false },
+        onDescriptionChange = { requestDescription = it },
+        onConfirm = {
+            changeRequestViewModel.createChangeRequest(
+                projectId = projectId.toInt(),
+                SendChangeRequest(
+                    requestType = "CREATE",
+                    targetTable = "TASK",
+                    targetTableId = null,
+                    description = requestDescription,
+                    newData = TaskCreate(
+                        title = title,
+                        description = description,
+                        startDate = startDate,
+                        endDate = endDate,
+                        assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
+                        priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
+                    )
+                ),
+                "Bearer ${accessToken.value}"
+            )
+
+            showChangeRequestDialog = false
+        }
+    )
 
     var memberList = if (members is Resource.Success) members?.data!! else emptyList()
     memberList = memberList + User(username = "Unassigned", id = -1, email = "")

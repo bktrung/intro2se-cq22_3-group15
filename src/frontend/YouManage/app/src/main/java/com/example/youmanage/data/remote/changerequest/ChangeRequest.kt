@@ -1,5 +1,6 @@
 package com.example.youmanage.data.remote.changerequest
 
+import com.example.youmanage.data.remote.taskmanagement.Task
 import com.google.gson.annotations.SerializedName
 
 data class ChangeRequest(
@@ -10,7 +11,7 @@ data class ChangeRequest(
     val description: String? = null,
     val id: Int? = null,
     @SerializedName("new_data")
-    val newData: Any? = null,
+    val newData: Task? = null,
     val project: Int? = null,
     @SerializedName("requestType")
     val requestType: String? = null,

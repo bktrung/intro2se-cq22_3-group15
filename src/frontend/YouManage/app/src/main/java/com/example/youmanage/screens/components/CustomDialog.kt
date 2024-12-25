@@ -337,17 +337,17 @@ fun <T> ChooseItemDialog(
                                         .fillMaxWidth()
                                         .clip(RoundedCornerShape(10.dp))
                                         .background(
-                                            if(checkItems.isNotEmpty() && !checkItems[index]) Color.LightGray
+                                            if (checkItems.isNotEmpty() && !checkItems[index]) Color.LightGray
                                             else if (index != isChosenItem) itemBackgroundColor
                                             else selectedItemBackgroundColor
                                         )
                                         .padding(horizontal = 20.dp, vertical = 5.dp)
                                         .clickable {
-                                            if(checkItems.isNotEmpty() && checkItems[index]){
+                                            if (checkItems.isNotEmpty() && checkItems[index]) {
                                                 isChosenItem = index
                                             }
 
-                                            if(!isReset){
+                                            if (!isReset) {
                                                 isChosenItem = index
                                             }
 
@@ -402,9 +402,8 @@ fun <T> ChooseItemDialog(
         }
     }
 
-    if(isReset) isChosenItem = -1
+    if (isReset) isChosenItem = -1
 }
-
 
 
 @Composable
@@ -507,4 +506,86 @@ fun CreateRoleDialog(
     }
 }
 
+@Composable
+fun ChangeRequestDialog(
+    title: String,
+    content: String,
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+    onDescriptionChange: (String) -> Unit
+) {
+    if (showDialog) {
 
+        var description by remember { mutableStateOf("") }
+
+        Dialog(
+            onDismissRequest = onDismiss,
+            properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true)
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .shadow(
+                        elevation = 8.dp,
+                        shape = RoundedCornerShape(10.dp)
+                    ),
+                shape = RoundedCornerShape(10.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = title,
+                        fontSize = 22.sp,
+                        fontFamily = fontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    Text(
+                        text = content,
+                        fontFamily = fontFamily,
+                        fontSize = 16.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(bottom = 24.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = {
+                            description = it
+                            onDescriptionChange(it)
+                        },
+                        label = { Text("Enter description") },
+                        maxLines = Int.MAX_VALUE
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(
+                            onClick = onDismiss,
+                            colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
+                        ) {
+                            Text("Cancel", fontFamily = fontFamily)
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = onConfirm,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text("OK", color = Color.White, fontFamily = fontFamily)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
