@@ -153,7 +153,15 @@ class ChangeRequest(models.Model):
             raise ValidationError("Updation/Deletion requests should include target_table_id.")
         
         if self.target_table == 'TASK':
-            allowed_fields = ['title', 'description', 'start_date', 'end_date', 'status', 'priority']
+            allowed_fields = ['title', 'description', 'start_date', 'end_date', 'status', 'priority', 'assignee_id']
+            if self.new_data and 'assignee_id' in self.new_data:
+                try:
+                    assignee = User.objects.get(id=self.new_data['assignee_id'])
+                    if assignee not in self.project.members.all():
+                        raise ValidationError({'assignee_id': 'Assignee must be a member of the project.'})
+                except User.DoesNotExist:
+                    raise ValidationError({'assignee_id': 'Invalid user ID provided.'})
+                
         elif self.target_table == 'ROLE':
             allowed_fields = ['role_name', 'description', 'users']
         else:
