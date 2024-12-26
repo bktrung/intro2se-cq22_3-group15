@@ -191,7 +191,7 @@ fun AddProjectScreen(
                             )
                         },
                         maxLines = Int.MAX_VALUE,
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(5.dp),
                         textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
                     )
                 }
@@ -268,7 +268,6 @@ fun AddProjectScreen(
 
                     Button(
                         onClick = {
-                            Log.d("AddProjectScreen", "AddProjectScreen: $access")
                             projectManagementViewModel.createProject(
                                 project = ProjectCreate(
                                     description = description,

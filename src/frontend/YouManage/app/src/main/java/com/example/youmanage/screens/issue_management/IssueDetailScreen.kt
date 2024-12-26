@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -167,13 +169,21 @@ fun IssueDetailScreen(
     }
 
     Scaffold(
-        modifier = Modifier.padding(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(
             bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
         ),
         topBar = {
-            TopBar(
-                title = "Edit Issue",
-                onNavigateBack = { onNavigateBack() }
+            com.example.youmanage.screens.project_management.TopBar(
+                title = "Issue Detail",
+                onNavigateBack = { onNavigateBack() },
+                color = Color.Transparent,
+                trailing = {
+                    Box(modifier = Modifier.size(24.dp))
+                }
             )
         },
         bottomBar = {
@@ -190,7 +200,6 @@ fun IssueDetailScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(backgroundColor)
                 .padding(paddingValues)
                 .padding(horizontal = 20.dp)
         ) {
@@ -254,7 +263,8 @@ fun IssueDetailScreen(
                 DropdownStatusSelector(
                     text = selectedStatus,
                     onClick = { showStatusDialog = true },
-                    backgroundColor = primaryColor
+                    backgroundColor = primaryColor,
+                    textColor = MaterialTheme.colorScheme.primary
                 )
 
                 AssigneeSelector(

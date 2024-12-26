@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -136,12 +137,23 @@ fun TaskListScreen(
     }
 
     Scaffold(
-        modifier = Modifier.padding(
-            bottom = WindowInsets.systemBars.asPaddingValues()
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(
+            bottom = WindowInsets
+                .systemBars.asPaddingValues()
                 .calculateBottomPadding()
         ),
         topBar = {
-            TopBar(
+            com.example.youmanage.screens.project_management.TopBar(
+                title = "Task List",
+                color = Color.Transparent,
+                trailing = {
+                    Box(
+                        modifier = Modifier.size(24.dp)
+                    )
+                },
                 onNavigateBack = { onNavigateBack() }
             )
         },
@@ -159,11 +171,11 @@ fun TaskListScreen(
                     shape = RoundedCornerShape(30.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Transparent,
-                        contentColor = Color.Black
+                        contentColor = MaterialTheme.colorScheme.primary
                     ),
                     modifier = Modifier.border(
                         2.dp,
-                        Color.Black,
+                        MaterialTheme.colorScheme.primary,
                         RoundedCornerShape(10.dp)
                     )
 
@@ -317,7 +329,7 @@ fun TaskItem(
                 Icon(
                     painter = painterResource(id = R.drawable.comment_icon),
                     contentDescription = "Comment",
-                    tint = Color.Black,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.clickable { onCommentClick() }
                 )
 
@@ -330,7 +342,7 @@ fun TaskItem(
                 Icon(
                     painter = painterResource(id = R.drawable.calendar_icon),
                     contentDescription = "Deadline",
-                    tint = Color.Black
+                    tint = MaterialTheme.colorScheme.primary
                 )
                 Text(endDate, fontSize = 15.sp, fontWeight = FontWeight.Medium)
 
@@ -386,8 +398,7 @@ fun ButtonSection(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        itemsIndexed(status){
-            index, name ->
+        itemsIndexed(status) { index, name ->
             TaskListButton(
                 name = name.first,
                 contentColor = if (index == isSelectedButton) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,

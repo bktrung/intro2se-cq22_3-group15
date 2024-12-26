@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -129,14 +130,24 @@ fun IssueListScreen(
 
 
     Scaffold(
-        modifier = Modifier.padding(
-            bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
-        ),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(
+                bottom = WindowInsets.systemBars
+                    .asPaddingValues()
+                    .calculateBottomPadding()
+            ),
         topBar = {
-            TopBar(
+            com.example.youmanage.screens.project_management.TopBar(
                 title = "Issue List",
+                color = Color.Transparent,
+                trailing = {
+                    Spacer(modifier = Modifier.size(24.dp))
+                },
                 onNavigateBack = { onNavigateBack() }
             )
+
         },
         bottomBar = {
 
@@ -151,11 +162,11 @@ fun IssueListScreen(
                     shape = RoundedCornerShape(30.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Transparent,
-                        contentColor = Color.Black
+                        contentColor = MaterialTheme.colorScheme.primary
                     ),
                     modifier = Modifier.border(
                         2.dp,
-                        Color.Black,
+                        MaterialTheme.colorScheme.primary,
                         RoundedCornerShape(10.dp)
                     )
                 ) {

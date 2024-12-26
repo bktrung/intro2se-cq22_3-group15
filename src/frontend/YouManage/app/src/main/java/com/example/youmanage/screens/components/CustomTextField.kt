@@ -65,12 +65,15 @@ fun PasswordTextField(
 
     TextField(
         value = content,
-        textStyle = TextStyle(fontSize = 20.sp, fontFamily = fontFamily, color = Color.Gray),
+        textStyle = TextStyle(
+            fontSize = 20.sp,
+            fontFamily = fontFamily,
+            color = MaterialTheme.colorScheme.primary),
         onValueChange = { onChangeValue(it) },
         placeholder = {
             Text(
                 text = placeholderContent,
-                color = placeholderColor
+                color = Color.Gray
             )
         },
         trailingIcon = {
@@ -105,12 +108,16 @@ fun TextFieldComponent(
 ) {
     TextField(
         value = content,
-        textStyle = TextStyle(fontSize = 20.sp, fontFamily = fontFamily, color = Color.Gray),
+        textStyle = TextStyle(
+            fontSize = 20.sp,
+            fontFamily = fontFamily,
+            color = MaterialTheme.colorScheme.primary
+        ),
         onValueChange = { onChangeValue(it) },
         placeholder = {
             Text(
                 text = placeholderContent,
-                color = placeholderColor
+                color = Color.Gray
             )
         },
         colors = TextFieldDefaults.colors(

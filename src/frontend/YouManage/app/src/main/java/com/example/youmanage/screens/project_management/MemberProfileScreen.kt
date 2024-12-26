@@ -28,6 +28,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -121,7 +122,7 @@ fun MemberProfileScreen(
             TopBar(
                 title = "Member Profile",
                 onNavigateBack = onNavigateBack,
-                color = Color.White,
+                color = Color.Transparent,
                 trailing = {
                    Box(
                        modifier = Modifier.size(24.dp)
@@ -131,6 +132,7 @@ fun MemberProfileScreen(
         },
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(WindowInsets.statusBars.asPaddingValues())
             .padding(
                 bottom = WindowInsets.systemBars
@@ -143,7 +145,6 @@ fun MemberProfileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color.White)
                 .padding(horizontal = 20.dp)
                 .padding(16.dp)
         ) {
@@ -276,7 +277,8 @@ fun MemberRoleItem(
                     modifier = Modifier
                         .padding(5.dp)
                         .size(30.dp)
-                        .clickable { onUnAssign() }
+                        .clickable { onUnAssign() },
+                    tint = Color.Black
                 )
             }
         }

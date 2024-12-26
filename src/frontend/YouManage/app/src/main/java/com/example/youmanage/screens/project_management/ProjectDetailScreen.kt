@@ -278,13 +278,12 @@ fun ProjectDetailScreen(
                         }
 
                     },
-                    color = MaterialTheme.colorScheme.primaryContainer,
+                    color = Color.Transparent,
                     onNavigateBack = { onNavigateBack() }
                 )
             },
             modifier = Modifier
                 .fillMaxSize()
-                .background(backgroundColor)
                 .padding(WindowInsets.statusBars.asPaddingValues())
                 .padding(
                     bottom = WindowInsets.systemBars
@@ -301,8 +300,6 @@ fun ProjectDetailScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
                     .background(MaterialTheme.colorScheme.background)
-                    .padding(top = paddingValues.calculateTopPadding())
-            
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -320,11 +317,13 @@ fun ProjectDetailScreen(
                     ) {
                         Text(
                             text = "Project Name",
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = 25.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = project?.data?.name.toString(),
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )

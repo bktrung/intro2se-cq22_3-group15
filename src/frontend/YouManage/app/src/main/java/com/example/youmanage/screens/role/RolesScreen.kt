@@ -8,10 +8,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -131,14 +135,16 @@ fun RolesScreen(
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .padding(vertical = 24.dp),
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()),
+
         topBar = {
             com.example.youmanage.screens.project_management.TopBar(
                 title = "Roles",
                 trailing = {
                     Spacer(modifier = Modifier.size(24.dp))
                 },
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = Color.Transparent,
                 onNavigateBack = onNavigateBack
             )
         },
@@ -157,16 +163,14 @@ fun RolesScreen(
                     },
                     shape = RoundedCornerShape(30.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.primary
                     ),
-                    modifier = Modifier
-                        .border(
-                            2.dp,
-                            Color.Black,
-                            RoundedCornerShape(30.dp)
-                        )
-
+                    modifier = Modifier.border(
+                        2.dp,
+                        MaterialTheme.colorScheme.primary,
+                        RoundedCornerShape(10.dp)
+                    )
                 ) {
                     Text(
                         "Create Role",

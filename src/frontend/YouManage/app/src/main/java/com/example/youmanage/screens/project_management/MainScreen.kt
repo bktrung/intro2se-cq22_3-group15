@@ -118,7 +118,7 @@ fun BottomNavigationBar(
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 16.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.onSurface),
+            .background(Color.Black.copy(alpha = 0.1f)),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -141,7 +141,7 @@ fun BottomNavigationBar(
                         .align(Alignment.CenterVertically),
                     tint = if (currentDestination?.hierarchy?.any {
                             it.route == item.route
-                        } == true) Color.Black else Color.Gray
+                        } == true) MaterialTheme.colorScheme.primary else Color.Gray
                 )
             }
         }

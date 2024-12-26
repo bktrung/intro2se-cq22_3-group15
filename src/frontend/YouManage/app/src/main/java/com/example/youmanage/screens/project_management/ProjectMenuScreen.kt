@@ -8,10 +8,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -120,7 +123,7 @@ fun ProjectMenuScreen(
         ProjectMenuItem(
             title = "Gantt Chart",
             icon = R.drawable.gantt_chart_icon,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.primary,
             onClick = { onGanttChart() }
         ),
         ProjectMenuItem(
@@ -130,22 +133,11 @@ fun ProjectMenuScreen(
             onClick = { onIssueList() }
         ),
         ProjectMenuItem(
-            title = "Member",
-            icon = R.drawable.user_icon,
-            color = MaterialTheme.colorScheme.primary
-        ),
-        ProjectMenuItem(
             title = "Activity Logs",
             icon = R.drawable.activity_logs,
             color = MaterialTheme.colorScheme.primary,
             onClick = { onActivityLog() }
         ),
-        ProjectMenuItem(
-            title = "Project Setting",
-            icon = R.drawable.setting_icon,
-            color = MaterialTheme.colorScheme.primary
-        ),
-
         ProjectMenuItem(
             title = "Roles",
             icon = R.drawable.task_icon,
@@ -176,13 +168,14 @@ fun ProjectMenuScreen(
                 trailing = {
                     Spacer(modifier = Modifier.size(24.dp))
                 },
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = Color.Transparent,
                 onNavigateBack = { onNavigateBack() }
             )
         },
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = 24.dp)
+            .padding(WindowInsets.statusBars.asPaddingValues())
+
 
     ) { paddingValues ->
         Box(

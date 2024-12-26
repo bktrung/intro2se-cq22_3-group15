@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -114,15 +116,22 @@ fun AddIssueScreen(
 
     Scaffold(
         modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(WindowInsets.statusBars.asPaddingValues())
             .padding(
                 bottom = WindowInsets.systemBars
                     .asPaddingValues()
                     .calculateBottomPadding()
             ),
         topBar = {
-            TopBar(
+            com.example.youmanage.screens.project_management.TopBar(
                 title = "Create Issue",
-                onNavigateBack = { onNavigateBack() }
+                onNavigateBack = { onNavigateBack() },
+                color = Color.Transparent,
+                trailing = {
+                    Box(modifier = Modifier.size(24.dp))
+                }
             )
         },
         bottomBar = {
@@ -149,13 +158,15 @@ fun AddIssueScreen(
                         }
                     },
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ),
 
-                ) {
+                    ) {
                     Text(
                         "Create Issue",
                         fontSize = 20.sp,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )

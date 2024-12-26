@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -42,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -67,6 +69,8 @@ fun UpdateProjectScreen(
     onNavigateBack: () -> Unit,
     onDisableAction: () -> Unit
 ) {
+
+
 
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
@@ -140,7 +144,7 @@ fun UpdateProjectScreen(
         },
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
             .padding(WindowInsets.statusBars.asPaddingValues())
 
     ) { paddingValues ->
@@ -175,7 +179,7 @@ fun UpdateProjectScreen(
 
                     Text(
                         "Project Title",
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
@@ -184,8 +188,8 @@ fun UpdateProjectScreen(
                         content = title,
                         onChangeValue = { title = it },
                         placeholderContent = "Enter project title",
-                        placeholderColor = Color.Gray,
-                        containerColor = textFieldColor,
+                        placeholderColor = MaterialTheme.colorScheme.primary,
+                        containerColor = MaterialTheme.colorScheme.surface,
                         icon = R.drawable.project_title_icon
                     )
                 }
@@ -202,7 +206,7 @@ fun UpdateProjectScreen(
 
                     Text(
                         "Description",
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
@@ -211,8 +215,8 @@ fun UpdateProjectScreen(
                         value = description,
                         onValueChange = { description = it },
                         colors = TextFieldDefaults.colors(
-                            focusedContainerColor = textFieldColor,
-                            unfocusedContainerColor = textFieldColor,
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent
                         ),
@@ -222,17 +226,18 @@ fun UpdateProjectScreen(
                             Icon(
                                 painter = painterResource(id = R.drawable.description_icon),
                                 contentDescription = "",
-                                tint = Color.Black
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         },
                         placeholder = {
                             Text(
                                 "Enter project description",
-                                color = Color.Gray
+                                color = MaterialTheme.colorScheme.primary
                             )
                         },
                         maxLines = Int.MAX_VALUE,
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(5.dp),
+                        textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
                     )
                 }
 
@@ -248,7 +253,7 @@ fun UpdateProjectScreen(
 
                     Text(
                         "Due date",
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
@@ -270,6 +275,7 @@ fun UpdateProjectScreen(
                                         id = R.drawable.calendar_icon
                                     ),
                                     contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.clickable {
                                         showDatePicker = true
                                     }
@@ -278,15 +284,16 @@ fun UpdateProjectScreen(
                             placeholder = {
                                 Text(
                                     text = "Enter due date",
-                                    color = Color.Gray
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             },
                             colors = TextFieldDefaults.colors(
-                                focusedContainerColor = textFieldColor,
-                                unfocusedContainerColor = textFieldColor,
+                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                                 focusedIndicatorColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent
-                            )
+                            ),
+                            textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
                         )
                     }
 
@@ -307,7 +314,9 @@ fun UpdateProjectScreen(
                     Button(
                         onClick = { showUpdateDialog = true },
                         shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ),
                         modifier = Modifier
                             .fillMaxWidth()
 
@@ -315,7 +324,7 @@ fun UpdateProjectScreen(
                         Text(
                             "Update",
                             fontSize = 20.sp,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(vertical = 8.dp)
                         )

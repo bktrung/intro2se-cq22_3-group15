@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -246,12 +247,14 @@ fun CreateTaskScreen(
                         }
                     },
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ),
                 ) {
                     Text(
                         "Create",
                         fontSize = 20.sp,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
@@ -276,14 +279,12 @@ fun CreateTaskScreen(
                 .fillMaxWidth()
                 .padding(paddingValues)
                 .padding(horizontal = 36.dp)
-                .padding(top = 20.dp)
+                .padding(bottom = 10.dp)
                 .verticalScroll(scrollState)
             ,
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
-
 
                 Column(
                     modifier = Modifier
@@ -349,7 +350,8 @@ fun CreateTaskScreen(
                             )
                         },
                         maxLines = Int.MAX_VALUE,
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(10.dp),
+                        textStyle = TextStyle(MaterialTheme.colorScheme.primary,)
                     )
                 }
 
@@ -482,13 +484,13 @@ fun PrioritySelector(
                     },
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
-                        if (index == priority) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+                        if (index == priority) MaterialTheme.colorScheme.primary else Color.Transparent
                     ),
-                    border = BorderStroke(2.dp, Color.Black)
+                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
                 ) {
                     Text(
                         text = item,
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = if (index != priority) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }

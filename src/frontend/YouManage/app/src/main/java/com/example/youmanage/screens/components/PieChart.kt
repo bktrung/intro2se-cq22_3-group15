@@ -82,9 +82,10 @@ fun PieChart(
             text = "Overall Activity",
             fontWeight = FontWeight.Medium,
             fontSize = 20.sp,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.primary
         )
 
+        val semiCircleColor = MaterialTheme.colorScheme.primaryContainer
         Spacer(modifier = Modifier.height(30.dp))
 
         Box(
@@ -120,7 +121,7 @@ fun PieChart(
                 }
 
                 drawArc(
-                    color = Color.White,
+                    color = semiCircleColor,
                     startAngle = 180f,
                     sweepAngle = 180f,
                     useCenter = true,
@@ -136,7 +137,7 @@ fun PieChart(
                     val subTextSize = innerRadius * 0.17f
 
                     val textMainPaint = Paint().apply {
-                        color = Color.Black.toArgb()
+                        color = Color.White.toArgb()
                         textSize = mainTextSize
                         isFakeBoldText = true
                         textAlign = Paint.Align.CENTER
@@ -144,7 +145,7 @@ fun PieChart(
                     }
 
                     val textPaint = Paint().apply {
-                        color = Color.Black.copy(alpha = 0.5f).toArgb()
+                        color = Color(0xffbaf4ca).toArgb()
                         textSize = subTextSize
                         isFakeBoldText = true
                         textAlign = Paint.Align.CENTER
@@ -187,10 +188,11 @@ fun PieChart(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             input.forEach { item ->
                 AnnotationItem(item.color, item.description)
@@ -221,7 +223,7 @@ fun AnnotationItem(
             text = name,
             fontWeight = FontWeight.Bold,
             fontSize = textSize,
-            color = Color.Black.copy(alpha = 0.6f)
+            color = MaterialTheme.colorScheme.primary
         )
     }
 }

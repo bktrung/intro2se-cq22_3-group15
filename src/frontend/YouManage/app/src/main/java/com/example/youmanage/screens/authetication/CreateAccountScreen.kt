@@ -84,7 +84,7 @@ fun CreateAccountScreen(
             }
 
             is Resource.Loading -> {
-                isLoading = true
+                //isLoading = true
             }
              else ->{
                  //isLoading = true
@@ -191,6 +191,17 @@ fun CreateAccountScreen(
 
                 Button(
                     onClick = {
+                        val userSignUp = UserSignUp(
+                            username = username,
+                            email = email,
+                            password1 = password,
+                            password2 = confirmPassword
+                        )
+
+                        Log.d(
+                            "IN create account",
+                            userSignUp.toString()
+                        )
                         viewModel.signUp(
                             UserSignUp(
                                 username = username,
@@ -199,8 +210,6 @@ fun CreateAccountScreen(
                                 password2 = confirmPassword
                             )
                         )
-
-
                     },
                     modifier = Modifier
                         .fillMaxWidth()

@@ -35,6 +35,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldColors
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -125,10 +127,14 @@ fun AlertDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
                             onClick = onConfirm,
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text("OK", color = MaterialTheme.colorScheme.onPrimary, fontFamily = fontFamily)
+                            Text(
+                                "OK",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontFamily = fontFamily
+                            )
                         }
                     }
                 }
@@ -257,19 +263,47 @@ fun DatePickerModal(
                     }
                     onDismiss()
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             ) {
-                Text("OK", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(
+                    "OK",
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    fontWeight = FontWeight.Bold
+                )
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Color.Black)
+                Text(
+                    "Cancel",
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
-        },
+        }
 
     ) {
-        DatePicker(state = datePickerState,)
+        DatePicker(
+            state = datePickerState,
+            colors = DatePickerDefaults.colors(
+                titleContentColor = MaterialTheme.colorScheme.primary,         // Màu cho tiêu đề
+                headlineContentColor = MaterialTheme.colorScheme.primary,     // Màu cho tiêu đề chính (headline)
+                weekdayContentColor = MaterialTheme.colorScheme.primary,      // Màu cho ngày trong tuần
+                dayContentColor = MaterialTheme.colorScheme.primary,          // Màu cho các ngày
+                todayContentColor = MaterialTheme.colorScheme.primary,          // Màu cho ngày hiện tại
+                selectedDayContentColor = MaterialTheme.colorScheme.onPrimary,  // Màu cho ngày được chọn
+                yearContentColor = MaterialTheme.colorScheme.primary,         // Màu cho các năm
+                currentYearContentColor = Color.Red,    // Màu cho năm hiện tại
+                selectedYearContentColor = MaterialTheme.colorScheme.onPrimary,  // Màu cho năm được chọn,
+                disabledDayContentColor = Color.Gray,
+                dateTextFieldColors = TextFieldDefaults.colors(
+                    focusedTextColor = MaterialTheme.colorScheme.primary,
+                    unfocusedTextColor = MaterialTheme.colorScheme.primary,
+                    disabledTextColor = Color.Gray,
+                    errorTextColor = MaterialTheme.colorScheme.onError)
+            )
+        )
     }
 }
 
@@ -343,9 +377,7 @@ fun <T> ChooseItemDialog(
                                         .clip(RoundedCornerShape(10.dp))
                                         .background(
 
-                                            if(checkItems.isNotEmpty() && !checkItems[index]) MaterialTheme.colorScheme.primaryContainer
-
-                                  
+                                            if (checkItems.isNotEmpty() && !checkItems[index]) MaterialTheme.colorScheme.primaryContainer
                                             else if (index != isChosenItem) itemBackgroundColor
                                             else selectedItemBackgroundColor
                                         )
@@ -402,7 +434,11 @@ fun <T> ChooseItemDialog(
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text("OK", color = MaterialTheme.colorScheme.onPrimary, fontFamily = fontFamily)
+                            Text(
+                                "OK",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontFamily = fontFamily
+                            )
                         }
                     }
                 }
@@ -501,7 +537,11 @@ fun CreateRoleDialog(
                         onClick = onDismiss,
                         colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
                     ) {
-                        Text("Cancel", fontFamily = fontFamily, color = MaterialTheme.colorScheme.primary)
+                        Text(
+                            "Cancel",
+                            fontFamily = fontFamily,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
@@ -513,7 +553,11 @@ fun CreateRoleDialog(
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("OK", color = MaterialTheme.colorScheme.onPrimary, fontFamily = fontFamily)
+                        Text(
+                            "OK",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontFamily = fontFamily
+                        )
                     }
                 }
             }
