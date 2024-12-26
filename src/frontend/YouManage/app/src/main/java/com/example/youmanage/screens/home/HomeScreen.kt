@@ -1,4 +1,4 @@
-package com.example.youmanage.screens.project_management
+package com.example.youmanage.screens.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

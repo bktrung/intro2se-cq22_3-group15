@@ -19,33 +19,34 @@ import org.json.JSONObject
 import retrofit2.HttpException
 import javax.inject.Inject
 
+suspend fun <T> safeApiCall(apiCall: suspend () -> T): Resource<T> {
+    return try {
+        Resource.Success(apiCall())
+    } catch (e: HttpException) {
+        handleHttpException(e)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Resource.Error(e.message.toString())
+    }
+}
+
+fun <T> handleHttpException(e: HttpException): Resource.Error<T> {
+    return when (e.code()) {
+        400 -> {
+            val errorBody = e.response()?.errorBody()?.string()
+            Resource.Error(errorBody.toString())
+        }
+
+        404 -> Resource.Error("User not found")
+        else -> Resource.Error("HTTP Error: ${e.code()}")
+    }
+}
+
 @ActivityScoped
 class ProjectManagementRepository @Inject constructor(
     private val api: ApiInterface
 ) {
 
-    private suspend fun <T> safeApiCall(apiCall: suspend () -> T): Resource<T> {
-        return try {
-            Resource.Success(apiCall())
-        } catch (e: HttpException) {
-            handleHttpException(e)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Resource.Error(e.message.toString())
-        }
-    }
-
-    private fun <T> handleHttpException(e: HttpException): Resource.Error<T> {
-        return when (e.code()) {
-            400 -> {
-                val errorBody = e.response()?.errorBody()?.string()
-                Resource.Error(errorBody.toString())
-            }
-
-            404 -> Resource.Error("User not found")
-            else -> Resource.Error("HTTP Error: ${e.code()}")
-        }
-    }
 
     suspend fun getProjectList(authorization: String): Resource<Projects> =
         safeApiCall { api.getProjectList(authorization) }

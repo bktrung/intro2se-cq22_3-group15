@@ -9,7 +9,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -20,16 +19,17 @@ import com.example.youmanage.screens.activity_logs.ActivityLogScreen
 import com.example.youmanage.screens.chat.ChatScreenWithViewModel
 import com.example.youmanage.screens.project_management.AddProjectScreen
 import com.example.youmanage.screens.project_management.GanttChartScreen
-import com.example.youmanage.screens.project_management.HomeScreen
-import com.example.youmanage.screens.project_management.MainScreen
+import com.example.youmanage.screens.home.HomeScreen
+import com.example.youmanage.screens.home.MainScreen
+import com.example.youmanage.screens.home.NotificationScreen
 import com.example.youmanage.screens.project_management.MemberProfileScreen
 import com.example.youmanage.screens.project_management.ProjectDetailScreen
 import com.example.youmanage.screens.project_management.ProjectMenuScreen
 import com.example.youmanage.screens.project_management.UpdateProjectScreen
-import com.example.youmanage.screens.project_management.UserProfileScreen
+import com.example.youmanage.screens.home.UserProfileScreen
 import com.example.youmanage.screens.role.RolesScreen
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ProjectManagementNavGraph(
     paddingValues: PaddingValues,
@@ -69,7 +69,11 @@ fun ProjectManagementNavGraph(
             )
         }
 
-        composable(ProjectManagementRouteScreen.Calender.route) {}
+        composable(ProjectManagementRouteScreen.Notification.route) {
+            NotificationScreen(
+                paddingValues = paddingValues
+            )
+        }
 
         composable(ProjectManagementRouteScreen.Issue.route) {
             UserProfileScreen(
@@ -98,10 +102,7 @@ fun NavGraphBuilder.projectManagementNavGraph(
 
         composable(ProjectManagementRouteScreen.Main.route) {
             MainScreen(
-                rootNavController = rootNavController,
-                onViewProject = {
-                    rootNavController.navigate("project_detail/${it}")
-                }
+                rootNavController = rootNavController
             )
         }
 

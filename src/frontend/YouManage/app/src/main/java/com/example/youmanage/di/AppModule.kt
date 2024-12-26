@@ -7,10 +7,12 @@ import com.example.youmanage.repository.ActivityLogRepository
 import com.example.youmanage.repository.AuthenticationRepository
 import com.example.youmanage.repository.ChangeRequestRepository
 import com.example.youmanage.repository.ChatRepository
+import com.example.youmanage.repository.NotificationRepository
 import com.example.youmanage.repository.ProjectManagementRepository
 import com.example.youmanage.repository.TaskManagementRepository
 import com.example.youmanage.repository.WebSocketRepository
 import com.example.youmanage.utils.Constants.BASE_URL
+import com.example.youmanage.viewmodel.NotificationViewModel
 import com.example.youmanage.viewmodel.SnackBarViewModel
 import com.google.gson.Gson
 import dagger.Module
@@ -22,9 +24,6 @@ import okhttp3.Cookie
 import okhttp3.CookieJar
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
-import okhttp3.Response
-import okhttp3.WebSocket
-import okhttp3.WebSocketListener
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
@@ -136,4 +135,10 @@ object AppModule {
     fun provideSnackBarViewModel(webSocketRepository: WebSocketRepository): SnackBarViewModel {
         return SnackBarViewModel(webSocketRepository)
     }
+
+    @Provides
+    @Singleton
+    fun provideNotificationRepository(webSocket: WebSocketFactory, api: ApiInterface)
+    = NotificationRepository(webSocket, api)
+
 }

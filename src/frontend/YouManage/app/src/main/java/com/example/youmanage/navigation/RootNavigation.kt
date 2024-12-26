@@ -1,11 +1,28 @@
 package com.example.youmanage.navigation
 
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -13,9 +30,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
@@ -23,13 +46,12 @@ import com.example.youmanage.data.remote.authentication.RefreshToken
 import com.example.youmanage.screens.LoadingScreen
 import com.example.youmanage.utils.Constants.ACCESS_TOKEN_KEY
 import com.example.youmanage.utils.Constants.REFRESH_TOKEN_KEY
+import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.isTokenExpired
 import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.SnackBarViewModel
+import com.example.youmanage.viewmodel.NotificationViewModel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.collectLatest
 
 object Graph {
     const val ROOT = "root_graph"
@@ -57,6 +79,7 @@ sealed class ProjectManagementRouteScreen(
     data object Main : ProjectManagementRouteScreen("main")
     data object Home : ProjectManagementRouteScreen("home")
     data object UserProfile : ProjectManagementRouteScreen("user_profile")
+    data object Notification: ProjectManagementRouteScreen("notification")
 
     data object Calender : ProjectManagementRouteScreen("calender")
     data object Issue : ProjectManagementRouteScreen("issue")
@@ -64,7 +87,9 @@ sealed class ProjectManagementRouteScreen(
     data object UpdateProject : ProjectManagementRouteScreen("update_project/{id}")
     data object ProjectDetail : ProjectManagementRouteScreen("project_detail/{id}")
     data object ProjectMenu : ProjectManagementRouteScreen("project_menu/{id}")
-    data object MemberProfile : ProjectManagementRouteScreen("member_profile/{project_id}/{member_id}")
+    data object MemberProfile :
+        ProjectManagementRouteScreen("member_profile/{project_id}/{member_id}")
+
     data object ActivityLogs : ProjectManagementRouteScreen("activity_logs/{projectId}")
     data object Roles : ProjectManagementRouteScreen("roles/{projectId}")
     data object GanttChart : ProjectManagementRouteScreen("gantt_chart/{projectId}")
@@ -97,35 +122,131 @@ sealed class IssuesManagementRouteScreen(
 @Composable
 fun RootNavGraph(
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    snackBarViewModel: SnackBarViewModel = hiltViewModel()
+    notificationViewModel: NotificationViewModel = hiltViewModel()
 ) {
 
-    val snackBarMessage by snackBarViewModel.snackBarMessage.collectAsState()
     val snackBarHostState = remember { SnackbarHostState() }
+    val notification by notificationViewModel.notificationFromSocket.observeAsState()
+    val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
+    val user by authenticationViewModel.user.observeAsState()
 
-    LaunchedEffect(snackBarMessage) {
-        snackBarMessage?.let {
-            snackBarHostState.showSnackbar(
-                it,
-                withDismissAction = true
-            )
+    val navController = rememberNavController()
+
+    fun seeMessage() {
+        navController.navigate(ProjectManagementRouteScreen.Notification.route)
+    }
+
+    LaunchedEffect(accessToken.value) {
+        accessToken.value?.let {
+            authenticationViewModel.getUser("Bearer $it")
+        }
+    }
+
+    LaunchedEffect(user) {
+        if (user is Resource.Success) {
+            notificationViewModel.connectToWebSocket("${WEB_SOCKET}user/${user?.data?.id}/")
+        }
+    }
+
+    LaunchedEffect(notification) {
+        if (notification is Resource.Success) {
+            notification?.data?.let {
+                snackBarHostState.showSnackbar(
+                    it.body ?: "No notification",
+                    withDismissAction = true,
+                    duration = SnackbarDuration.Indefinite
+                )
+            }
         }
     }
 
     Scaffold(
         snackbarHost = {
-            SnackbarHost(hostState = snackBarHostState)
+            SnackbarHost(hostState = snackBarHostState) { data ->
+                Snackbar(
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .padding(
+                            bottom = WindowInsets.systemBars
+                                .asPaddingValues()
+                                .calculateBottomPadding() * 4
+                        )
+                        .shadow(8.dp, RoundedCornerShape(10.dp))
+                    ,
+
+                    containerColor = MaterialTheme.colorScheme.onPrimary,
+                    contentColor = MaterialTheme.colorScheme.primary
+                ) {
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = null,
+                                tint = Color(0xffFFC107),
+                                modifier = Modifier.size(40.dp)
+                            )
+
+                            Text(
+                                text = data.visuals.message,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 20.sp,
+                                modifier = Modifier.padding(
+                                    horizontal = 16.dp,
+                                    vertical = 20.dp
+                                )
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            TextButton(onClick = { data.performAction() }) {
+                                Text(
+                                    text = "Skip",
+                                    color = Color(0xFFBDBDBD),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 20.sp
+                                )
+                            }
+
+                            TextButton(onClick = { seeMessage() }) {
+                                Text(
+                                    text = "See",
+                                    color = Color(0xFF03A9F4),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 20.sp
+                                )
+                            }
+                        }
+
+                    }
+
+                }
+
+            }
         }
     ) { paddingValues ->
 
         val padding = paddingValues
 
-        val navController = rememberNavController()
-        val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
         val refreshToken = authenticationViewModel.refreshToken.collectAsState(initial = null)
         val newAccessToken = authenticationViewModel.refreshResponse.observeAsState()
         var tokenExpired by rememberSaveable { mutableStateOf(false) }
-
         var isLoading by remember { mutableStateOf(true) }
         var startDestination by remember { mutableStateOf("") }
 
