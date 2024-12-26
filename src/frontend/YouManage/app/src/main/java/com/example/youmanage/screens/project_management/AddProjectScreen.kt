@@ -325,7 +325,8 @@ fun AddProjectScreen(
 fun MemberItem(
     member: MemberItem,
     onDelete: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
 
     Box(
@@ -333,6 +334,7 @@ fun MemberItem(
         modifier = modifier
             .clip(RoundedCornerShape(5.dp))
             .background(member.backgroundColor)
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier

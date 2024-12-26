@@ -77,6 +77,7 @@ fun ProjectDetailScreen(
     onClickMenu: () -> Unit,
     onDisableAction: () -> Unit,
     onUpdateProject: () -> Unit,
+    onMemberProfile: (Int) -> Unit,
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
     taskManagementViewModel: TaskManagementViewModel = hiltViewModel()
@@ -346,7 +347,8 @@ fun ProjectDetailScreen(
                             memberId = it
                             showDeleteDialog = true
                         },
-                        members = project?.data?.members ?: emptyList()
+                        members = project?.data?.members ?: emptyList(),
+                        onMemberProfile = onMemberProfile
                     )
                 }
             }
@@ -485,7 +487,8 @@ fun DescriptionSection(
 fun MembersSection(
     members: List<User> = emptyList(),
     onAddNewMember: () -> Unit = {},
-    onDeleteMember: (String) -> Unit = {}
+    onDeleteMember: (String) -> Unit = {},
+    onMemberProfile: (Int) -> Unit
 ) {
 
 
@@ -552,6 +555,7 @@ fun MembersSection(
                         onDelete = {
                             onDeleteMember(members[index].id.toString())
                         },
+                        onClick = { onMemberProfile(members[index].id) },
                         modifier = Modifier.fillMaxWidth(0.7f)
                     )
                 }
