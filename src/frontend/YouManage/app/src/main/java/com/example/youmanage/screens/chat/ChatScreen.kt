@@ -1,6 +1,13 @@
 package com.example.youmanage.screens.chat
 
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.util.Base64
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -21,6 +29,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,6 +54,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -53,10 +63,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.rememberAsyncImagePainter
 import com.example.youmanage.R
 import com.example.youmanage.data.remote.chat.Message
 import com.example.youmanage.data.remote.chat.MessageRequest
 import com.example.youmanage.data.remote.projectmanagement.User
+import com.example.youmanage.utils.Constants.BASE_URL
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
@@ -67,6 +79,7 @@ import com.example.youmanage.viewmodel.ChatViewModel
 fun ChatScreen(
     messages: List<Message> = emptyList(),
     onMessageSent: (String, Boolean) -> Unit = { _, _ -> },
+    onImageSent: (String) -> Unit = { _ -> },
     userId: Int = 1,
     onNavigateBack: () -> Unit = {},
     loadPrevMessage: () -> Unit = {},
@@ -97,6 +110,7 @@ fun ChatScreen(
         bottomBar = {
             ChatInputBar(
                 onMessageSent = onMessageSent,
+                onImageSent = onImageSent ,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp, vertical = 16.dp)
@@ -169,7 +183,7 @@ fun ChatScreen(
 
 @Composable
 fun MessageBubble(
-    message: Message = Message(User(), "Yes", 0, 0, ""),
+    message: Message = Message(User(), "Yes","", 0, 0, ""),
     isSentByUser: Boolean = false,
     username: String = "Tuong",
     avatarUrl: String = ""
@@ -220,7 +234,8 @@ fun MessageBubble(
 //                } else {
                 TextMessageBubble(
                     content = message.content,
-                    isSentByUser = isSentByUser
+                    isSentByUser = isSentByUser,
+                    imagePath = message.imageUrl
                 )
                 //  }
             }
@@ -257,24 +272,72 @@ fun Avatar(icon: ImageVector, contentDescription: String) {
 }
 
 
+
 @Composable
-fun TextMessageBubble(content: String, isSentByUser: Boolean) {
-    Text(
-        text = content,
+fun TextMessageBubble(content: String, imagePath: String?, isSentByUser: Boolean) {
+    val fullImageUrl = imagePath?.let { "$BASE_URL$it" } // Xây dựng URL nếu imagePath không null
+
+    // Hiển thị văn bản
+    if (content.isNotBlank()){
+        MessageContent(
+            content = content,
+            isSentByUser = isSentByUser
+        )
+    }
+
+    // Hiển thị hình ảnh nếu có
+    if (fullImageUrl != null) {
+        MessageImage(imageUrl = fullImageUrl)
+    }
+}
+
+@Composable
+fun MessageContent(content: String, isSentByUser: Boolean) {
+    Column(
         modifier = Modifier
             .background(
                 color = if (isSentByUser) AppColors.SentMessageColor else AppColors.ReceivedMessageColor,
                 shape = RoundedCornerShape(16.dp)
             )
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        color = AppColors.TextColor,
-        style = TextStyle(
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 15.sp,
-            lineHeight = 20.sp
+            .padding(12.dp),
+        horizontalAlignment = Alignment.Start // Điều chỉnh alignment cho nội dung
+    ) {
+        Text(
+            text = content,
+            color = AppColors.TextColor,
+            style = TextStyle(
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 15.sp,
+                lineHeight = 20.sp
+            )
         )
-    )
+    }
 }
+
+@Composable
+fun MessageImage(imageUrl: String) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(vertical = 8.dp)
+    ) {
+        Image(
+            painter = rememberAsyncImagePainter(
+                model = imageUrl,
+                placeholder = painterResource(R.drawable.find_user_img), // Hình placeholder
+                error = painterResource(R.drawable.error_img) // Hình lỗi
+            ),
+            contentDescription = null,
+            modifier = Modifier
+                .sizeIn(maxWidth = 200.dp, maxHeight = 200.dp) // Kích thước tối đa
+                .clip(RoundedCornerShape(8.dp)) // Bo góc cho hình ảnh
+                .border(1.dp, Color.Gray, RoundedCornerShape(8.dp)),
+            contentScale = ContentScale.Inside // Giữ nguyên tỷ lệ gốc
+        )
+    }
+}
+
+
+
 
 
 //@Composable
@@ -370,11 +433,26 @@ fun TextMessageBubble(content: String, isSentByUser: Boolean) {
 @Composable
 fun ChatInputBar(
     onMessageSent: (String, Boolean) -> Unit,
+    onImageSent:(String) ->Unit,
     modifier: Modifier = Modifier
 ) {
     var messageText by remember { mutableStateOf("") }
     var isRecording by remember { mutableStateOf(false) }
     val context = LocalContext.current
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val uri = result.data?.data
+            if (uri != null) {
+                val base64Image = convertImageToBase64(context, uri)
+                if (base64Image != null) {
+                    onImageSent(base64Image)
+                }
+            }
+        }
+    }
 
     // Thay đổi cách khởi tạo MediaRecorder để đảm bảo nó được tái khởi tạo khi cần
     //var mediaRecorder: MediaRecorder? by remember { mutableStateOf(null) }
@@ -430,22 +508,21 @@ fun ChatInputBar(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
+
         IconButton(
             onClick = {
-//                if (isRecording) {
-//                    // Dừng ghi âm và gửi tin nhắn
-//                    stopRecordingAndSend()
-//                } else {
-//                    // Bắt đầu ghi âm
-//                    startRecording()
-//                }
-                isRecording = !isRecording
+                // Xử lý logic gửi ảnh ở đây
+                val intent = Intent(Intent.ACTION_PICK).apply {
+                    type = "image/*"
+                }
+                launcher.launch(intent)
             },
             modifier = Modifier.padding(8.dp)
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.bug_icon),
-                contentDescription = "Mic Icon",
+            Icon(
+                painter = painterResource(id = R.drawable.icon_image),
+                contentDescription = "Send Image",
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(32.dp)
             )
         }
@@ -549,7 +626,11 @@ fun ChatScreenWithViewModel(
         ChatScreen(
             messages = messages?.reversed() ?: emptyList(),
             onMessageSent = { content, isAudio ->
-                chatViewModel.sendMessage(MessageRequest(content))
+                chatViewModel.sendMessage(MessageRequest(message = content, image = null))
+            },
+            onImageSent = {
+                base64Image ->
+                chatViewModel.sendMessage(MessageRequest(message = null, image = base64Image))
             },
             userId = userId,
             onNavigateBack = onNavigateBack,
@@ -583,4 +664,22 @@ object AppColors {
 @Composable
 fun DefaultPreview() {
     //ChatScreenWithViewModel()
+}
+
+// Hàm chuyển đổi ảnh sang Base64
+fun convertImageToBase64(context: Context, uri: Uri): String? {
+    return try {
+        val inputStream = context.contentResolver.openInputStream(uri)
+        val bytes = inputStream?.readBytes()
+        inputStream?.close()
+        if (bytes != null) {
+            val base64String = Base64.encodeToString(bytes, Base64.DEFAULT)
+            "data:image/png;base64,$base64String"
+        } else {
+            null
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
 }
