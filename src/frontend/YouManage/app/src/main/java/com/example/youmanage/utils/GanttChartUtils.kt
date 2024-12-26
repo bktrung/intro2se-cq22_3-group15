@@ -1,5 +1,6 @@
 package com.example.youmanage.utils
 
+import com.example.youmanage.data.remote.projectmanagement.GanttChartData
 import com.example.youmanage.data.remote.projectmanagement.Project
 import com.example.youmanage.data.remote.taskmanagement.Task
 import java.text.SimpleDateFormat
@@ -24,7 +25,8 @@ fun calculateTaskDuration(startDate: Date, endDate: Date): Long {
     return (endDate.time - startDate.time) / (1000 * 60 * 60 * 24) // Duration in days
 }
 
-fun generateChartData(tasks: List<Task>, project: Project): ProjectTimeline {
+
+fun generateChartData(tasks: List<GanttChartData>, projectDueDate: String): ProjectTimeline {
     if (tasks.isEmpty()) return ProjectTimeline(Date(), Date(), emptyList())
 
     val dateTasks = tasks.mapNotNull { task ->
@@ -33,18 +35,18 @@ fun generateChartData(tasks: List<Task>, project: Project): ProjectTimeline {
         if (start != null && end != null) Pair(task, start to end) else null
     }
 
-    if (tasks.isEmpty()) return ProjectTimeline(Date(), Date(), emptyList())
+    if (dateTasks.isEmpty()) return ProjectTimeline(Date(), Date(), emptyList())
 
     val projectStartDate = dateTasks.minOfOrNull { it.second.first } ?: Date()
-    val projectEndDate = parseDate(project.dueDate) ?: Date()
+    val projectEndDate = parseDate(projectDueDate) ?: Date()
     val projectDuration = calculateTaskDuration(projectStartDate, projectEndDate).toFloat()
 
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
-   val chartData = dateTasks.map { (task, dateRange) ->
+    val chartData = dateTasks.map { (task, dateRange) ->
         val (taskStart, taskEnd) = dateRange
         val taskStartNormalized = (taskStart.time - projectStartDate.time).toFloat() / (1000 * 60 * 60 * 24) / projectDuration
-       val taskEndNormalized = ((taskEnd.time + 24L * 60L * 60L * 1000L) - projectStartDate.time).toFloat() / (1000 * 60 * 60 * 24) / projectDuration
+        val taskEndNormalized = ((taskEnd.time + 24L * 60L * 60L * 1000L) - projectStartDate.time).toFloat() / (1000 * 60 * 60 * 24) / projectDuration
         ChartData(
             title = task.title,
             start = taskStartNormalized,
@@ -53,9 +55,9 @@ fun generateChartData(tasks: List<Task>, project: Project): ProjectTimeline {
             endTime = dateFormatter.format(taskEnd)
         )
     }
+
     return ProjectTimeline(projectStartDate, projectEndDate, chartData)
 }
-
 
 
 data class ChartData(

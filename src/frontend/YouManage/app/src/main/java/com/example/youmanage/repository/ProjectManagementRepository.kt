@@ -2,6 +2,7 @@ package com.example.youmanage.repository
 
 import com.example.youmanage.data.remote.ApiInterface
 import com.example.youmanage.data.remote.projectmanagement.Assign
+import com.example.youmanage.data.remote.projectmanagement.GanttChartData
 import com.example.youmanage.data.remote.projectmanagement.Id
 import com.example.youmanage.data.remote.projectmanagement.Progress
 import com.example.youmanage.data.remote.projectmanagement.Project
@@ -182,5 +183,8 @@ class ProjectManagementRepository @Inject constructor(
             authorization
         )
     }
+
+    suspend fun getGanttChartData(id: String, authorization: String): Resource<List<GanttChartData>> =
+        safeApiCall { api.getGanttChartData(id,authorization) }
 
 }

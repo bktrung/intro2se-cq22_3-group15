@@ -1,5 +1,6 @@
 package com.example.youmanage.data.remote
 
+import com.example.youmanage.data.remote.projectmanagement.GanttChartData
 import com.example.youmanage.data.remote.projectmanagement.Id
 import com.example.youmanage.data.remote.projectmanagement.Project
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
@@ -74,6 +75,12 @@ interface ProjectAPI {
         @Path("projectId") id: String,
         @Header("Authorization") authentication: String
     ): List<User>
+
+    @GET("/projects/{projectId}/gantt-chart/")
+    suspend fun getGanttChartData(
+        @Path("projectId") id: String,
+        @Header("Authorization") authentication: String
+    ): List<GanttChartData>
 
     @GET("/users/self/")
     suspend fun getUser(

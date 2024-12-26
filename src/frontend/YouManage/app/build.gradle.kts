@@ -117,4 +117,6 @@ dependencies {
     // Navigation Animation
     implementation ("com.google.accompanist:accompanist-navigation-animation:0.33.1-alpha")
 
+    implementation ("io.coil-kt:coil-compose:2.4.0")
+
 }
