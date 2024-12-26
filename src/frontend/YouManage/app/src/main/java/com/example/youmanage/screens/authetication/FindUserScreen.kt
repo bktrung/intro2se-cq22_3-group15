@@ -15,6 +15,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -63,7 +64,7 @@ fun FindUserScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         IconButton(
             onClick = {
@@ -76,7 +77,8 @@ fun FindUserScreen(
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.back_arrow_icon),
-                contentDescription = "Back"
+                contentDescription = "Back",
+                tint = MaterialTheme.colorScheme.primary
             )
         }
 
@@ -101,13 +103,15 @@ fun FindUserScreen(
             Text(
                 text = "Find your account",
                 fontSize = 30.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
             )
 
             Spacer(modifier = Modifier.height(5.dp))
 
             Text(
-                text = "Enter your email"
+                text = "Enter your email",
+                color = MaterialTheme.colorScheme.secondary
             )
 
             Spacer(modifier = Modifier.height(40.dp))
@@ -117,7 +121,7 @@ fun FindUserScreen(
                 onChangeValue = { user = it },
                 placeholderContent = "Email",
                 placeholderColor = Color.Gray,
-                containerColor = Color(0x1A000000)
+                containerColor = MaterialTheme.colorScheme.surface,
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -127,7 +131,7 @@ fun FindUserScreen(
                     authenticationViewModel.checkEmail(Email(user))
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black
+                    containerColor = MaterialTheme.colorScheme.primary,
                 ),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
@@ -139,7 +143,8 @@ fun FindUserScreen(
                     "Continue",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = 5.dp)
+                    modifier = Modifier.padding(vertical = 5.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
             }
         }

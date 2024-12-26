@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -87,10 +88,10 @@ fun ChatScreen(
         topBar = {
             com.example.youmanage.screens.project_management.TopBar(
                 title = "Chat Room",
-                color = Color.Transparent,
+                color = MaterialTheme.colorScheme.primaryContainer,
                 onNavigateBack = onNavigateBack,
                 trailing = {
-                    Spacer(modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.size(24.dp).background(MaterialTheme.colorScheme.primaryContainer))
                 }
             )
         },
@@ -101,7 +102,7 @@ fun ChatScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp, vertical = 16.dp)
                     .background(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        color = MaterialTheme.colorScheme.primaryContainer,
                         shape = MaterialTheme.shapes.medium
                     )
             )
@@ -115,8 +116,8 @@ fun ChatScreen(
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            AppColors.LightBlue,
-                            AppColors.LighterBlue
+                            MaterialTheme.colorScheme.background,
+                            MaterialTheme.colorScheme.background
                         )
                     )
                 ),
@@ -204,7 +205,7 @@ fun MessageBubble(
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.primary
                         ),
                         modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
                     )
@@ -441,12 +442,13 @@ fun ChatInputBar(
 //                }
                 isRecording = !isRecording
             },
-            modifier = Modifier.padding(8.dp)
+            modifier = Modifier.padding(8.dp),
         ) {
             Image(
                 painter = painterResource(id = R.drawable.bug_icon),
                 contentDescription = "Mic Icon",
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(32.dp),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
             )
         }
 

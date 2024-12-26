@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -104,7 +105,7 @@ fun ActivityLogScreen(
         topBar = {
             TopBar(
                 title = "Activity Log",
-                color = Color.Transparent,
+                color = MaterialTheme.colorScheme.primaryContainer,
                 trailing = {
                     Box(modifier = Modifier.size(10.dp))
                 },
@@ -115,7 +116,7 @@ fun ActivityLogScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xffBAE5F5))
+                .background(MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
                 .padding(top = 20.dp, bottom = 60.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -129,7 +130,7 @@ fun ActivityLogScreen(
                         text = "No Activity Log",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
@@ -182,7 +183,7 @@ fun ActivityItems(
             defaultElevation = 10.dp
         ),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         )
 
     ) {
@@ -202,7 +203,7 @@ fun ActivityItems(
             ) {
                 Text(
                     activity.description,
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 20.sp,
                     modifier = Modifier.padding(bottom = 10.dp)

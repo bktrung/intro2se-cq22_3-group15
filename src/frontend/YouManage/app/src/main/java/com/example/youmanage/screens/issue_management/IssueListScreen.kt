@@ -26,6 +26,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -70,7 +71,7 @@ fun IssueListScreen(
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
 ) {
-    val backgroundColor = Color(0xffBAE5F5)
+    val backgroundColor = MaterialTheme.colorScheme.background
     val issues by issueManagementViewModel.issues.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     var filterIssues by remember { mutableStateOf(emptyList<Issue>()) }
@@ -216,7 +217,7 @@ fun IssueItem(
         onClick = { onIssueClick() },
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
         ),
         modifier = Modifier
             .fillMaxWidth()
@@ -280,7 +281,7 @@ fun TopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.Transparent)
+            .background(MaterialTheme.colorScheme.primaryContainer)
             .padding(24.dp)
             .padding(top = 24.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -289,13 +290,15 @@ fun TopBar(
         IconButton(onClick = { onNavigateBack() }) {
             Icon(
                 painter = painterResource(id = R.drawable.back_arrow_icon),
-                contentDescription = "Back"
+                contentDescription = "Back",
+                tint = MaterialTheme.colorScheme.primary
             )
         }
         Text(
             text = title,
             fontSize = 30.sp,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
         )
 
         Spacer(modifier = Modifier.size(30.dp))
