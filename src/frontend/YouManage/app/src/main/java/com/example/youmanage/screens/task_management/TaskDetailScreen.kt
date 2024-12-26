@@ -35,6 +35,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -91,7 +92,11 @@ import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
 import kotlinx.coroutines.delay
 
-val primaryColor = Color.Black.copy(alpha = 0.1f)
+
+
+val primaryColor: Color
+    @Composable
+    get() = MaterialTheme.colorScheme.surface
 
 data class TaskState(
     val title: String = "",
@@ -302,7 +307,7 @@ fun TaskDetailScreen(
                     text = taskState.title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 25.sp,
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.clickable {
                         showTitleEditor = !showTitleEditor
                     }
@@ -545,9 +550,9 @@ fun LabeledTextField(
     placeholder: String,
     @DrawableRes leadingIconRes: Int,
     modifier: Modifier = Modifier,
-    backgroundColor: Color = Color.White,
-    textColor: Color = Color.Black,
-    placeholderColor: Color = Color.Gray
+    backgroundColor: Color = MaterialTheme.colorScheme.background,
+    textColor: Color = MaterialTheme.colorScheme.primary,
+    placeholderColor: Color = MaterialTheme.colorScheme.primary
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -585,7 +590,8 @@ fun LabeledTextField(
                 )
             },
             maxLines = Int.MAX_VALUE,
-            shape = RoundedCornerShape(10.dp)
+            shape = RoundedCornerShape(10.dp),
+            textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
         )
     }
 }
@@ -607,7 +613,8 @@ fun CommentSection(
         Text(
             text = "Comments",
             fontWeight = FontWeight.Bold,
-            fontSize = 20.sp
+            fontSize = 20.sp,
+            color = MaterialTheme.colorScheme.primary
         )
 
         LazyColumn(
@@ -637,7 +644,7 @@ fun CommentSection(
             onValueChange = { content = it },
             placeholder = {
                 Text(
-                    "Enter your comment"
+                    "Enter your comment",
                 )
             },
             trailingIcon = {
@@ -651,7 +658,8 @@ fun CommentSection(
                     tint = Color.Black
                 )
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
         )
     }
 }
@@ -749,8 +757,8 @@ fun TaskBottomBar(
                 onClick = onSaveClick,
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black,
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
                 Text(
@@ -765,8 +773,8 @@ fun TaskBottomBar(
                 onClick = onDeleteClick,
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black,
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
                 Text(
@@ -810,7 +818,7 @@ fun EditCommentDialog(
                         shape = RoundedCornerShape(10.dp)
                     ),
                 shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
             ) {
                 Column(
                     modifier = Modifier
@@ -822,7 +830,7 @@ fun EditCommentDialog(
                         fontSize = 22.sp,
                         fontFamily = fontFamily,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
@@ -830,6 +838,7 @@ fun EditCommentDialog(
                         value = comment,
                         onValueChange = { comment = it },
                         maxLines = Int.MAX_VALUE,
+                        textStyle = TextStyle(color = MaterialTheme.colorScheme.primary),
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -840,7 +849,7 @@ fun EditCommentDialog(
                     ) {
                         TextButton(
                             onClick = onDismiss,
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Text("Cancel", fontFamily = fontFamily)
                         }
@@ -849,20 +858,20 @@ fun EditCommentDialog(
 
                         Button(
                             onClick = { onSave(comment) },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text("Save", color = Color.White, fontFamily = fontFamily)
+                            Text("Save", color = MaterialTheme.colorScheme.onPrimary, fontFamily = fontFamily)
                         }
 
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Button(
                             onClick = onDelete,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text("Delete", color = Color.White, fontFamily = fontFamily)
+                            Text("Delete", color = MaterialTheme.colorScheme.onPrimary, fontFamily = fontFamily)
                         }
                     }
                 }

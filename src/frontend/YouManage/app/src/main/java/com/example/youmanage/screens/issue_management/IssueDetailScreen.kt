@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -97,8 +98,8 @@ fun IssueDetailScreen(
     val showChooseTask = remember { mutableStateOf(false) }
     val showChooseMember = remember { mutableStateOf(false) }
 
-    val backgroundColor = Color(0xFFFFFFFF)
-    val textFieldColor = Color(0xFFF5F5F5)
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val textFieldColor = MaterialTheme.colorScheme.surface
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
@@ -212,7 +213,7 @@ fun IssueDetailScreen(
                 ) {
                     Text(
                         "Issue Title",
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
@@ -223,7 +224,7 @@ fun IssueDetailScreen(
                         placeholderContent = "Enter issue title",
                         placeholderColor = Color.Gray,
                         containerColor = textFieldColor,
-                        icon = R.drawable.project_title_icon
+                        icon = R.drawable.project_title_icon,
                     )
                 }
 
@@ -235,7 +236,7 @@ fun IssueDetailScreen(
                 ) {
                     Text(
                         "Description",
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
@@ -376,8 +377,8 @@ fun IssueBottomBar(
                 onClick = onSaveClick,
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black,
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
                 Text(
@@ -392,8 +393,8 @@ fun IssueBottomBar(
                 onClick = onDeleteClick,
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black,
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
                 Text(

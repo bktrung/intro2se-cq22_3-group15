@@ -26,6 +26,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -133,7 +134,7 @@ fun CreateTaskScreen(
     )
 
     var showDatePicker by remember { mutableStateOf(false) }
-    val textFieldColor = Color(0xFFF5F5F5)
+    val textFieldColor = MaterialTheme.colorScheme.surface
 
     var showChooseMember by remember {
         mutableStateOf(false)
@@ -158,7 +159,9 @@ fun CreateTaskScreen(
         mutableStateOf("Unassigned")
     }
 
+
     val context = LocalContext.current
+
 
     LaunchedEffect(changeRequestResponse){
         if (changeRequestResponse is Resource.Success) {
@@ -241,7 +244,6 @@ fun CreateTaskScreen(
                             }
 
                         }
-
                     },
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
@@ -292,7 +294,7 @@ fun CreateTaskScreen(
 
                     Text(
                         "Task Title",
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
@@ -301,7 +303,7 @@ fun CreateTaskScreen(
                         content = title,
                         onChangeValue = { title = it },
                         placeholderContent = "Enter project title",
-                        placeholderColor = Color.Gray,
+                        placeholderColor = MaterialTheme.colorScheme.primary,
                         containerColor = textFieldColor,
                         icon = R.drawable.project_title_icon
                     )
@@ -317,7 +319,7 @@ fun CreateTaskScreen(
 
                     Text(
                         "Description",
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
@@ -337,13 +339,13 @@ fun CreateTaskScreen(
                             Icon(
                                 painter = painterResource(id = R.drawable.description_icon),
                                 contentDescription = "",
-                                tint = Color.Black
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         },
                         placeholder = {
                             Text(
                                 "Enter project description",
-                                color = Color.Gray
+                                color = MaterialTheme.colorScheme.primary
                             )
                         },
                         maxLines = Int.MAX_VALUE,
@@ -463,7 +465,7 @@ fun PrioritySelector(
     ) {
         Text(
             "Priority",
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp
         )
@@ -480,13 +482,13 @@ fun PrioritySelector(
                     },
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
-                        if (index == priority) Color.Black else Color.Transparent
+                        if (index == priority) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
                     ),
                     border = BorderStroke(2.dp, Color.Black)
                 ) {
                     Text(
                         text = item,
-                        color = if (index == priority) Color.White else Color.Black
+                        color = MaterialTheme.colorScheme.onPrimary,
                     )
                 }
             }

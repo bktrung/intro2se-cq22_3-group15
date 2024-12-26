@@ -22,6 +22,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -78,7 +79,7 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
-            .background(Color(0xFFF0F0F0))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
@@ -88,22 +89,24 @@ fun HomeScreen(
             TextField(
                 value = searchQuery,
                 onValueChange = { newValue -> searchQuery = newValue },
-                placeholder = { Text("Find your project", color = Color.Gray) },
+                placeholder = { Text("Find your project", color = MaterialTheme.colorScheme.primary) },
                 leadingIcon = {
                     Icon(
                         painter = painterResource(id = R.drawable.search_icon),
-                        contentDescription = "Search"
+                        contentDescription = "Search",
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 },
                 modifier = Modifier
                     .fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = textFieldColor,
-                    unfocusedContainerColor = textFieldColor,
+                    focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp),
+                textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -119,7 +122,8 @@ fun HomeScreen(
                 ) {
                     Text(
                         text = "Projects",
-                        style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                     Spacer(modifier = Modifier.height(5.dp))
 
@@ -135,18 +139,18 @@ fun HomeScreen(
                             1 -> "You have one project"
                             else -> "You have $numOfProjects projects"
                         },
-                        style = TextStyle(color = Color.Black)
+                        style = TextStyle(color = MaterialTheme.colorScheme.primary)
                     )
                 }
 
                 Button(
                     onClick = { onAddNewProject() },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xffd9d9d9),
-                        contentColor = Color.Black
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
-                    Text(text = "+ Add", fontSize = 16.sp, color = Color.Black)
+                    Text(text = "+ Add", fontSize = 16.sp)
                 }
             }
 

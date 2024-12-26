@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -70,7 +71,7 @@ fun PieChart(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(10.dp))
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.primaryContainer)
             .padding(horizontal = 30.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -80,7 +81,8 @@ fun PieChart(
         Text(
             text = "Overall Activity",
             fontWeight = FontWeight.Medium,
-            fontSize = 20.sp
+            fontSize = 20.sp,
+            color = Color.Black
         )
 
         Spacer(modifier = Modifier.height(30.dp))

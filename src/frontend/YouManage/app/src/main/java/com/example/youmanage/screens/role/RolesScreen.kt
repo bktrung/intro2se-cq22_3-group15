@@ -25,6 +25,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -137,7 +138,7 @@ fun RolesScreen(
                 trailing = {
                     Spacer(modifier = Modifier.size(24.dp))
                 },
-                color = Color.Transparent,
+                color = MaterialTheme.colorScheme.primaryContainer,
                 onNavigateBack = onNavigateBack
             )
         },
@@ -156,14 +157,14 @@ fun RolesScreen(
                     },
                     shape = RoundedCornerShape(30.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = Color.Black
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     modifier = Modifier
                         .border(
                             2.dp,
                             Color.Black,
-                            RoundedCornerShape(10.dp)
+                            RoundedCornerShape(30.dp)
                         )
 
                 ) {
@@ -349,7 +350,7 @@ fun RoleItem(
             defaultElevation = 3.dp
         ),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xffBAE5F5)
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Row(
@@ -365,7 +366,7 @@ fun RoleItem(
                 style = TextStyle(
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 20.sp,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.primary
                 ),
                 maxLines = Int.MAX_VALUE,
                 modifier = Modifier.weight(1f)
@@ -380,7 +381,8 @@ fun RoleItem(
                     modifier = Modifier
                         .padding(5.dp)
                         .size(30.dp)
-                        .clickable { onUpdate() }
+                        .clickable { onUpdate() },
+                    tint = MaterialTheme.colorScheme.primary
                 )
 
                 Icon(
@@ -389,7 +391,8 @@ fun RoleItem(
                     modifier = Modifier
                         .padding(5.dp)
                         .size(30.dp)
-                        .clickable { onDelete() }
+                        .clickable { onDelete() },
+                    tint = MaterialTheme.colorScheme.primary
                 )
 
                 Icon(
@@ -398,7 +401,8 @@ fun RoleItem(
                     modifier = Modifier
                         .padding(5.dp)
                         .size(30.dp)
-                        .clickable { onAssign() }
+                        .clickable { onAssign() },
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
         }

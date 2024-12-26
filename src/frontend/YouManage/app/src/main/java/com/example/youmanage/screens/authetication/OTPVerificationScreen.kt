@@ -255,7 +255,7 @@ fun OTPVerificationScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White),
+            .background(MaterialTheme.colorScheme.background),
 
         ) {
 
@@ -270,7 +270,8 @@ fun OTPVerificationScreen(
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.back_arrow_icon),
-                contentDescription = "Back"
+                contentDescription = "Back",
+                tint = MaterialTheme.colorScheme.primary
             )
         }
 
@@ -288,13 +289,14 @@ fun OTPVerificationScreen(
             Text(
                 "OTP Verification",
                 fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
             )
 
             Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = "An 6-digits code has been sent to your email",
-                color = Color.Black.copy(alpha = 0.5f)
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
             )
 
             OTPTextField(
@@ -311,7 +313,7 @@ fun OTPVerificationScreen(
             ) {
                 Text(
                     text = "The OPT will be expired in ",
-                    color = Color.Black.copy(alpha = 0.5f)
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                 )
                 Text(
                     text = String.format("%02d:%02d", minutes, seconds),
@@ -326,7 +328,7 @@ fun OTPVerificationScreen(
 
                 Text(
                     text = "Didn't receive code?",
-                    color = Color.Black.copy(alpha = 0.5f)
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                 )
                 TextButton(onClick = {
                     authenticationViewModel.forgotPasswordSendOTP(
