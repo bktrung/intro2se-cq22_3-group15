@@ -33,6 +33,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', '52.77.148.0', 'youmanage.c0smic.tech
 
 INSTALLED_APPS = [
     'daphne',
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
