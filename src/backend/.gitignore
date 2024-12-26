@@ -171,3 +171,7 @@ celerybeat-schedule.dir
 
 # bat
 tempCodeRunnerFile.bat
+
+.vscode/
+
+.VSCodeCounter/

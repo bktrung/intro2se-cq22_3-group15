@@ -92,7 +92,7 @@ class TaskSerializer(serializers.ModelSerializer):
                 })
 
         # Validate against project dates if creating new task
-        project = data.get('project')
+        project = self.context.get('project')
         if project:
             if data.get('start_date') and data['start_date'] < project.duedate:
                 raise serializers.ValidationError({
