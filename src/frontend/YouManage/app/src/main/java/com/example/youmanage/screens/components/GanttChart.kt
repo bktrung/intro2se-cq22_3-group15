@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,6 +30,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.example.youmanage.utils.ProjectTimeline
+import com.example.youmanage.utils.randomVibrantLightColor
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -39,8 +42,8 @@ fun GanttChart(
     timelineBackgroundColor: Color = Color(0xFF00B7FF),
     timelineBorderColor: Color = Color.White,
     timelineTextColor: Color = Color.White,
-    ganttBarColor: Color = Color.Blue,
-    ganttBarLabelColor: Color = Color.Black
+    ganttBarColor: Color = Color(0xffBAE5F5),
+    ganttBarLabelColor: Color = MaterialTheme.colorScheme.primary
 ) {
     val dateFormatter = SimpleDateFormat("dd/MM", Locale.getDefault())
     val totalDays = ((projectTimeLine.projectEndDate.time - projectTimeLine.projectStartDate.time) / (1000 * 60 * 60 * 24)).toInt()
@@ -49,7 +52,10 @@ fun GanttChart(
     var selectedTask by remember { mutableStateOf<Pair<String, Pair<String, String>?>>(Pair("", null)) }
 
     Row(modifier = Modifier.horizontalScroll(scrollState)) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize()
+                .padding(start = 20.dp)
+        ) {
             // Timeline
             Canvas(modifier = Modifier
                 .width(50.dp * totalDays)
@@ -200,7 +206,7 @@ private fun DrawScope.drawGanttBar(
         color = barColor,
         topLeft = Offset(taskStartX, (size.height - barHeight) / 2),
         size = Size(taskEndX - taskStartX, barHeight),
-        cornerRadius = CornerRadius(barHeight / 2, barHeight / 2)
+        cornerRadius = CornerRadius(barHeight / 5, barHeight / 5)
     )
 
     // Draw the task label
