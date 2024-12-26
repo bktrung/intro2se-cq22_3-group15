@@ -27,6 +27,10 @@ fun calculateTaskDuration(startDate: Date, endDate: Date): Long {
 
 
 fun generateChartData(tasks: List<GanttChartData>, projectDueDate: String): ProjectTimeline {
+
+    println("tasks: $tasks")
+    println("projectDueDate: $projectDueDate")
+
     if (tasks.isEmpty()) return ProjectTimeline(Date(), Date(), emptyList())
 
     val dateTasks = tasks.mapNotNull { task ->

@@ -275,6 +275,8 @@ fun MemberRoleItem(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = "Assign",
                     modifier = Modifier
+
+
                         .padding(5.dp)
                         .size(30.dp)
                         .clickable { onUnAssign() },

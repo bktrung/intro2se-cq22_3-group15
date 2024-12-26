@@ -5,12 +5,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,10 +34,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
 import com.example.youmanage.screens.components.GanttChart
 import com.example.youmanage.utils.Constants.WEB_SOCKET
+import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.generateChartData
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
+
 @Composable
 fun GanttChartScreen(
     onNavigateBack: () -> Unit = {},
@@ -45,7 +52,6 @@ fun GanttChartScreen(
     val ganttChartData by projectManagementViewModel.ganttChartData.observeAsState()
     val project by projectManagementViewModel.project.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
-
 
     // Lấy danh sách task
     LaunchedEffect(accessToken.value) {
@@ -67,10 +73,39 @@ fun GanttChartScreen(
         }
     }
 
+    LaunchedEffect(key1 = ganttChartData) {
+        if (ganttChartData is Resource.Success) {
+            println("ganttChartData: ${ganttChartData?.data}")
+        } else {
+            println("ganttChartData: ${ganttChartData?.message}")
+        }
+
+    }
+
+
+    LaunchedEffect(ganttChartData) {
+
+    }
     Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(
+                bottom = WindowInsets.systemBars
+                    .asPaddingValues()
+                    .calculateBottomPadding()
+            ),
         topBar = {
             TopBar(
-                onNavigateBack = { onNavigateBack() }
+                title = "Gantt Chart",
+                color = Color.Transparent,
+                trailing = {
+                    Box(
+                        modifier = Modifier.size(24.dp)
+                    )
+                },
+                onNavigateBack = onNavigateBack
             )
         }
     ) { paddingValues ->
@@ -78,17 +113,17 @@ fun GanttChartScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(backgroundColor)
                 .padding(paddingValues)
         ) {
-            if (ganttChartData?.data != null && project?.data != null) {
+            if (ganttChartData is Resource.Success && project is Resource.Success) {
+                println("ganttChartData is Render: ${ganttChartData?.data}")
+                println("project: ${project?.data}")
                 GanttChart(
                     generateChartData(
                         tasks = ganttChartData!!.data!!,
                         projectDueDate = project!!.data!!.dueDate
                     )
                 )
-
             } else {
                 Text(
                     text = "Loading...",
