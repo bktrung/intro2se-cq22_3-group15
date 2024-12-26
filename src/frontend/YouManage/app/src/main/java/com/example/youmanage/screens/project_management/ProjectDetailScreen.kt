@@ -226,17 +226,17 @@ fun ProjectDetailScreen(
 
             pieChartInputList = listOf(
                 PieChartInput(
-                    color = Color(0xffedf0f2),
+                    color = Color(0xffFFD580),
                     value = pending.toDouble().div(total) * 100.0,
                     description = "Pending"
                 ),
                 PieChartInput(
-                    color = Color(0xfffccdcd),
+                    color = Color(0xff90CAF9),
                     value = inProgress.toDouble().div(total) * 100.0,
                     description = "In Progress"
                 ),
                 PieChartInput(
-                    color = Color(0xffbaf4ca),
+                    color = Color(0xffA5D6A7),
                     value = completed.toDouble().div(total) * 100.0,
                     description = "Completed"
                 )
