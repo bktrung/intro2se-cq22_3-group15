@@ -2,7 +2,7 @@ from django.db.models.signals import post_save, pre_save, post_delete, m2m_chang
 from django.dispatch import receiver
 from project_manager.models import Task, Project, Issue, Comment, Role, ChangeRequest
 from chat.models import ChatMessage
-from .utils import send_object_notification, log_notification, send_notification_to_user
+from .utils import send_object_notification, log_notification, send_notification_to_user, send_notification_in_app
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.contrib.auth import get_user_model
@@ -113,6 +113,7 @@ def notify_group_membership(sender, instance, action, pk_set, **kwargs):
             # Log notification
             log_notification(title, body, user)
             send_notification_to_user(title, body, user)
+            send_notification_in_app(title, body, user)
             
 @receiver(post_save, sender=ChatMessage)
 def notify_new_chat_message(sender, instance, created, **kwargs):
@@ -159,6 +160,7 @@ def notify_project_deleted(sender, instance, **kwargs):
     for member in instance.members.all():
         log_notification(title, body, member)
         send_notification_to_user(title, body, member)
+        send_notification_in_app(title, body, member)
             
 @receiver(pre_save, sender=Task)
 def store_task_state(sender, instance, **kwargs):
@@ -189,6 +191,7 @@ def notify_task_assignee(sender, instance, created, **kwargs):
     # Send notifications
     log_notification(title, body, instance.assignee)
     send_notification_to_user(title, body, instance.assignee)
+    send_notification_in_app(title, body, instance.assignee)
                 
 @receiver(post_save, sender=Task)
 def notify_task_completion_to_host(sender, instance, created, **kwargs):
@@ -201,6 +204,7 @@ def notify_task_completion_to_host(sender, instance, created, **kwargs):
     
     log_notification(title, body, instance.project.host)
     send_notification_to_user(title, body, instance.project.host)
+    send_notification_in_app(title, body, instance.project.host)
     
 @receiver(pre_save, sender=Issue)
 def store_issue_state(sender, instance, **kwargs):
@@ -231,6 +235,7 @@ def notify_issue_assignee(sender, instance, created, **kwargs):
     # Send notifications
     log_notification(title, body, instance.assignee)
     send_notification_to_user(title, body, instance.assignee)
+    send_notification_in_app(title, body, instance.assignee)
     
 @receiver(post_save, sender=Issue)
 def notify_issue_completion_to_host(sender, instance, created, **kwargs):
@@ -243,6 +248,7 @@ def notify_issue_completion_to_host(sender, instance, created, **kwargs):
     
     log_notification(title, body, instance.project.host)
     send_notification_to_user(title, body, instance.project.host)
+    send_notification_in_app(title, body, instance.project.host)
     
 @receiver(post_save, sender=Issue)
 def notify_issue_creation(sender, instance, created, **kwargs):
@@ -254,6 +260,7 @@ def notify_issue_creation(sender, instance, created, **kwargs):
     
     log_notification(title, body, instance.project.host)
     send_notification_to_user(title, body, instance.project.host)
+    send_notification_in_app(title, body, instance.project.host)
     
 @receiver(post_save, sender=Comment)
 def notify_comment_creation(sender, instance, created, **kwargs):
@@ -265,6 +272,7 @@ def notify_comment_creation(sender, instance, created, **kwargs):
     
     log_notification(title, body, instance.task.assignee)
     send_notification_to_user(title, body, instance.task.assignee)
+    send_notification_in_app(title, body, instance.task.assignee)
     
 @receiver(post_save, sender=ChangeRequest)
 def notify_change_request_creation(sender, instance, created, **kwargs):
@@ -276,6 +284,7 @@ def notify_change_request_creation(sender, instance, created, **kwargs):
     
     log_notification(title, body, instance.project.host)
     send_notification_to_user(title, body, instance.project.host)
+    send_notification_in_app(title, body, instance.project.host)
     
 @receiver(post_save, sender=ChangeRequest)
 def notify_change_request_approval(sender, instance, created, **kwargs):
@@ -287,6 +296,7 @@ def notify_change_request_approval(sender, instance, created, **kwargs):
     
     log_notification(title, body, instance.requester)
     send_notification_to_user(title, body, instance.requester)
+    send_notification_in_app(title, body, instance.requester)
     
 @receiver(post_save, sender=ChangeRequest)
 def notify_change_request_rejection(sender, instance, created, **kwargs):
@@ -298,6 +308,7 @@ def notify_change_request_rejection(sender, instance, created, **kwargs):
     
     log_notification(title, body, instance.requester)
     send_notification_to_user(title, body, instance.requester)
+    send_notification_in_app(title, body, instance.requester)
     
 @receiver(m2m_changed, sender=Role.users.through)
 def notify_role_assignment(sender, instance, action, pk_set, **kwargs):
@@ -310,4 +321,5 @@ def notify_role_assignment(sender, instance, action, pk_set, **kwargs):
             # Log notification
             log_notification(title, body, user)
             send_notification_to_user(title, body, user)
+            send_notification_in_app(title, body, user)
             

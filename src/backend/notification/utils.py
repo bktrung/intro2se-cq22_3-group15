@@ -56,3 +56,18 @@ def send_notification_to_user(title, body, user):
     if device_tokens:
         access_token = get_firebase_access_token.delay().get()
         send_batch_fcm_notification(access_token, device_tokens, title, body)
+        
+def send_notification_in_app(title, body, user):
+    channel_layer = get_channel_layer()
+    group_name = f"user_{user.id}"
+    
+    data = {
+        "type": "notification",
+        "title": title,
+        "body": body
+    }
+    
+    async_to_sync(channel_layer.group_send)(
+        group_name,
+        {"type": "send.notification", "data": data}
+    )
