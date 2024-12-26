@@ -125,14 +125,17 @@ def notify_new_chat_message(sender, instance, created, **kwargs):
     
     project_members = project.members.exclude(id=author.id).prefetch_related('device_tokens')
     
-    # Key format: project_messages_{project_id}_{user_id}
     for user in project_members:
         cache_key = f"project_messages_{project.id}_{user.id}"
         
-        # Increment message count in cache
-        message_count = cache.incr(cache_key, delta=1, timeout=300)  # Atomic increment
-        if message_count == 1:
-            cache.expire(cache_key, 300)  # Set expiry only on first increment
+        # Get current count
+        message_count = cache.get(cache_key, 0)
+        
+        # Increment count
+        message_count += 1
+        
+        # Set new count with timeout
+        cache.set(cache_key, message_count, timeout=300)
                 
         # Only send notification if:
         # 1. First message (count=1)
@@ -141,7 +144,6 @@ def notify_new_chat_message(sender, instance, created, **kwargs):
         throttle_key = f"notification_sent_{project.id}_{user.id}"
         
         if (message_count == 1 or message_count % 5 == 0) and not cache.get(throttle_key):
-                
             title = f"New messages in {project.name}"
             body = f"{message_count} new message{'s' if message_count > 1 else ''}"
             if message_count == 1:
