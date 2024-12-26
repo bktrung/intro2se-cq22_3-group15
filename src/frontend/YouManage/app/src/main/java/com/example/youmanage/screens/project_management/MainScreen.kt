@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -117,7 +118,7 @@ fun BottomNavigationBar(
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 16.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFFF0F0F0)),
+            .background(Color.Black.copy(alpha = 0.1f)),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -140,7 +141,7 @@ fun BottomNavigationBar(
                         .align(Alignment.CenterVertically),
                     tint = if (currentDestination?.hierarchy?.any {
                             it.route == item.route
-                        } == true) Color.Black else Color.Gray
+                        } == true) MaterialTheme.colorScheme.primary else Color.Gray
                 )
             }
         }

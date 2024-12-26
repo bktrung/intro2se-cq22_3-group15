@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.youmanage.data.remote.ApiInterface
+import com.example.youmanage.data.remote.authentication.AccessToken
 import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
 import com.example.youmanage.data.remote.authentication.RefreshToken
 import com.example.youmanage.data.remote.authentication.Message
@@ -79,6 +80,10 @@ class AuthenticationRepository @Inject constructor(
 
     suspend fun logOut(logoutRequest: RefreshToken, authorization: String): Resource<Message> {
         return safeApiCall { api.logOut(logoutRequest, authorization = authorization) }
+    }
+
+    suspend fun refreshAccessToken(refreshToken: RefreshToken, authorization: String): Resource<AccessToken> {
+        return safeApiCall { api.refreshAccessToken(refreshToken, authorization) }
     }
 
     suspend fun verifyOTP(request: VerifyRequest): Resource<Message> {

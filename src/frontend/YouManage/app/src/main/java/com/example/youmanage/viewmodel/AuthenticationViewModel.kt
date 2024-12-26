@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.youmanage.data.remote.authentication.AccessToken
 import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
 import com.example.youmanage.data.remote.authentication.Email
 import com.example.youmanage.data.remote.authentication.Message
@@ -52,6 +53,9 @@ class AuthenticationViewModel @Inject constructor(
     private val _user = MutableLiveData<Resource<User>>()
     val user : LiveData<Resource<User>> get() = _user
 
+    private val _refreshResponse = MutableLiveData<Resource<AccessToken>>()
+    val refreshResponse: LiveData<Resource<AccessToken>> get() = _refreshResponse
+
     val accessToken: Flow<String?> = repository.accessToken
     val refreshToken: Flow<String?> = repository.refreshToken
 
@@ -77,6 +81,12 @@ class AuthenticationViewModel @Inject constructor(
     fun verifyOTP(request: VerifyRequest){
         viewModelScope.launch {
             _verifyOTPResponse.value = repository.verifyOTP(request)
+        }
+    }
+
+    fun refreshAccessToken(refreshToken: RefreshToken, authorization: String) {
+        viewModelScope.launch {
+            _refreshResponse.value = repository.refreshAccessToken(refreshToken, authorization)
         }
     }
 

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -30,6 +31,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,6 +58,7 @@ import com.example.youmanage.R
 import com.example.youmanage.data.remote.taskmanagement.Task
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Constants.statusMapping
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
@@ -74,7 +77,7 @@ fun TaskListScreen(
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
 ) {
 
-    val backgroundColor = Color(0xffBAE5F5)
+    val backgroundColor = MaterialTheme.colorScheme.background
 
     val tasks by taskManagementViewModel.tasks.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
@@ -98,27 +101,13 @@ fun TaskListScreen(
         projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
     }
 
-    LaunchedEffect(
-        key1 = memberSocket,
-        key2 = projectSocket
-    ) {
-        if (
-            projectSocket is Resource.Success &&
-            projectSocket?.data?.type == "project_deleted" &&
-            projectSocket?.data?.content?.id.toString() == projectId
-        ) {
-            onDisableAction()
-
-            if (
-                memberSocket is Resource.Success &&
-                memberSocket?.data?.type == "member_removed" &&
-                user is Resource.Success &&
-                memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
-            ) {
-                onDisableAction()
-            }
-        }
-    }
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = projectId,
+        onDisableAction = onDisableAction
+    )
 
     var isSelectedButton by rememberSaveable { mutableIntStateOf(0) }
 
@@ -148,12 +137,23 @@ fun TaskListScreen(
     }
 
     Scaffold(
-        modifier = Modifier.padding(
-            bottom = WindowInsets.systemBars.asPaddingValues()
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(
+            bottom = WindowInsets
+                .systemBars.asPaddingValues()
                 .calculateBottomPadding()
         ),
         topBar = {
-            TopBar(
+            com.example.youmanage.screens.project_management.TopBar(
+                title = "Task List",
+                color = Color.Transparent,
+                trailing = {
+                    Box(
+                        modifier = Modifier.size(24.dp)
+                    )
+                },
                 onNavigateBack = { onNavigateBack() }
             )
         },
@@ -171,11 +171,11 @@ fun TaskListScreen(
                     shape = RoundedCornerShape(30.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Transparent,
-                        contentColor = Color.Black
+                        contentColor = MaterialTheme.colorScheme.primary
                     ),
                     modifier = Modifier.border(
                         2.dp,
-                        Color.Black,
+                        MaterialTheme.colorScheme.primary,
                         RoundedCornerShape(10.dp)
                     )
 
@@ -253,7 +253,7 @@ fun TaskItem(
         onClick = { onTaskClick() },
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
         ),
         modifier = Modifier
             .fillMaxWidth()
@@ -286,7 +286,7 @@ fun TaskItem(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(5.dp))
-                        .background(Color.LightGray)
+                        .background(MaterialTheme.colorScheme.primary)
                         .then(
                             if (priority.isNullOrBlank()) Modifier
                                 .size(10.dp)
@@ -298,7 +298,8 @@ fun TaskItem(
                             text = it,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(vertical = 5.dp, horizontal = 10.dp)
+                            modifier = Modifier.padding(vertical = 5.dp, horizontal = 10.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 }
@@ -328,7 +329,7 @@ fun TaskItem(
                 Icon(
                     painter = painterResource(id = R.drawable.comment_icon),
                     contentDescription = "Comment",
-                    tint = Color.Black,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.clickable { onCommentClick() }
                 )
 
@@ -341,7 +342,7 @@ fun TaskItem(
                 Icon(
                     painter = painterResource(id = R.drawable.calendar_icon),
                     contentDescription = "Deadline",
-                    tint = Color.Black
+                    tint = MaterialTheme.colorScheme.primary
                 )
                 Text(endDate, fontSize = 15.sp, fontWeight = FontWeight.Medium)
 
@@ -358,7 +359,7 @@ fun TopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.Transparent)
+            .background(MaterialTheme.colorScheme.primaryContainer)
             .padding(24.dp)
             .padding(top = 24.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -367,13 +368,15 @@ fun TopBar(
         IconButton(onClick = { onNavigateBack() }) {
             Icon(
                 painter = painterResource(id = R.drawable.back_arrow_icon),
-                contentDescription = "Back"
+                contentDescription = "Back",
+                tint = MaterialTheme.colorScheme.primary
             )
         }
         Text(
             text = "Task List",
             fontSize = 30.sp,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
         )
 
         Spacer(modifier = Modifier.size(30.dp))
@@ -395,12 +398,11 @@ fun ButtonSection(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        itemsIndexed(status){
-            index, name ->
+        itemsIndexed(status) { index, name ->
             TaskListButton(
                 name = name.first,
-                contentColor = if (index == isSelectedButton) Color(0xffBAE5F5) else Color.Black,
-                containerColor = if (index == isSelectedButton) Color.Black else Color.Transparent,
+                contentColor = if (index == isSelectedButton) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+                containerColor = if (index == isSelectedButton) MaterialTheme.colorScheme.primary else Color.Transparent,
                 onClick = { onClick(index) }
             )
         }
@@ -426,7 +428,7 @@ fun TaskListButton(
         modifier = Modifier
             .border(
                 2.dp,
-                borderColor,
+                MaterialTheme.colorScheme.primary,
                 RoundedCornerShape(30.dp)
             )
 
@@ -435,7 +437,7 @@ fun TaskListButton(
             name,
             fontWeight = FontWeight.Bold,
             fontSize = 15.sp,
-            modifier = Modifier.padding(vertical = 10.dp)
+            modifier = Modifier.padding(vertical = 10.dp),
         )
     }
 }

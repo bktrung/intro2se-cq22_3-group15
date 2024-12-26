@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,6 +27,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,6 +55,7 @@ import com.example.youmanage.data.remote.issusemanagement.Issue
 import com.example.youmanage.screens.task_management.ButtonSection
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Constants.statusMapping
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.IssuesViewModel
@@ -69,7 +72,7 @@ fun IssueListScreen(
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
 ) {
-    val backgroundColor = Color(0xffBAE5F5)
+    val backgroundColor = MaterialTheme.colorScheme.background
     val issues by issueManagementViewModel.issues.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     var filterIssues by remember { mutableStateOf(emptyList<Issue>()) }
@@ -94,27 +97,13 @@ fun IssueListScreen(
         projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
     }
 
-    LaunchedEffect(
-        key1 = memberSocket,
-        key2 = projectSocket
-    ) {
-        if (
-            projectSocket is Resource.Success &&
-            projectSocket?.data?.type == "project_deleted" &&
-            projectSocket?.data?.content?.id.toString() == projectId
-        ) {
-            onDisableAction()
-
-            if (
-                memberSocket is Resource.Success &&
-                memberSocket?.data?.type == "member_removed" &&
-                user is Resource.Success &&
-                memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
-            ) {
-                onDisableAction()
-            }
-        }
-    }
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = projectId,
+        onDisableAction = onDisableAction
+    )
 
     LaunchedEffect(Unit) {
         issueManagementViewModel.connectToIssueWebSocket(webSocketUrl)
@@ -141,14 +130,24 @@ fun IssueListScreen(
 
 
     Scaffold(
-        modifier = Modifier.padding(
-            bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
-        ),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(
+                bottom = WindowInsets.systemBars
+                    .asPaddingValues()
+                    .calculateBottomPadding()
+            ),
         topBar = {
-            TopBar(
+            com.example.youmanage.screens.project_management.TopBar(
                 title = "Issue List",
+                color = Color.Transparent,
+                trailing = {
+                    Spacer(modifier = Modifier.size(24.dp))
+                },
                 onNavigateBack = { onNavigateBack() }
             )
+
         },
         bottomBar = {
 
@@ -163,11 +162,11 @@ fun IssueListScreen(
                     shape = RoundedCornerShape(30.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Transparent,
-                        contentColor = Color.Black
+                        contentColor = MaterialTheme.colorScheme.primary
                     ),
                     modifier = Modifier.border(
                         2.dp,
-                        Color.Black,
+                        MaterialTheme.colorScheme.primary,
                         RoundedCornerShape(10.dp)
                     )
                 ) {
@@ -229,7 +228,7 @@ fun IssueItem(
         onClick = { onIssueClick() },
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
         ),
         modifier = Modifier
             .fillMaxWidth()
@@ -293,7 +292,7 @@ fun TopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.Transparent)
+            .background(MaterialTheme.colorScheme.primaryContainer)
             .padding(24.dp)
             .padding(top = 24.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -302,13 +301,15 @@ fun TopBar(
         IconButton(onClick = { onNavigateBack() }) {
             Icon(
                 painter = painterResource(id = R.drawable.back_arrow_icon),
-                contentDescription = "Back"
+                contentDescription = "Back",
+                tint = MaterialTheme.colorScheme.primary
             )
         }
         Text(
             text = title,
             fontSize = 30.sp,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
         )
 
         Spacer(modifier = Modifier.size(30.dp))

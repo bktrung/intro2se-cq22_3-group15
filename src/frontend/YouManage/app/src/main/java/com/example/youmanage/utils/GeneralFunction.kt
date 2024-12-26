@@ -4,7 +4,13 @@ import android.os.Build
 import android.util.Base64
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Color
+import com.example.youmanage.data.remote.projectmanagement.Project
+import com.example.youmanage.data.remote.projectmanagement.User
+import com.example.youmanage.data.remote.websocket.MemberObject
+import com.example.youmanage.data.remote.websocket.WebSocketResponse
 import org.json.JSONObject
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -97,4 +103,33 @@ fun formatToRelativeTime(isoString: String): String {
     }
 }
 
+@Composable
+fun HandleOutProjectWebSocket(
+    memberSocket: Resource<WebSocketResponse<MemberObject>>?,
+    projectSocket: Resource<WebSocketResponse<Project>>?,
+    user: Resource<User>?,
+    projectId: String,
+    onDisableAction: () -> Unit
+) {
+    LaunchedEffect(
+        key1 = memberSocket,
+        key2 = projectSocket
+    ) {
+        // Kiểm tra thông báo từ WebSocket của dự án
+        if (projectSocket is Resource.Success &&
+            projectSocket.data?.type == "project_deleted" &&
+            projectSocket.data.content?.id.toString() == projectId
+        ) {
+            onDisableAction()
+        }
 
+        // Kiểm tra thông báo từ WebSocket của thành viên
+        if (memberSocket is Resource.Success &&
+            memberSocket.data?.type == "member_removed" &&
+            user is Resource.Success &&
+            memberSocket.data.content?.affectedMembers?.contains(user.data) == true
+        ) {
+            onDisableAction()
+        }
+    }
+}

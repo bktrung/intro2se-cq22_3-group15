@@ -147,4 +147,18 @@ class RoleViewmodel @Inject constructor(
             }
         }
     }
+
+    fun getRolesOfMember(
+        projectId: String,
+        memberId: String,
+        authorization: String
+    ){
+        viewModelScope.launch {
+            _roles.value = repository.getRolesOfMember(
+                projectId,
+                memberId,
+                authorization
+            )
+        }
+    }
 }

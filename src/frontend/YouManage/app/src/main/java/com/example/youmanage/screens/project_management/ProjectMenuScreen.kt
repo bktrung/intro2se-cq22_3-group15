@@ -8,14 +8,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,6 +47,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.screens.components.AlertDialog
 import com.example.youmanage.screens.components.ErrorDialog
 import com.example.youmanage.utils.Constants.WEB_SOCKET
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
@@ -72,8 +77,6 @@ fun ProjectMenuScreen(
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
-    val navController = rememberNavController()
 
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     val deleteProjectResponse by projectManagementViewModel.deleteProjectResponse.observeAsState()
@@ -102,75 +105,50 @@ fun ProjectMenuScreen(
         }
     }
 
-    LaunchedEffect(
-        key1 = memberSocket,
-        key2 = projectSocket
-    ) {
-        if (
-            projectSocket is Resource.Success &&
-            projectSocket?.data?.type == "project_deleted" &&
-            projectSocket?.data?.content?.id.toString() == id
-        ) {
-            onDisableAction()
-        }
-
-        if (
-            memberSocket is Resource.Success &&
-            memberSocket?.data?.type == "member_removed" &&
-            user is Resource.Success &&
-            memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
-        ) {
-            onDisableAction()
-        }
-    }
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = id,
+        onDisableAction = onDisableAction
+    )
 
     val projectMenuItems = listOf(
         ProjectMenuItem(
             title = "Task List",
             icon = R.drawable.task_icon,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.primary,
             onClick = { onTaskList() }
         ),
         ProjectMenuItem(
             title = "Gantt Chart",
             icon = R.drawable.gantt_chart_icon,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.primary,
             onClick = { onGanttChart() }
         ),
         ProjectMenuItem(
             title = "Issue List",
             icon = R.drawable.bug_icon,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.primary,
             onClick = { onIssueList() }
-        ),
-        ProjectMenuItem(
-            title = "Member",
-            icon = R.drawable.user_icon,
-            color = Color.Black
         ),
         ProjectMenuItem(
             title = "Activity Logs",
             icon = R.drawable.activity_logs,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.primary,
             onClick = { onActivityLog() }
         ),
         ProjectMenuItem(
-            title = "Project Setting",
-            icon = R.drawable.setting_icon,
-            color = Color.Black
-        ),
-
-        ProjectMenuItem(
             title = "Roles",
             icon = R.drawable.task_icon,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.primary,
             onClick = { onRoles() }
         ),
 
         ProjectMenuItem(
             title = "Chat Room",
             icon = R.drawable.bubble_chat,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.primary,
             onClick = {
                 onChatRoom()
             }
@@ -178,7 +156,7 @@ fun ProjectMenuScreen(
         ProjectMenuItem(
             title = "Delete Project",
             icon = R.drawable.trash_icon,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.primary,
             onClick = { showDeleteDialog = true }
         )
     )
@@ -196,7 +174,8 @@ fun ProjectMenuScreen(
         },
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = 24.dp)
+            .padding(WindowInsets.statusBars.asPaddingValues())
+
 
     ) { paddingValues ->
         Box(
@@ -269,7 +248,7 @@ fun MenuItem(
             .fillMaxWidth()
             .padding(horizontal = 25.dp)
             .clip(RoundedCornerShape(5.dp))
-            .background(Color(0x0D000000))
+            .background(MaterialTheme.colorScheme.surface)
             .clickable { onClick() }
     ) {
         Row(

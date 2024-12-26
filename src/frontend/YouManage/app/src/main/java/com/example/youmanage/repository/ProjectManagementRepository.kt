@@ -142,6 +142,18 @@ class ProjectManagementRepository @Inject constructor(
         }
     }
 
+    suspend fun getRolesOfMember(
+        projectId: String,
+        memberId: String,
+        authorization: String
+    ): Resource<List<Role>> = safeApiCall {
+        api.getRolesOfMember(
+            projectId,
+            memberId,
+            authorization
+        )
+    }
+
     suspend fun updateRole(
         projectId: String,
         roleId: String,

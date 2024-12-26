@@ -14,11 +14,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
@@ -45,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -55,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -132,7 +136,7 @@ fun OTPTextField(
             onDone = {
                 keyboardController?.hide()
             }
-        )
+        ),
     )
 
     LaunchedEffect(key1 = true) {
@@ -141,12 +145,13 @@ fun OTPTextField(
     }
 }
 
+@Preview
 @Composable
 fun OTPCell(
-    char: String,
-    isFocus: Boolean,
-    isShowWarning: Boolean,
-    modifier: Modifier
+    char: String = "",
+    isFocus: Boolean = false,
+    isShowWarning: Boolean = false,
+    modifier: Modifier = Modifier
 ) {
 
     val borderColor = if (isShowWarning) {
@@ -154,7 +159,7 @@ fun OTPCell(
     } else if (isFocus) {
         Color.Green
     } else {
-        Color.Black
+        MaterialTheme.colorScheme.onBackground
     }
 
     Surface(
@@ -165,12 +170,15 @@ fun OTPCell(
                 color = borderColor,
                 shape = MaterialTheme.shapes.small
             )
+            .clip(MaterialTheme.shapes.small)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Text(
             text = char,
             style = MaterialTheme.typography.bodyLarge.copy(
                 color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.Bold
             ),
             modifier = Modifier.wrapContentSize(align = Alignment.Center)
         )
@@ -255,7 +263,13 @@ fun OTPVerificationScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White),
+            .background(MaterialTheme.colorScheme.background)
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(
+                bottom = WindowInsets.systemBars
+                    .asPaddingValues()
+                    .calculateBottomPadding()
+            ),
 
         ) {
 
@@ -270,7 +284,8 @@ fun OTPVerificationScreen(
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.back_arrow_icon),
-                contentDescription = "Back"
+                contentDescription = "Back",
+                tint = MaterialTheme.colorScheme.primary
             )
         }
 
@@ -288,13 +303,14 @@ fun OTPVerificationScreen(
             Text(
                 "OTP Verification",
                 fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
             )
 
             Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = "An 6-digits code has been sent to your email",
-                color = Color.Black.copy(alpha = 0.5f)
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
             )
 
             OTPTextField(
@@ -311,7 +327,7 @@ fun OTPVerificationScreen(
             ) {
                 Text(
                     text = "The OPT will be expired in ",
-                    color = Color.Black.copy(alpha = 0.5f)
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                 )
                 Text(
                     text = String.format("%02d:%02d", minutes, seconds),
@@ -326,7 +342,7 @@ fun OTPVerificationScreen(
 
                 Text(
                     text = "Didn't receive code?",
-                    color = Color.Black.copy(alpha = 0.5f)
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                 )
                 TextButton(onClick = {
                     authenticationViewModel.forgotPasswordSendOTP(

@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -64,12 +65,15 @@ fun PasswordTextField(
 
     TextField(
         value = content,
-        textStyle = TextStyle(fontSize = 20.sp, fontFamily = fontFamily),
+        textStyle = TextStyle(
+            fontSize = 20.sp,
+            fontFamily = fontFamily,
+            color = MaterialTheme.colorScheme.primary),
         onValueChange = { onChangeValue(it) },
         placeholder = {
             Text(
                 text = placeholderContent,
-                color = placeholderColor
+                color = Color.Gray
             )
         },
         trailingIcon = {
@@ -104,22 +108,28 @@ fun TextFieldComponent(
 ) {
     TextField(
         value = content,
-        textStyle = TextStyle(fontSize = 20.sp, fontFamily = fontFamily),
+        textStyle = TextStyle(
+            fontSize = 20.sp,
+            fontFamily = fontFamily,
+            color = MaterialTheme.colorScheme.primary
+        ),
         onValueChange = { onChangeValue(it) },
         placeholder = {
             Text(
                 text = placeholderContent,
-                color = placeholderColor
+                color = Color.Gray
             )
         },
         colors = TextFieldDefaults.colors(
             focusedContainerColor = containerColor,
             focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent
+            unfocusedIndicatorColor = Color.Transparent,
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 30.dp)
+            .padding(horizontal = 30.dp),
+
+
     )
 }
 
@@ -134,9 +144,9 @@ fun LeadingTextFieldComponent(
 ) {
     TextField(
         value = content,
-        textStyle = TextStyle(fontSize = 20.sp, fontFamily = fontFamily),
+        textStyle = TextStyle(fontSize = 20.sp, fontFamily = fontFamily, color = MaterialTheme.colorScheme.primary),
         leadingIcon = {
-            Icon(painter = painterResource(id = icon), contentDescription = "")
+            Icon(painter = painterResource(id = icon), contentDescription = "", tint= MaterialTheme.colorScheme.primary)
         },
         onValueChange = { onChangeValue(it) },
         placeholder = {
@@ -156,6 +166,8 @@ fun LeadingTextFieldComponent(
     )
 }
 
+
+
 @Composable
 fun DatePickerField(
     label: String,
@@ -172,7 +184,7 @@ fun DatePickerField(
     ) {
         Text(
             text = label,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp
         )
@@ -189,13 +201,14 @@ fun DatePickerField(
                     Icon(
                         painter = painterResource(id = iconResource),
                         contentDescription = null,
-                        modifier = Modifier.clickable { onDateClick() }
+                        modifier = Modifier.clickable { onDateClick() },
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 },
                 placeholder = {
                     Text(
                         text = placeholder,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.primary
                     )
                 },
                 colors = TextFieldDefaults.colors(
@@ -203,7 +216,8 @@ fun DatePickerField(
                     unfocusedContainerColor = containerColor,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
-                )
+                ),
+                textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
             )
         }
     }
@@ -224,7 +238,8 @@ fun AssigneeSelector(
         Text(
             text = label,
             fontWeight = FontWeight.Bold,
-            fontSize = 20.sp
+            fontSize = 20.sp,
+            color = MaterialTheme.colorScheme.primary
         )
 
         Box(
@@ -246,7 +261,7 @@ fun AssigneeSelector(
 
                 Text(
                     text = username,
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.Medium,
                     fontSize = 18.sp
                 )
@@ -270,7 +285,8 @@ fun TaskSelector(
         Text(
             text = label,
             fontWeight = FontWeight.Bold,
-            fontSize = 20.sp
+            fontSize = 20.sp,
+            color = MaterialTheme.colorScheme.primary
         )
 
         Box(
@@ -283,7 +299,7 @@ fun TaskSelector(
             ) {
                 Text(
                     text = title,
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.Medium,
                     fontSize = 18.sp
                 )

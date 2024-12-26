@@ -59,6 +59,9 @@ class ProjectManagementViewModel @Inject constructor(
     private val _memberSocket = MutableLiveData<Resource<WebSocketResponse<MemberObject>>>()
     val memberSocket: LiveData<Resource<WebSocketResponse<MemberObject>>> get() = _memberSocket
 
+    private val _updateProjectResponse = MutableLiveData<Resource<Project>>()
+    val updateProjectResponse: LiveData<Resource<Project>> get() = _updateProjectResponse
+
     fun getProjectList(authorization: String) {
         viewModelScope.launch {
             _projects.value = repository.getProjectList(authorization = authorization)
@@ -79,7 +82,7 @@ class ProjectManagementViewModel @Inject constructor(
 
     fun updateFullProject(id: String, project: ProjectCreate, authorization: String) {
         viewModelScope.launch {
-            repository.updateFullProject(id = id, project = project, authorization = authorization)
+            _updateProjectResponse.value = repository.updateFullProject(id = id, project = project, authorization = authorization)
         }
     }
 

@@ -24,6 +24,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -83,7 +84,7 @@ fun CreateAccountScreen(
             }
 
             is Resource.Loading -> {
-                isLoading = true
+                //isLoading = true
             }
              else ->{
                  //isLoading = true
@@ -103,7 +104,7 @@ fun CreateAccountScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(16.dp)
         ) {
             IconButton(
@@ -114,7 +115,8 @@ fun CreateAccountScreen(
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.back_arrow_icon),
-                    contentDescription = "Back"
+                    contentDescription = "Back",
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -131,7 +133,7 @@ fun CreateAccountScreen(
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold
                     ),
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.primary
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -151,8 +153,8 @@ fun CreateAccountScreen(
                     content = username,
                     onChangeValue = { username = it },
                     placeholderContent = "Username",
-                    placeholderColor = Color.Gray,
-                    containerColor = Color(0x1A000000)
+                    placeholderColor = MaterialTheme.colorScheme.primary,
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -161,8 +163,8 @@ fun CreateAccountScreen(
                     content = email,
                     onChangeValue = { email = it },
                     placeholderContent = "Email",
-                    placeholderColor = Color.Gray,
-                    containerColor = Color(0x1A000000)
+                    placeholderColor = MaterialTheme.colorScheme.primary,
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -171,8 +173,8 @@ fun CreateAccountScreen(
                     content = password,
                     onChangeValue = { password = it },
                     placeholderContent = "Password",
-                    placeholderColor = Color.Gray,
-                    containerColor = Color(0x1A000000)
+                    placeholderColor = MaterialTheme.colorScheme.primary,
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -181,14 +183,25 @@ fun CreateAccountScreen(
                     content = confirmPassword,
                     onChangeValue = { confirmPassword = it },
                     placeholderContent = "Confirm Password",
-                    placeholderColor = Color.Gray,
-                    containerColor = Color(0x1A000000)
+                    placeholderColor = MaterialTheme.colorScheme.primary,
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
 
                 Spacer(modifier = Modifier.height(36.dp))
 
                 Button(
                     onClick = {
+                        val userSignUp = UserSignUp(
+                            username = username,
+                            email = email,
+                            password1 = password,
+                            password2 = confirmPassword
+                        )
+
+                        Log.d(
+                            "IN create account",
+                            userSignUp.toString()
+                        )
                         viewModel.signUp(
                             UserSignUp(
                                 username = username,
@@ -197,8 +210,6 @@ fun CreateAccountScreen(
                                 password2 = confirmPassword
                             )
                         )
-
-
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -206,12 +217,12 @@ fun CreateAccountScreen(
                         .padding(horizontal = 30.dp),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Black
+                        containerColor = MaterialTheme.colorScheme.primary,
                     )
                 ) {
                     Text(
                         text = "Create",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontFamily = fontFamily,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold
@@ -232,7 +243,7 @@ fun CreateAccountScreen(
                     )
                     Text(
                         text = "Log in",
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         fontFamily = fontFamily,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,

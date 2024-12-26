@@ -26,10 +26,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -44,21 +43,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
+import com.example.youmanage.screens.components.AddMemberDialog
 import com.example.youmanage.screens.components.DatePickerModal
 import com.example.youmanage.screens.components.LeadingTextFieldComponent
-import com.example.youmanage.utils.randomVibrantLightColor
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 
@@ -81,7 +78,7 @@ fun AddProjectScreen(
 
     var members by remember { mutableStateOf(listOf<MemberItem>()) }
 
-    val textFieldColor = Color(0xFFF5F5F5)
+    val textFieldColor = MaterialTheme.colorScheme.surface
 
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
@@ -102,7 +99,7 @@ fun AddProjectScreen(
         },
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
             .padding(WindowInsets.statusBars.asPaddingValues())
 
     ) { paddingValues ->
@@ -137,7 +134,7 @@ fun AddProjectScreen(
 
                     Text(
                         "Project Title",
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
@@ -146,7 +143,7 @@ fun AddProjectScreen(
                         content = title,
                         onChangeValue = { title = it },
                         placeholderContent = "Enter project title",
-                        placeholderColor = Color.Gray,
+                        placeholderColor = MaterialTheme.colorScheme.primary,
                         containerColor = textFieldColor,
                         icon = R.drawable.project_title_icon
                     )
@@ -164,7 +161,7 @@ fun AddProjectScreen(
 
                     Text(
                         "Description",
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
@@ -184,17 +181,18 @@ fun AddProjectScreen(
                             Icon(
                                 painter = painterResource(id = R.drawable.description_icon),
                                 contentDescription = "",
-                                tint = Color.Black
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         },
                         placeholder = {
                             Text(
                                 "Enter project description",
-                                color = Color.Gray
+                                color = MaterialTheme.colorScheme.primary
                             )
                         },
                         maxLines = Int.MAX_VALUE,
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(5.dp),
+                        textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
                     )
                 }
 
@@ -210,7 +208,7 @@ fun AddProjectScreen(
 
                     Text(
                         "Due date",
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
@@ -229,9 +227,11 @@ fun AddProjectScreen(
                             leadingIcon = {
                                 Icon(
                                     painter = painterResource(
-                                        id = R.drawable.calendar_icon
+                                        id = R.drawable.calendar_icon,
                                     ),
+
                                     contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.clickable {
                                         showDatePicker = true
                                     }
@@ -240,7 +240,7 @@ fun AddProjectScreen(
                             placeholder = {
                                 Text(
                                     text = "Enter due date",
-                                    color = Color.Gray
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             },
                             colors = TextFieldDefaults.colors(
@@ -268,7 +268,6 @@ fun AddProjectScreen(
 
                     Button(
                         onClick = {
-                            Log.d("AddProjectScreen", "AddProjectScreen: $access")
                             projectManagementViewModel.createProject(
                                 project = ProjectCreate(
                                     description = description,
@@ -280,7 +279,7 @@ fun AddProjectScreen(
                             onNavigateBack()
                         },
                         shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         modifier = Modifier
                             .fillMaxWidth()
 
@@ -288,7 +287,7 @@ fun AddProjectScreen(
                         Text(
                             "Create",
                             fontSize = 20.sp,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
@@ -328,116 +327,11 @@ fun AddProjectScreen(
 
 
 @Composable
-fun AddMemberDialog(
-    title: String,
-    showDialog: Boolean,
-    onDismiss: () -> Unit,
-    onConfirm: (MemberItem) -> Unit
-) {
-    if (showDialog) {
-
-        var username by remember {
-            mutableStateOf("")
-        }
-
-        Dialog(
-            onDismissRequest = onDismiss,
-            properties = DialogProperties(
-                dismissOnBackPress = true,
-                dismissOnClickOutside = true
-            )
-        ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .shadow(
-                        elevation = 8.dp,
-                        shape = RoundedCornerShape(10.dp)
-                    ),
-                shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
-
-                ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-
-                    Text(
-                        text = title,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp),
-                        horizontalAlignment = Alignment.Start,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-
-                        Text(
-                            "Username",
-                            color = Color.Black,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        LeadingTextFieldComponent(
-                            content = username,
-                            onChangeValue = { username = it },
-                            placeholderContent = "Username",
-                            placeholderColor = Color.Gray,
-                            containerColor = Color(0x1A000000),
-                            icon = R.drawable.member_icon
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Button(
-                        onClick = {
-                            onConfirm(
-                                MemberItem(
-                                    username,
-                                    randomVibrantLightColor(),
-                                    R.drawable.avatar
-                                )
-                            )
-                        },
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp)
-                    ) {
-                        Text(
-                            "Add",
-                            fontSize = 16.sp,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 fun MemberItem(
     member: MemberItem,
     onDelete: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
 
     Box(
@@ -445,6 +339,7 @@ fun MemberItem(
         modifier = modifier
             .clip(RoundedCornerShape(5.dp))
             .background(member.backgroundColor)
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier
@@ -468,7 +363,7 @@ fun MemberItem(
 
             Text(
                 text = member.username,
-                color = Color.Black,
+                color = MaterialTheme.colorScheme.secondary,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 18.sp
             )

@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -21,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,6 +54,7 @@ import com.example.youmanage.screens.components.LeadingTextFieldComponent
 import com.example.youmanage.screens.components.TaskSelector
 import com.example.youmanage.screens.task_management.primaryColor
 import com.example.youmanage.utils.Constants.statusMapping
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.IssuesViewModel
@@ -96,8 +100,8 @@ fun IssueDetailScreen(
     val showChooseTask = remember { mutableStateOf(false) }
     val showChooseMember = remember { mutableStateOf(false) }
 
-    val backgroundColor = Color(0xFFFFFFFF)
-    val textFieldColor = Color(0xFFF5F5F5)
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val textFieldColor = MaterialTheme.colorScheme.surface
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
@@ -107,27 +111,13 @@ fun IssueDetailScreen(
         }
     }
 
-    LaunchedEffect(
-        key1 = memberSocket,
-        key2 = projectSocket
-    ) {
-        if (
-            projectSocket is Resource.Success &&
-            projectSocket?.data?.type == "project_deleted" &&
-            projectSocket?.data?.content?.id.toString() == projectId
-        ) {
-            onDisableAction()
-        }
-
-        if (
-            memberSocket is Resource.Success &&
-            memberSocket?.data?.type == "member_removed" &&
-            user is Resource.Success &&
-            memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
-        ) {
-            onDisableAction()
-        }
-    }
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = projectId,
+        onDisableAction = onDisableAction
+    )
 
     LaunchedEffect(issue) {
         if (issue is Resource.Success) {
@@ -179,13 +169,21 @@ fun IssueDetailScreen(
     }
 
     Scaffold(
-        modifier = Modifier.padding(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(
             bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
         ),
         topBar = {
-            TopBar(
-                title = "Edit Issue",
-                onNavigateBack = { onNavigateBack() }
+            com.example.youmanage.screens.project_management.TopBar(
+                title = "Issue Detail",
+                onNavigateBack = { onNavigateBack() },
+                color = Color.Transparent,
+                trailing = {
+                    Box(modifier = Modifier.size(24.dp))
+                }
             )
         },
         bottomBar = {
@@ -202,7 +200,6 @@ fun IssueDetailScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(backgroundColor)
                 .padding(paddingValues)
                 .padding(horizontal = 20.dp)
         ) {
@@ -225,7 +222,7 @@ fun IssueDetailScreen(
                 ) {
                     Text(
                         "Issue Title",
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
@@ -236,7 +233,7 @@ fun IssueDetailScreen(
                         placeholderContent = "Enter issue title",
                         placeholderColor = Color.Gray,
                         containerColor = textFieldColor,
-                        icon = R.drawable.project_title_icon
+                        icon = R.drawable.project_title_icon,
                     )
                 }
 
@@ -248,7 +245,7 @@ fun IssueDetailScreen(
                 ) {
                     Text(
                         "Description",
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
@@ -266,7 +263,8 @@ fun IssueDetailScreen(
                 DropdownStatusSelector(
                     text = selectedStatus,
                     onClick = { showStatusDialog = true },
-                    backgroundColor = primaryColor
+                    backgroundColor = primaryColor,
+                    textColor = MaterialTheme.colorScheme.primary
                 )
 
                 AssigneeSelector(
@@ -389,8 +387,8 @@ fun IssueBottomBar(
                 onClick = onSaveClick,
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black,
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
                 Text(
@@ -405,8 +403,8 @@ fun IssueBottomBar(
                 onClick = onDeleteClick,
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black,
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
                 Text(

@@ -16,12 +16,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -53,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -96,7 +101,9 @@ fun ChatScreen(
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = 24.dp),
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()),
+
         topBar = {
             com.example.youmanage.screens.project_management.TopBar(
                 title = "Chat Room",
@@ -115,7 +122,7 @@ fun ChatScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp, vertical = 16.dp)
                     .background(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        color = MaterialTheme.colorScheme.primaryContainer,
                         shape = MaterialTheme.shapes.medium
                     )
             )
@@ -129,8 +136,8 @@ fun ChatScreen(
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            AppColors.LightBlue,
-                            AppColors.LighterBlue
+                            MaterialTheme.colorScheme.background,
+                            MaterialTheme.colorScheme.background
                         )
                     )
                 ),
@@ -218,7 +225,7 @@ fun MessageBubble(
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.primary
                         ),
                         modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
                     )
@@ -517,8 +524,9 @@ fun ChatInputBar(
                 }
                 launcher.launch(intent)
             },
-            modifier = Modifier.padding(8.dp)
+            modifier = Modifier.padding(8.dp),
         ) {
+
             Icon(
                 painter = painterResource(id = R.drawable.icon_image),
                 contentDescription = "Send Image",

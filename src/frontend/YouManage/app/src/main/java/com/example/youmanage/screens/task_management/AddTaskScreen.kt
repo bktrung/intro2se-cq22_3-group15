@@ -1,6 +1,7 @@
 package com.example.youmanage.screens.task_management
 
 import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
@@ -25,6 +26,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -44,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -68,7 +71,9 @@ import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
 import com.example.youmanage.screens.project_management.TopBar
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.viewmodel.ChangeRequestViewModel
+import com.example.youmanage.viewmodel.SnackBarViewModel
 
 
 @Preview
@@ -82,18 +87,24 @@ fun CreateTaskScreen(
     taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
-    changeRequestViewModel: ChangeRequestViewModel = hiltViewModel()
+    changeRequestViewModel: ChangeRequestViewModel = hiltViewModel(),
+    showSnackBarViewModel: SnackBarViewModel = hiltViewModel()
 ) {
+
+    // Data from API
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     val user by authenticationViewModel.user.observeAsState()
     val members by projectManagementViewModel.members.observeAsState()
     val task by taskManagementViewModel.task.observeAsState()
     val project by projectManagementViewModel.project.observeAsState()
     val changeRequestResponse by changeRequestViewModel.response.observeAsState()
-    var openErrorDialog by remember { mutableStateOf(false) }
 
+    // WebSocket
     val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
     val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
+
+    var send by remember { mutableStateOf(false) }
+    var openErrorDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(task) {
         if (task is Resource.Success) {
@@ -115,30 +126,16 @@ fun CreateTaskScreen(
         }
     }
 
-    LaunchedEffect(
-        key1 = memberSocket,
-        key2 = projectSocket
-    ) {
-        if (
-            projectSocket is Resource.Success &&
-            projectSocket?.data?.type == "project_deleted" &&
-            projectSocket?.data?.content?.id.toString() == projectId
-        ) {
-            onDisableAction()
-        }
-
-        if (
-            memberSocket is Resource.Success &&
-            memberSocket?.data?.type == "member_removed" &&
-            user is Resource.Success &&
-            memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
-        ) {
-            onDisableAction()
-        }
-    }
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = projectId,
+        onDisableAction = onDisableAction
+    )
 
     var showDatePicker by remember { mutableStateOf(false) }
-    val textFieldColor = Color(0xFFF5F5F5)
+    val textFieldColor = MaterialTheme.colorScheme.surface
 
     var showChooseMember by remember {
         mutableStateOf(false)
@@ -163,13 +160,44 @@ fun CreateTaskScreen(
         mutableStateOf("Unassigned")
     }
 
+
     val context = LocalContext.current
+
 
     LaunchedEffect(changeRequestResponse){
         if (changeRequestResponse is Resource.Success) {
             Toast.makeText(context, "Request sent successfully!", Toast.LENGTH_SHORT).show()
         } else{
             Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    var requestDescription by remember { mutableStateOf("") }
+
+    LaunchedEffect(send){
+        if(send){
+            changeRequestViewModel.createChangeRequest(
+                projectId = projectId.toInt(),
+                SendChangeRequest(
+                    requestType = "CREATE",
+                    targetTable = "TASK",
+                    targetTableId = null,
+                    description = requestDescription,
+                    newData = TaskCreate(
+                        title = title,
+                        description = description,
+                        startDate = startDate,
+                        endDate = endDate,
+                        assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
+                        priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
+                    )
+                ),
+                "Bearer ${accessToken.value}"
+            )
+
+            showSnackBarViewModel.showSnackBar(
+                "Check your inbox to see the request!"
+            )
         }
     }
 
@@ -201,7 +229,6 @@ fun CreateTaskScreen(
                         if(currentUserId != null && hostId != null) {
                             if (currentUserId != hostId) {
                                 showChangeRequestDialog = true
-                                return@Button
                             } else{
                                 taskManagementViewModel.createTask(
                                     projectId = projectId,
@@ -218,15 +245,16 @@ fun CreateTaskScreen(
                             }
 
                         }
-
                     },
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ),
                 ) {
                     Text(
                         "Create",
                         fontSize = 20.sp,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
@@ -251,14 +279,12 @@ fun CreateTaskScreen(
                 .fillMaxWidth()
                 .padding(paddingValues)
                 .padding(horizontal = 36.dp)
-                .padding(top = 20.dp)
+                .padding(bottom = 10.dp)
                 .verticalScroll(scrollState)
             ,
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
-
 
                 Column(
                     modifier = Modifier
@@ -269,7 +295,7 @@ fun CreateTaskScreen(
 
                     Text(
                         "Task Title",
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
@@ -278,7 +304,7 @@ fun CreateTaskScreen(
                         content = title,
                         onChangeValue = { title = it },
                         placeholderContent = "Enter project title",
-                        placeholderColor = Color.Gray,
+                        placeholderColor = MaterialTheme.colorScheme.primary,
                         containerColor = textFieldColor,
                         icon = R.drawable.project_title_icon
                     )
@@ -294,7 +320,7 @@ fun CreateTaskScreen(
 
                     Text(
                         "Description",
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
@@ -314,17 +340,18 @@ fun CreateTaskScreen(
                             Icon(
                                 painter = painterResource(id = R.drawable.description_icon),
                                 contentDescription = "",
-                                tint = Color.Black
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         },
                         placeholder = {
                             Text(
                                 "Enter project description",
-                                color = Color.Gray
+                                color = MaterialTheme.colorScheme.primary
                             )
                         },
                         maxLines = Int.MAX_VALUE,
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(10.dp),
+                        textStyle = TextStyle(MaterialTheme.colorScheme.primary,)
                     )
                 }
 
@@ -387,7 +414,7 @@ fun CreateTaskScreen(
             })
     }
 
-    var requestDescription by remember { mutableStateOf("") }
+
     ChangeRequestDialog(
         title = "Send Request?",
         content = "Send request to host to create this task?",
@@ -395,24 +422,7 @@ fun CreateTaskScreen(
         onDismiss = { showChangeRequestDialog = false },
         onDescriptionChange = { requestDescription = it },
         onConfirm = {
-            changeRequestViewModel.createChangeRequest(
-                projectId = projectId.toInt(),
-                SendChangeRequest(
-                    requestType = "CREATE",
-                    targetTable = "TASK",
-                    targetTableId = null,
-                    description = requestDescription,
-                    newData = TaskCreate(
-                        title = title,
-                        description = description,
-                        startDate = startDate,
-                        endDate = endDate,
-                        assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
-                        priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
-                    )
-                ),
-                "Bearer ${accessToken.value}"
-            )
+            send = true
 
             showChangeRequestDialog = false
         }
@@ -457,7 +467,7 @@ fun PrioritySelector(
     ) {
         Text(
             "Priority",
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp
         )
@@ -474,13 +484,13 @@ fun PrioritySelector(
                     },
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
-                        if (index == priority) Color.Black else Color.Transparent
+                        if (index == priority) MaterialTheme.colorScheme.primary else Color.Transparent
                     ),
-                    border = BorderStroke(2.dp, Color.Black)
+                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
                 ) {
                     Text(
                         text = item,
-                        color = if (index == priority) Color.White else Color.Black
+                        color = if (index != priority) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }

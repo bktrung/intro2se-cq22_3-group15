@@ -22,8 +22,10 @@ import com.example.youmanage.screens.project_management.AddProjectScreen
 import com.example.youmanage.screens.project_management.GanttChartScreen
 import com.example.youmanage.screens.project_management.HomeScreen
 import com.example.youmanage.screens.project_management.MainScreen
+import com.example.youmanage.screens.project_management.MemberProfileScreen
 import com.example.youmanage.screens.project_management.ProjectDetailScreen
 import com.example.youmanage.screens.project_management.ProjectMenuScreen
+import com.example.youmanage.screens.project_management.UpdateProjectScreen
 import com.example.youmanage.screens.project_management.UserProfileScreen
 import com.example.youmanage.screens.role.RolesScreen
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
@@ -125,7 +127,28 @@ fun NavGraphBuilder.projectManagementNavGraph(
                 onDisableAction = {
                     rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
                 },
+                onUpdateProject = {
+                    rootNavController.navigate("update_project/${id}")
+                },
+                onMemberProfile = {memberId ->
+                    rootNavController.navigate("member_profile/${id}/${memberId}")
+                },
                 id = id!!.toInt()
+            )
+        }
+
+        composable(
+            route = ProjectManagementRouteScreen.UpdateProject.route
+        ){
+            val id = it.arguments?.getString("id")
+            UpdateProjectScreen(
+                onNavigateBack = {
+                    rootNavController.navigateUp()
+                },
+                projectId = id!!.toString(),
+                onDisableAction = {
+                    rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
+                }
             )
         }
 
@@ -214,6 +237,21 @@ fun NavGraphBuilder.projectManagementNavGraph(
             val projectId = backStackEntry.arguments?.getString("projectId")
             GanttChartScreen(
                 projectId = projectId ?: "",
+                onNavigateBack = {
+                    rootNavController.navigateUp()
+                }
+            )
+        }
+
+        composable(
+            route = ProjectManagementRouteScreen.MemberProfile.route
+        ){
+            val projectId = it.arguments?.getString("project_id")
+            val memberId = it.arguments?.getString("member_id")
+
+            MemberProfileScreen(
+                projectId = projectId ?: "",
+                memberId = memberId ?: "",
                 onNavigateBack = {
                     rootNavController.navigateUp()
                 }

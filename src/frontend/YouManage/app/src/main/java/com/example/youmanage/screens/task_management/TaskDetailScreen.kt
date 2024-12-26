@@ -35,6 +35,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -83,6 +84,7 @@ import com.example.youmanage.ui.theme.fontFamily
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Constants.priorityChoice
 import com.example.youmanage.utils.Constants.statusMapping
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.formatToRelativeTime
 import com.example.youmanage.viewmodel.AuthenticationViewModel
@@ -90,7 +92,10 @@ import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
 import kotlinx.coroutines.delay
 
-val primaryColor = Color.Black.copy(alpha = 0.1f)
+
+val primaryColor: Color
+    @Composable
+    get() = MaterialTheme.colorScheme.surface
 
 data class TaskState(
     val title: String = "",
@@ -147,27 +152,13 @@ fun TaskDetailScreen(
         taskManagementViewModel.connectToTaskWebSocket(webSocketUrl)
     }
 
-    LaunchedEffect(
-        key1 = memberSocket,
-        key2 = projectSocket
-    ) {
-        if (
-            projectSocket is Resource.Success &&
-            projectSocket?.data?.type == "project_deleted" &&
-            projectSocket?.data?.content?.id.toString() == projectId
-        ) {
-            onDisableAction()
-        }
-
-        if (
-            memberSocket is Resource.Success &&
-            memberSocket?.data?.type == "member_removed" &&
-            user is Resource.Success &&
-            memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
-        ) {
-            onDisableAction()
-        }
-    }
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = projectId,
+        onDisableAction = onDisableAction
+    )
 
     val scrollable = rememberScrollState()
     var showStatusDialog by remember { mutableStateOf(false) }
@@ -225,7 +216,6 @@ fun TaskDetailScreen(
         }
     }
 
-
     LaunchedEffect(taskUpdate) {
         if (taskUpdate is Resource.Success) {
             taskManagementViewModel.getTask(
@@ -258,271 +248,264 @@ fun TaskDetailScreen(
         }
     }
 
-    Box(
+    Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
-    ) {
-        Scaffold(
+            .background(MaterialTheme.colorScheme.background)
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(
+                bottom = WindowInsets.systemBars
+                    .asPaddingValues()
+                    .calculateBottomPadding()
+            ),
+        topBar = {
+            TopBar(
+                title = "Task Detail",
+                trailing = {
+                    Spacer(modifier = Modifier.size(24.dp))
+                },
+                color = Color.Transparent,
+                onNavigateBack = { onNavigateBack() }
+            )
+        },
+        bottomBar = {
+            TaskBottomBar(
+                onSaveClick = {
+                    newTask = TaskUpdate(
+                        title = taskState.editTitle,
+                        description = taskState.description,
+                        startDate = taskState.startDate,
+                        endDate = taskState.endDate,
+                        priority = if (taskState.priority == -1) null else priorityChoice[taskState.priority].uppercase()
+                    )
+                    showSaveDialog = true
+                },
+                onDeleteClick = {
+                    showDeleteDialog = true
+                }
+            )
+        }
+    ) { paddingValues ->
+
+        Column(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White)
-                .padding(
-                    top = WindowInsets.statusBars
-                        .asPaddingValues()
-                        .calculateTopPadding(),
-                    bottom = WindowInsets.systemBars
-                        .asPaddingValues()
-                        .calculateBottomPadding()
-                ),
-            topBar = {
-                TopBar(
-                    title = "Task Detail",
-                    trailing = {
-                        Spacer(modifier = Modifier.size(24.dp))
-                    },
-                    color = Color.Transparent,
-                    onNavigateBack = { onNavigateBack() }
-                )
-            },
-            bottomBar = {
-                TaskBottomBar(
-                    onSaveClick = {
-                        newTask = TaskUpdate(
-                            title = taskState.editTitle,
-                            description = taskState.description,
-                            startDate = taskState.startDate,
-                            endDate = taskState.endDate,
-                            priority = if (taskState.priority == -1) null else priorityChoice[taskState.priority].uppercase()
-                        )
-                        showSaveDialog = true
-                    },
-                    onDeleteClick = {
-                        showDeleteDialog = true
-                    }
-                )
-            }
-        ) { paddingValues ->
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(paddingValues)
-                    .padding(horizontal = 32.dp)
-                    .verticalScroll(scrollable),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
-            ) {
-                Text(
-                    text = taskState.title,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 25.sp,
-                    color = Color.Black,
-                    modifier = Modifier.clickable {
-                        showTitleEditor = !showTitleEditor
-                    }
-                )
-
-                AnimatedVisibility(visible = showTitleEditor) {
-                    TextField(
-                        value = taskState.editTitle,
-                        textStyle = TextStyle(fontSize = 20.sp, fontFamily = fontFamily),
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.project_title_icon),
-                                contentDescription = ""
-                            )
-                        },
-                        onValueChange = { taskState = taskState.copy(editTitle = it) },
-                        placeholder = {
-                            Text(
-                                text = "Enter project title",
-                                fontSize = 20.sp,
-                                color = Color.Gray
-                            )
-                        },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = primaryColor,
-                            unfocusedContainerColor = primaryColor,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    )
-                }
-
-                DropdownStatusSelector(
-                    text = taskState.status,
-                    onClick = { showStatusDialog = true },
-                    backgroundColor = primaryColor
-                )
-
-                LabeledTextField(
-                    label = "Description",
-                    value = taskState.description,
-                    onValueChange = { taskState = taskState.copy(description = it) },
-                    placeholder = "Enter project description",
-                    leadingIconRes = R.drawable.description_icon,
-                    backgroundColor = primaryColor
-                )
-
-                PrioritySelector(
-                    priorityChoice = priorityChoice,
-                    priority = taskState.priority,
-                    onPrioritySelected = {
-                        taskState = taskState.copy(priority = it)
-                    }
-                )
-
-                AssigneeSelector(
-                    label = "Assignee",
-                    avatarRes = R.drawable.avatar,
-                    username = taskState.username,
-                    onClick = {
-                        showMemberDialog = true
-                    }
-                )
-
-                DatePickerField(
-                    label = "Start date",
-                    date = taskState.startDate,
-                    onDateClick = {
-                        isTime = 1
-                        showDatePicker = true
-                    },
-                    iconResource = R.drawable.calendar_icon,
-                    placeholder = "Enter start date",
-                    containerColor = primaryColor
-                )
-
-                DatePickerField(
-                    label = "End date",
-                    date = taskState.endDate,
-                    onDateClick = {
-                        isTime = 2
-                        showDatePicker = true
-                    },
-                    iconResource = R.drawable.calendar_icon,
-                    placeholder = "Enter end date",
-                    containerColor = primaryColor
-                )
-
-                CommentSection(
-                    comments = if (comments is Resource.Success) comments?.data!! else emptyList(),
-                    postComment = { content ->
-                        taskManagementViewModel.postComment(
-                            projectId,
-                            taskId,
-                            Content(content),
-                            "Bearer ${accessToken.value}"
-                        )
-                    },
-                    onClick = { comment ->
-                        currentComment = comment
-
-                        if (currentComment.author.id == user?.data?.id) {
-                            showCommentEditor = true
-                        }
-                    }
-                )
-            }
-
-            ChooseItemDialog(
-                title = "Choose Status",
-                showDialog = showStatusDialog,
-                items = listOf("Pending", "In Progress", "Completed"),
-                displayText = { it },
-                onDismiss = { showStatusDialog = false },
-                onConfirm = {
-
-                    taskState = taskState.copy(status = it)
-                    showStatusDialog = false
+                .fillMaxWidth()
+                .padding(paddingValues)
+                .padding(horizontal = 32.dp)
+                .verticalScroll(scrollable),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            Text(
+                text = taskState.title,
+                fontWeight = FontWeight.Bold,
+                fontSize = 25.sp,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable {
+                    showTitleEditor = !showTitleEditor
                 }
             )
 
-            val memberList = if (members is Resource.Success) members?.data!! else emptyList()
+            AnimatedVisibility(visible = showTitleEditor) {
+                TextField(
+                    value = taskState.editTitle,
+                    textStyle = TextStyle(fontSize = 20.sp, fontFamily = fontFamily),
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.project_title_icon),
+                            contentDescription = ""
+                        )
+                    },
+                    onValueChange = { taskState = taskState.copy(editTitle = it) },
+                    placeholder = {
+                        Text(
+                            text = "Enter project title",
+                            fontSize = 20.sp,
+                            color = Color.Gray
+                        )
+                    },
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = primaryColor,
+                        unfocusedContainerColor = primaryColor,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                )
+            }
 
-            ChooseItemDialog(
-                title = "Choose Member",
-                showDialog = showMemberDialog,
-                items = memberList,
-                displayText = { it.username ?: "Unknown" },
-                onDismiss = { showMemberDialog = false },
-                onConfirm = { user ->
-                    taskState = taskState.copy(
-                        username = user.username ?: "Unknown",
-                        memberId = user.id
-                    )
+            DropdownStatusSelector(
+                text = taskState.status,
+                onClick = { showStatusDialog = true },
+                backgroundColor = primaryColor,
+                textColor = MaterialTheme.colorScheme.primary
+            )
 
-                    showMemberDialog = false
+            LabeledTextField(
+                label = "Description",
+                value = taskState.description,
+                onValueChange = { taskState = taskState.copy(description = it) },
+                placeholder = "Enter project description",
+                leadingIconRes = R.drawable.description_icon,
+                backgroundColor = primaryColor
+            )
+
+            PrioritySelector(
+                priorityChoice = priorityChoice,
+                priority = taskState.priority,
+                onPrioritySelected = {
+                    taskState = taskState.copy(priority = it)
                 }
             )
 
-            if (showDatePicker) {
-                DatePickerModal(
-                    onDateSelected = {
-                        if (isTime == 1) {
-                            taskState = taskState.copy(startDate = it)
-                        } else if (isTime == 2) {
-                            taskState = taskState.copy(endDate = it)
-                        }
-                        isTime = 0
-                    },
-                    onDismiss = {
-                        showDatePicker = false
-                        isTime = 0
-                    })
-            }
+            AssigneeSelector(
+                label = "Assignee",
+                avatarRes = R.drawable.avatar,
+                username = taskState.username,
+                onClick = {
+                    showMemberDialog = true
+                }
+            )
 
-            EditCommentDialog(
-                title = "Edit comment",
-                content = currentComment.content,
-                showDialog = showCommentEditor,
-                onDismiss = { showCommentEditor = false },
-                onSave = { content ->
-                    taskManagementViewModel.updateComment(
+            DatePickerField(
+                label = "Start date",
+                date = taskState.startDate,
+                onDateClick = {
+                    isTime = 1
+                    showDatePicker = true
+                },
+                iconResource = R.drawable.calendar_icon,
+                placeholder = "Enter start date",
+                containerColor = primaryColor
+            )
+
+            DatePickerField(
+                label = "End date",
+                date = taskState.endDate,
+                onDateClick = {
+                    isTime = 2
+                    showDatePicker = true
+                },
+                iconResource = R.drawable.calendar_icon,
+                placeholder = "Enter end date",
+                containerColor = primaryColor
+            )
+
+            CommentSection(
+                comments = if (comments is Resource.Success) comments?.data!! else emptyList(),
+                postComment = { content ->
+                    taskManagementViewModel.postComment(
                         projectId,
                         taskId,
-                        currentComment.id.toString(),
                         Content(content),
                         "Bearer ${accessToken.value}"
                     )
-                    showCommentEditor = false
                 },
-                onDelete = {
-                    taskManagementViewModel.deleteComment(
-                        projectId,
-                        taskId,
-                        currentComment.id.toString(),
-                        "Bearer ${accessToken.value}"
-                    )
+                onClick = { comment ->
+                    currentComment = comment
 
-                    showCommentEditor = false
+                    if (currentComment.author.id == user?.data?.id) {
+                        showCommentEditor = true
+                    }
                 }
             )
-
-
-            AlertDialog(
-                title = "Delete task?",
-                content = "Are you sure you want to delete this task?",
-                showDialog = showDeleteDialog,
-                onDismiss = {
-                    showDeleteDialog = false
-                },
-                onConfirm = {
-                    taskManagementViewModel.deleteTask(
-                        projectId,
-                        taskId,
-                        "Bearer ${accessToken.value}"
-                    )
-                    showDeleteDialog = false
-                    onNavigateBack()
-                }
-            )
-
         }
 
+        ChooseItemDialog(
+            title = "Choose Status",
+            showDialog = showStatusDialog,
+            items = listOf("Pending", "In Progress", "Completed"),
+            displayText = { it },
+            onDismiss = { showStatusDialog = false },
+            onConfirm = {
+
+                taskState = taskState.copy(status = it)
+                showStatusDialog = false
+            }
+        )
+
+        val memberList = if (members is Resource.Success) members?.data!! else emptyList()
+
+        ChooseItemDialog(
+            title = "Choose Member",
+            showDialog = showMemberDialog,
+            items = memberList,
+            displayText = { it.username ?: "Unknown" },
+            onDismiss = { showMemberDialog = false },
+            onConfirm = { user ->
+                taskState = taskState.copy(
+                    username = user.username ?: "Unknown",
+                    memberId = user.id
+                )
+
+                showMemberDialog = false
+            }
+        )
+
+        if (showDatePicker) {
+            DatePickerModal(
+                onDateSelected = {
+                    if (isTime == 1) {
+                        taskState = taskState.copy(startDate = it)
+                    } else if (isTime == 2) {
+                        taskState = taskState.copy(endDate = it)
+                    }
+                    isTime = 0
+                },
+                onDismiss = {
+                    showDatePicker = false
+                    isTime = 0
+                })
+        }
+
+        EditCommentDialog(
+            title = "Edit comment",
+            content = currentComment.content,
+            showDialog = showCommentEditor,
+            onDismiss = { showCommentEditor = false },
+            onSave = { content ->
+                taskManagementViewModel.updateComment(
+                    projectId,
+                    taskId,
+                    currentComment.id.toString(),
+                    Content(content),
+                    "Bearer ${accessToken.value}"
+                )
+                showCommentEditor = false
+            },
+            onDelete = {
+                taskManagementViewModel.deleteComment(
+                    projectId,
+                    taskId,
+                    currentComment.id.toString(),
+                    "Bearer ${accessToken.value}"
+                )
+
+                showCommentEditor = false
+            }
+        )
+
+
+        AlertDialog(
+            title = "Delete task?",
+            content = "Are you sure you want to delete this task?",
+            showDialog = showDeleteDialog,
+            onDismiss = {
+                showDeleteDialog = false
+            },
+            onConfirm = {
+                taskManagementViewModel.deleteTask(
+                    projectId,
+                    taskId,
+                    "Bearer ${accessToken.value}"
+                )
+                showDeleteDialog = false
+                onNavigateBack()
+            }
+        )
+
     }
+
 
     AlertDialog(
         title = "Update task?",
@@ -559,9 +542,9 @@ fun LabeledTextField(
     placeholder: String,
     @DrawableRes leadingIconRes: Int,
     modifier: Modifier = Modifier,
-    backgroundColor: Color = Color.White,
-    textColor: Color = Color.Black,
-    placeholderColor: Color = Color.Gray
+    backgroundColor: Color = MaterialTheme.colorScheme.background,
+    textColor: Color = MaterialTheme.colorScheme.primary,
+    placeholderColor: Color = MaterialTheme.colorScheme.primary
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -599,7 +582,8 @@ fun LabeledTextField(
                 )
             },
             maxLines = Int.MAX_VALUE,
-            shape = RoundedCornerShape(10.dp)
+            shape = RoundedCornerShape(10.dp),
+            textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
         )
     }
 }
@@ -621,7 +605,8 @@ fun CommentSection(
         Text(
             text = "Comments",
             fontWeight = FontWeight.Bold,
-            fontSize = 20.sp
+            fontSize = 20.sp,
+            color = MaterialTheme.colorScheme.primary
         )
 
         LazyColumn(
@@ -651,7 +636,7 @@ fun CommentSection(
             onValueChange = { content = it },
             placeholder = {
                 Text(
-                    "Enter your comment"
+                    "Enter your comment",
                 )
             },
             trailingIcon = {
@@ -662,10 +647,11 @@ fun CommentSection(
                         postComment(content)
                         content = ""
                     },
-                    tint = Color.Black
+                    tint = MaterialTheme.colorScheme.primary
                 )
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
         )
     }
 }
@@ -763,8 +749,8 @@ fun TaskBottomBar(
                 onClick = onSaveClick,
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black,
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
                 Text(
@@ -779,8 +765,8 @@ fun TaskBottomBar(
                 onClick = onDeleteClick,
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black,
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
                 Text(
@@ -824,7 +810,7 @@ fun EditCommentDialog(
                         shape = RoundedCornerShape(10.dp)
                     ),
                 shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
             ) {
                 Column(
                     modifier = Modifier
@@ -836,7 +822,7 @@ fun EditCommentDialog(
                         fontSize = 22.sp,
                         fontFamily = fontFamily,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
@@ -844,6 +830,7 @@ fun EditCommentDialog(
                         value = comment,
                         onValueChange = { comment = it },
                         maxLines = Int.MAX_VALUE,
+                        textStyle = TextStyle(color = MaterialTheme.colorScheme.primary),
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -854,7 +841,7 @@ fun EditCommentDialog(
                     ) {
                         TextButton(
                             onClick = onDismiss,
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Text("Cancel", fontFamily = fontFamily)
                         }
@@ -863,20 +850,28 @@ fun EditCommentDialog(
 
                         Button(
                             onClick = { onSave(comment) },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text("Save", color = Color.White, fontFamily = fontFamily)
+                            Text(
+                                "Save",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontFamily = fontFamily
+                            )
                         }
 
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Button(
                             onClick = onDelete,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text("Delete", color = Color.White, fontFamily = fontFamily)
+                            Text(
+                                "Delete",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontFamily = fontFamily
+                            )
                         }
                     }
                 }

@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +18,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -23,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -45,6 +50,7 @@ import com.example.youmanage.R
 import com.example.youmanage.data.remote.activitylogs.Activity
 import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.utils.Constants.WEB_SOCKET
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.formatToRelativeTime
 import com.example.youmanage.viewmodel.ActivityLogsViewModel
@@ -55,12 +61,12 @@ import com.example.youmanage.viewmodel.ProjectManagementViewModel
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ActivityLogScreen(
-    authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    activityLogViewModel: ActivityLogsViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
     projectId: String = "",
     onNavigateBack: () -> Unit = {},
     onDisableAction: () -> Unit = {},
+    authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
+    activityLogViewModel: ActivityLogsViewModel = hiltViewModel(),
+    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel()
 ) {
     val accessToken = authenticationViewModel.accessToken.collectAsState(null)
     val activityLogs by activityLogViewModel.activityLogs.collectAsState()
@@ -69,6 +75,8 @@ fun ActivityLogScreen(
     val user by authenticationViewModel.user.observeAsState()
     val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
     val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
+
+    val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
 
     // Only trigger API call when accessToken is updated and activityLogs are empty
     LaunchedEffect(accessToken.value) {
@@ -79,40 +87,31 @@ fun ActivityLogScreen(
                     authorization = "Bearer $it"
                 )
 
-                projectManagementViewModel.connectToMemberWebsocket(url = "${WEB_SOCKET}project/$projectId/")
-                projectManagementViewModel.connectToProjectWebsocket(url = "${WEB_SOCKET}project/$projectId/")
+                projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+                projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
             }
         }
     }
 
-    LaunchedEffect(
-        key1 = memberSocket,
-        key2 = projectSocket
-    ) {
-        if (
-            projectSocket is Resource.Success &&
-            projectSocket?.data?.type == "project_deleted" &&
-            projectSocket?.data?.content?.id.toString() == projectId
-        ) {
-            onDisableAction()
-        }
-
-        if (
-            memberSocket is Resource.Success &&
-            memberSocket?.data?.type == "member_removed" &&
-            user is Resource.Success &&
-            memberSocket?.data?.content?.affectedMembers?.
-            contains(user?.data) == true
-        ) {
-            onDisableAction()
-        }
-    }
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = projectId,
+        onDisableAction = onDisableAction
+    )
 
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xffBAE5F5))
-            .padding(top = 24.dp),
+            .background(MaterialTheme.colorScheme.background)
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(
+                bottom = WindowInsets.systemBars
+                    .asPaddingValues()
+                    .calculateBottomPadding()
+            ),
+
         topBar = {
             TopBar(
                 title = "Activity Log",
@@ -127,9 +126,7 @@ fun ActivityLogScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xffBAE5F5))
-                .padding(paddingValues)
-                .padding(top = 20.dp, bottom = 60.dp),
+                .padding(paddingValues),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -141,7 +138,7 @@ fun ActivityLogScreen(
                         text = "No Activity Log",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
@@ -194,7 +191,7 @@ fun ActivityItems(
             defaultElevation = 10.dp
         ),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         )
 
     ) {
@@ -214,7 +211,7 @@ fun ActivityItems(
             ) {
                 Text(
                     activity.description,
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 20.sp,
                     modifier = Modifier.padding(bottom = 10.dp)
