@@ -6,16 +6,40 @@ services:
         restart: unless-stopped
         container_name: only-app
         ports:
-        - 6969:8000
-        - 7000:8000
-        - 8000:8000
-        - 9000:8000
+            - 6969:8000
+            - 7000:8000
+            - 8000:8000
+            - 9000:8000
         depends_on:
             - redis
-        
+            - celery-worker
+            - celery-beat
+
     redis:
         image: redis:7 
         restart: unless-stopped
         container_name: redis-db
         ports:
             - 6379:6379
+
+    celery-worker:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: unless-stopped
+        container_name: celery-worker
+        working_dir: /usr/src/backend
+        command: celery -A project_management worker -l info
+        depends_on:
+            - redis
+
+    celery-beat:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: unless-stopped
+        container_name: celery-beat
+        working_dir: /usr/src/backend
+        command: celery -A project_management beat -l info
+        depends_on:
+            - redis
