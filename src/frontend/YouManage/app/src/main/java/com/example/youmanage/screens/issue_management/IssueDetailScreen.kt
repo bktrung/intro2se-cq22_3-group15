@@ -9,9 +9,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,6 +51,8 @@ import com.example.youmanage.screens.components.DropdownStatusSelector
 import com.example.youmanage.screens.components.LeadingTextFieldComponent
 import com.example.youmanage.screens.components.TaskSelector
 import com.example.youmanage.screens.task_management.primaryColor
+import com.example.youmanage.utils.Constants.statusMapping
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.IssuesViewModel
@@ -59,6 +64,7 @@ import com.example.youmanage.viewmodel.TaskManagementViewModel
 fun IssueDetailScreen(
     projectId: String = "",
     onNavigateBack: () -> Unit = {},
+    onDisableAction: () -> Unit = {},
     issueManagementViewModel: IssuesViewModel = hiltViewModel(),
     taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
@@ -69,6 +75,10 @@ fun IssueDetailScreen(
     val members by projectManagementViewModel.members.observeAsState()
     val tasks by taskManagementViewModel.tasks.observeAsState()
     val issue by issueManagementViewModel.issue.observeAsState()
+    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
+    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
+    val issueUpdate by issueManagementViewModel.issueUpdate.observeAsState()
+    val user by authenticationViewModel.user.observeAsState()
 
     var openErrorDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -83,11 +93,7 @@ fun IssueDetailScreen(
     var assignedMemberId by remember { mutableIntStateOf(-1) }
     var selectedStatus by rememberSaveable { mutableStateOf("PENDING") }
 
-    val statusMapping = listOf(
-        "Pending" to "PENDING",
-        "In Progress" to "IN_PROGRESS",
-        "Done" to "COMPLETED"
-    )
+    var update by remember { mutableStateOf(false) }
 
     val showChooseTask = remember { mutableStateOf(false) }
     val showChooseMember = remember { mutableStateOf(false) }
@@ -103,23 +109,67 @@ fun IssueDetailScreen(
         }
     }
 
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = projectId,
+        onDisableAction = onDisableAction
+    )
+
     LaunchedEffect(issue) {
         if (issue is Resource.Success) {
             val data = (issue as Resource.Success).data
             title = data!!.title
             description = data.description?:""
-            assignedMemberId = data.assignee.id ?: -1
-            assignedMember = data.assignee.username
+            assignedMemberId = data.assignee.id
+            assignedMember = data.assignee.username ?: "Unassigned"
             selectedTask = data.task
             selectedStatus = data.status
-            reporter = data.reporter.username
+            reporter = data.reporter.username ?: "Unassigned"
         }
         if (issue is Resource.Error) {
             openErrorDialog = true
         }
     }
 
+    LaunchedEffect(issueUpdate){
+        if (issueUpdate is Resource.Success){
+            issueManagementViewModel.getIssue(
+                projectId,
+                issueId,
+                "Bearer ${accessToken.value}"
+            )
+        }
+    }
+
+    LaunchedEffect(update){
+        if (update){
+            accessToken.value?.let { token ->
+                Log.d("Issuse Status", selectedStatus)
+                issueManagementViewModel.updateIssue(
+                    projectId = projectId,
+                    issueId = issue?.data?.id.toString(),
+                    IssueUpdate(
+                        title = title,
+                        description = description,
+                        project = projectId.toInt(),
+                        assignee = if (assignedMemberId != -1) assignedMemberId else null,
+                        task = selectedTask?.id,
+                        status = statusMapping.firstOrNull { it.first == selectedStatus }?.second
+                            ?: "PENDING",
+                    ),
+                    authorization = "Bearer $token"
+                )
+            }
+            update = false
+        }
+    }
+
     Scaffold(
+        modifier = Modifier.padding(
+            bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
+        ),
         topBar = {
             TopBar(
                 title = "Edit Issue",
@@ -251,11 +301,11 @@ fun IssueDetailScreen(
             title = "Choose Member",
             showDialog = showChooseMember.value,
             items = members?.data ?: emptyList(),
-            displayText = { it.username },
+            displayText = { it.username ?: "Unknown" },
             onDismiss = { showChooseMember.value = false },
-            onConfirm = { user ->
-                assignedMemberId = user.id
-                assignedMember = user.username
+            onConfirm = {
+                assignedMemberId = it.id
+                assignedMember = it.username ?: "Unknown"
                 showChooseMember.value = false
             }
         )
@@ -264,7 +314,7 @@ fun IssueDetailScreen(
     ChooseItemDialog(
         title = "Choose Status",
         showDialog = showStatusDialog,
-        items = listOf("Pending", "In Progress", "Done"),
+        items = listOf("Pending", "In Progress", "Completed"),
         displayText = { it },
         onDismiss = { showStatusDialog = false },
         onConfirm = {
@@ -281,26 +331,8 @@ fun IssueDetailScreen(
             showSaveDialog = false
         },
         onConfirm = {
-
-            accessToken.value?.let { token ->
-
-                Log.d("Issue Status", selectedStatus)
-                issueManagementViewModel.updateIssue(
-                    projectId = projectId,
-                    issueId = issue?.data?.id.toString(),
-                    IssueUpdate(
-                        title = title,
-                        description = description,
-                        project = projectId.toInt(),
-                        assignee = if (assignedMemberId != -1) assignedMemberId else null,
-                        task = selectedTask?.id,
-                        status = selectedStatus,
-                    ),
-                    authorization = "Bearer $token"
-                )
-            }
+            update = true
             showSaveDialog = false
-            onNavigateBack()
         })
 
     AlertDialog(

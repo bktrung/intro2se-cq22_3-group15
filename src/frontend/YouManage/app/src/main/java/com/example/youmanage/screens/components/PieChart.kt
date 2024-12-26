@@ -151,9 +151,17 @@ fun PieChart(
                         isAntiAlias = true
                     }
 
-                    val text = if (input.isNotEmpty()) "${
-                        String.format("%.1f", input.last().value).toDouble()
-                    }%" else "Null "
+                    val text = if (input.isNotEmpty()) {
+                        try {
+                            val value = input.last().value.toString().replace(",", ".")
+                            "${String.format("%.1f", value.toDouble())}%"
+                        } catch (e: NumberFormatException) {
+                            "Invalid Value"
+                        }
+                    } else {
+                        "Null"
+                    }
+
                     val textBounds = android.graphics.Rect()
                     textPaint.getTextBounds(text, 0, text.length, textBounds)
 

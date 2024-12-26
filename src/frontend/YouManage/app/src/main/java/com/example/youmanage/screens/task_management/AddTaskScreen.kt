@@ -1,6 +1,8 @@
 package com.example.youmanage.screens.task_management
 
 import android.os.Build
+import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -9,10 +11,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -21,6 +27,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -37,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -44,8 +52,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
+import com.example.youmanage.data.remote.changerequest.SendChangeRequest
+import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.taskmanagement.TaskCreate
+import com.example.youmanage.screens.components.AlertDialog
 import com.example.youmanage.screens.components.AssigneeSelector
+import com.example.youmanage.screens.components.ChangeRequestDialog
 import com.example.youmanage.screens.components.ChooseItemDialog
 import com.example.youmanage.screens.components.DatePickerField
 import com.example.youmanage.screens.components.DatePickerModal
@@ -57,6 +69,10 @@ import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
+import com.example.youmanage.screens.project_management.TopBar
+import com.example.youmanage.utils.HandleOutProjectWebSocket
+import com.example.youmanage.viewmodel.ChangeRequestViewModel
+import com.example.youmanage.viewmodel.SnackBarViewModel
 
 
 @Preview
@@ -69,17 +85,25 @@ fun CreateTaskScreen(
     onDisableAction: () -> Unit = {},
     taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel()
+    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
+    changeRequestViewModel: ChangeRequestViewModel = hiltViewModel(),
+    showSnackBarViewModel: SnackBarViewModel = hiltViewModel()
 ) {
+
+    // Data from API
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     val user by authenticationViewModel.user.observeAsState()
     val members by projectManagementViewModel.members.observeAsState()
     val task by taskManagementViewModel.task.observeAsState()
-    var openErrorDialog by remember { mutableStateOf(false) }
+    val project by projectManagementViewModel.project.observeAsState()
+    val changeRequestResponse by changeRequestViewModel.response.observeAsState()
 
-    val taskSocket by taskManagementViewModel.taskSocket.observeAsState()
+    // WebSocket
     val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
     val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
+
+    var send by remember { mutableStateOf(false) }
+    var openErrorDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(task) {
         if (task is Resource.Success) {
@@ -94,38 +118,29 @@ fun CreateTaskScreen(
             val webSocketUrl = "${WEB_SOCKET}project/${projectId}/"
             projectManagementViewModel.getMembers(projectId, "Bearer $token")
             authenticationViewModel.getUser("Bearer $token")
+            projectManagementViewModel.getProject(projectId, "Bearer $token")
             taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
             projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
             projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
         }
     }
 
-    LaunchedEffect(
-        key1 = memberSocket,
-        key2 = projectSocket
-    ) {
-        if (
-            projectSocket is Resource.Success &&
-            projectSocket?.data?.type == "project_deleted" &&
-            projectSocket?.data?.content?.id.toString() == projectId
-        ) {
-            onDisableAction()
-        }
-
-        if (
-            memberSocket is Resource.Success &&
-            memberSocket?.data?.type == "member_removed" &&
-            user is Resource.Success &&
-            memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
-        ) {
-            onDisableAction()
-        }
-    }
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = projectId,
+        onDisableAction = onDisableAction
+    )
 
     var showDatePicker by remember { mutableStateOf(false) }
     val textFieldColor = MaterialTheme.colorScheme.surface
 
     var showChooseMember by remember {
+        mutableStateOf(false)
+    }
+
+    var showChangeRequestDialog by remember {
         mutableStateOf(false)
     }
 
@@ -144,61 +159,131 @@ fun CreateTaskScreen(
         mutableStateOf("Unassigned")
     }
 
-    Box(
+
+    val context = LocalContext.current
+
+
+    LaunchedEffect(changeRequestResponse){
+        if (changeRequestResponse is Resource.Success) {
+            Toast.makeText(context, "Request sent successfully!", Toast.LENGTH_SHORT).show()
+        } else{
+            Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    var requestDescription by remember { mutableStateOf("") }
+
+    LaunchedEffect(send){
+        if(send){
+            changeRequestViewModel.createChangeRequest(
+                projectId = projectId.toInt(),
+                SendChangeRequest(
+                    requestType = "CREATE",
+                    targetTable = "TASK",
+                    targetTableId = null,
+                    description = requestDescription,
+                    newData = TaskCreate(
+                        title = title,
+                        description = description,
+                        startDate = startDate,
+                        endDate = endDate,
+                        assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
+                        priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
+                    )
+                ),
+                "Bearer ${accessToken.value}"
+            )
+
+            showSnackBarViewModel.showSnackBar(
+                "Check your inbox to see the request!"
+            )
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopBar(
+                title = "Create Task",
+                color = Color.Transparent,
+                trailing = {
+                    Box(
+                        modifier = Modifier.size(24.dp)
+                    )
+                },
+                onNavigateBack = { onNavigateBack() }
+            )
+        },
+        bottomBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Button(
+                    onClick = {
+                        val currentUserId = user?.data?.id
+                        val hostId = project?.data?.host?.id
+
+                        if(currentUserId != null && hostId != null) {
+                            if (currentUserId != hostId) {
+                                showChangeRequestDialog = true
+                            } else{
+                                taskManagementViewModel.createTask(
+                                    projectId = projectId,
+                                    TaskCreate(
+                                        title = title,
+                                        description = description,
+                                        startDate = startDate,
+                                        endDate = endDate,
+                                        assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
+                                        priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
+                                    ),
+                                    authorization = "Bearer ${accessToken.value}"
+                                )
+                            }
+
+                        }
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                ) {
+                    Text(
+                        "Create",
+                        fontSize = 20.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+            }
+        },
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
+            .padding(
+                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
+                bottom = WindowInsets.systemBars
+                    .asPaddingValues()
+                    .calculateBottomPadding()
+            )
+            .background(Color.White)
+    ) { paddingValues ->
+
+        val scrollState = rememberScrollState()
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp)
-                .padding(top = 20.dp),
+                .padding(paddingValues)
+                .padding(horizontal = 36.dp)
+                .padding(top = 20.dp)
+                .verticalScroll(scrollState)
+            ,
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 5.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = {
 
-                }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.back_arrow_icon),
-                        contentDescription = "Back",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-
-
-                Text(
-                    "Create Task",
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-
-                Spacer(modifier = Modifier.size(30.dp))
-
-            }
-
-
-            val scrollState = rememberScrollState()
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .verticalScroll(scrollState),
-                verticalArrangement = Arrangement.spacedBy(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
 
                 Column(
                     modifier = Modifier
@@ -308,41 +393,7 @@ fun CreateTaskScreen(
                         showChooseMember = true
                     }
                 )
-
-
-                Button(
-                    onClick = {
-                        taskManagementViewModel.createTask(
-                            projectId = projectId,
-                            TaskCreate(
-                                title = title,
-                                description = description,
-                                startDate = startDate,
-                                endDate = endDate,
-                                assigneeId = assignedMemberId,
-                                priority = if(priority == -1) null else priorityChoice[priority].uppercase() ,
-                            ),
-                            authorization = "Bearer ${accessToken.value}"
-                        )
-
-                    },
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-
-                ) {
-                    Text(
-                        "Create",
-                        fontSize = 20.sp,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
             }
-        }
     }
 
     if (showDatePicker) {
@@ -361,15 +412,32 @@ fun CreateTaskScreen(
             })
     }
 
+
+    ChangeRequestDialog(
+        title = "Send Request?",
+        content = "Send request to host to create this task?",
+        showDialog = showChangeRequestDialog,
+        onDismiss = { showChangeRequestDialog = false },
+        onDescriptionChange = { requestDescription = it },
+        onConfirm = {
+            send = true
+
+            showChangeRequestDialog = false
+        }
+    )
+
+    var memberList = if (members is Resource.Success) members?.data!! else emptyList()
+    memberList = memberList + User(username = "Unassigned", id = -1, email = "")
+
     ChooseItemDialog(
         title = "Choose Member",
         showDialog = showChooseMember,
-        items = if (members is Resource.Success) members?.data!! else emptyList(),
-        displayText = { it.username },
+        items = memberList,
+        displayText = { it.username ?: "Unassigned" },
         onDismiss = { showChooseMember = false },
-        onConfirm = { user ->
-            assignedMemberId = user.id
-            assignedMember = user.username
+        onConfirm = {
+            assignedMemberId = it.id
+            assignedMember = it.username ?: "Unassigned"
             showChooseMember = false
         }
     )

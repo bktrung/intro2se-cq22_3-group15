@@ -44,6 +44,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.screens.components.AlertDialog
 import com.example.youmanage.screens.components.ErrorDialog
 import com.example.youmanage.utils.Constants.WEB_SOCKET
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
@@ -68,12 +69,11 @@ fun ProjectMenuScreen(
     onActivityLog: () -> Unit = {},
     onDeleteProjectSuccess: () -> Unit = {},
     onDisableAction: () -> Unit = {},
+    onGanttChart: () -> Unit = {},
     id: String,
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
-    val navController = rememberNavController()
 
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     val deleteProjectResponse by projectManagementViewModel.deleteProjectResponse.observeAsState()
@@ -102,27 +102,13 @@ fun ProjectMenuScreen(
         }
     }
 
-    LaunchedEffect(
-        key1 = memberSocket,
-        key2 = projectSocket
-    ) {
-        if (
-            projectSocket is Resource.Success &&
-            projectSocket?.data?.type == "project_deleted" &&
-            projectSocket?.data?.content?.id.toString() == id
-        ) {
-            onDisableAction()
-        }
-
-        if (
-            memberSocket is Resource.Success &&
-            memberSocket?.data?.type == "member_removed" &&
-            user is Resource.Success &&
-            memberSocket?.data?.content?.affectedMembers?.contains(user?.data) == true
-        ) {
-            onDisableAction()
-        }
-    }
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = id,
+        onDisableAction = onDisableAction
+    )
 
     val projectMenuItems = listOf(
         ProjectMenuItem(
@@ -130,6 +116,12 @@ fun ProjectMenuScreen(
             icon = R.drawable.task_icon,
             color = MaterialTheme.colorScheme.primary,
             onClick = { onTaskList() }
+        ),
+        ProjectMenuItem(
+            title = "Gantt Chart",
+            icon = R.drawable.gantt_chart_icon,
+            color = Color.Black,
+            onClick = { onGanttChart() }
         ),
         ProjectMenuItem(
             title = "Issue List",

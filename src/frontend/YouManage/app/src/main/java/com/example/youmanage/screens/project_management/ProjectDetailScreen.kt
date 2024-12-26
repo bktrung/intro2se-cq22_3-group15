@@ -8,11 +8,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -20,9 +24,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +45,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -49,24 +57,30 @@ import com.example.youmanage.R
 import com.example.youmanage.data.remote.projectmanagement.Id
 import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.taskmanagement.Username
+import com.example.youmanage.screens.components.AddMemberDialog
 import com.example.youmanage.screens.components.AlertDialog
 import com.example.youmanage.screens.components.PieChart
 import com.example.youmanage.screens.components.PieChartInput
 import com.example.youmanage.screens.components.pieChartInput
 import com.example.youmanage.utils.Constants.WEB_SOCKET
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import com.example.youmanage.viewmodel.TaskManagementViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun ProjectDetailScreen(
     backgroundColor: Color = Color(0xffBAE5F5),
     id: Int,
-    authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
     onClickMenu: () -> Unit,
-    onDisableAction: () -> Unit
+    onDisableAction: () -> Unit,
+    onUpdateProject: () -> Unit,
+    authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
+    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
+    taskManagementViewModel: TaskManagementViewModel = hiltViewModel()
 ) {
     val project by projectManagementViewModel.project.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
@@ -75,8 +89,9 @@ fun ProjectDetailScreen(
     val projectProgress by projectManagementViewModel.progress.observeAsState()
     val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
     val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
+    val taskSocket by taskManagementViewModel.taskSocket.observeAsState()
+
     val user by authenticationViewModel.user.observeAsState()
-    val members by projectManagementViewModel.members.observeAsState()
 
     var pieChartInputList by remember { mutableStateOf<List<PieChartInput>>(emptyList()) }
 
@@ -107,18 +122,16 @@ fun ProjectDetailScreen(
     }
 
     LaunchedEffect(addMemberResponse) {
-        Log.d("Again", "Again")
         if (addMemberResponse is Resource.Error && isAdd) {
             showAddAlertDialog = true
         }
 
-        if(addMemberResponse is Resource.Success) {
+        if (addMemberResponse is Resource.Success) {
             projectManagementViewModel.getProject(
                 id = id.toString(),
                 authorization = "Bearer ${accessToken.value}"
             )
         }
-
     }
 
     LaunchedEffect(removeMemberResponse) {
@@ -126,7 +139,7 @@ fun ProjectDetailScreen(
             showRemoveAlertDialog = true
         }
 
-        if(removeMemberResponse is Resource.Success) {
+        if (removeMemberResponse is Resource.Success) {
             projectManagementViewModel.getProject(
                 id = id.toString(),
                 authorization = "Bearer ${accessToken.value}"
@@ -141,29 +154,59 @@ fun ProjectDetailScreen(
             authenticationViewModel.getUser("Bearer $it")
             projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
             projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+            taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
         }
     }
 
-    LaunchedEffect(
-        key1 = memberSocket,
-        key2 = projectSocket
-    ) {
-        if (
-            projectSocket is Resource.Success &&
-            projectSocket?.data?.type == "project_deleted" &&
-            projectSocket?.data?.content?.id.toString() == id.toString()
-        ) {
-            onDisableAction()
-        }
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = id.toString(),
+        onDisableAction = onDisableAction
+    )
 
-        if (
-            memberSocket is Resource.Success &&
-            memberSocket?.data?.type == "member_removed" &&
-            user is Resource.Success &&
-            memberSocket?.data?.content?.affectedMembers?.
-            contains(user?.data) == true
+    LaunchedEffect(projectSocket) {
+        if (projectSocket is Resource.Success &&
+            projectSocket?.data?.type == "project_updated" &&
+            projectSocket?.data?.content?.id == id
         ) {
-            onDisableAction()
+            projectManagementViewModel.getProject(
+                id.toString(),
+                "Bearer ${accessToken.value}"
+            )
+        }
+    }
+
+    val taskStage = listOf(
+        "task_created",
+        "task_updated",
+        "task_deleted"
+    )
+
+    LaunchedEffect(taskSocket) {
+        if (taskSocket is Resource.Success &&
+            taskStage.contains(taskSocket?.data?.type) &&
+            projectSocket?.data?.content?.id == id
+        ) {
+            projectManagementViewModel.getProgressTrack(
+                id = id.toString(),
+                authorization = "Bearer ${accessToken.value}"
+            )
+        }
+    }
+
+    val memberStage = listOf(
+        "member_added",
+        "member_removed"
+    )
+
+    LaunchedEffect(memberSocket) {
+        if (memberSocket is Resource.Success &&
+            memberStage.contains(memberSocket?.data?.type) &&
+            projectSocket?.data?.content?.id == id
+        ) {
+            projectManagementViewModel.getProject(id.toString(), "Bearer ${accessToken.value}")
         }
     }
 
@@ -174,9 +217,8 @@ fun ProjectDetailScreen(
             var pending = projectProgress?.data?.pending ?: 0
             val inProgress = projectProgress?.data?.inProgress ?: 0
             val completed = projectProgress?.data?.completed ?: 0
-            Log.d("Progress Tracker", "Total: $total, Pending: $pending, In Progress: $inProgress, Completed: $completed")
 
-            if(total == 0) {
+            if (total == 0) {
                 total = 1
                 pending = 1
             }
@@ -204,7 +246,6 @@ fun ProjectDetailScreen(
     }
 
     Log.d("Access Token", "${accessToken.value}")
-
     Log.d("Project ID", "$id")
 
     if (project is Resource.Success) {
@@ -216,13 +257,25 @@ fun ProjectDetailScreen(
                 TopBar(
                     "Project Detail",
                     trailing = {
-                        IconButton(onClick = { onClickMenu() }) {
-                            Icon(
-                                imageVector = Icons.Default.Menu,
-                                contentDescription = "Menu",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(onClick = { onUpdateProject() }) {
+                                Icon(
+                                    imageVector = Icons.Default.Create,
+                                    contentDescription = "Update"
+                                )
+
+                            }
+                            IconButton(onClick = { onClickMenu() }) {
+                                Icon(
+                                    imageVector = Icons.Default.Menu,
+                                    contentDescription = "Menu"
+                                )
+                            }
                         }
+
                     },
                     color = MaterialTheme.colorScheme.primaryContainer,
                     onNavigateBack = { onNavigateBack() }
@@ -231,7 +284,12 @@ fun ProjectDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(backgroundColor)
-                .padding(top = 24.dp)
+                .padding(WindowInsets.statusBars.asPaddingValues())
+                .padding(
+                    bottom = WindowInsets.systemBars
+                        .asPaddingValues()
+                        .calculateBottomPadding()
+                )
 
         ) { paddingValues ->
 
@@ -242,7 +300,8 @@ fun ProjectDetailScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
                     .background(MaterialTheme.colorScheme.background)
-
+                    .padding(top = paddingValues.calculateTopPadding())
+            
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -250,6 +309,25 @@ fun ProjectDetailScreen(
                         .fillMaxSize()
                         .verticalScroll(scrollState)
                 ) {
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 36.dp),
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text(
+                            text = "Project Name",
+                            fontSize = 25.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = project?.data?.name.toString(),
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
 
                     if (projectProgress is Resource.Success) {
                         PieChart(
@@ -336,6 +414,13 @@ fun ProjectDetailScreen(
                 showDeleteDialog = false
             }
         )
+    } else {
+        Box(modifier = Modifier.fillMaxSize()) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        }
+        LaunchedEffect(project) {
+            delay(500)
+        }
     }
 }
 
@@ -408,6 +493,8 @@ fun MembersSection(
     onAddNewMember: () -> Unit = {},
     onDeleteMember: (String) -> Unit = {}
 ) {
+
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -446,28 +533,35 @@ fun MembersSection(
         }
 
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
-                .padding(top = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalAlignment = Alignment.Start
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color.Black.copy(alpha = 0.1f))
         ) {
-            items(members.size) { index ->
-                MemberItem(
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .padding(vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                items(members.size) { index ->
                     MemberItem(
-                        username = members[index].username,
-                        backgroundColor = Color.Transparent,
-                        avatar = R.drawable.avatar
-                    ),
-                    onDelete = {
-                        onDeleteMember(members[index].id.toString())
-                    },
-                    modifier = Modifier.fillMaxWidth(0.7f)
-                )
+                        MemberItem(
+                            username = members[index].username ?: "Unknown",
+                            backgroundColor = Color.Transparent,
+                            avatar = R.drawable.avatar
+                        ),
+                        onDelete = {
+                            onDeleteMember(members[index].id.toString())
+                        },
+                        modifier = Modifier.fillMaxWidth(0.7f)
+                    )
+                }
             }
         }
     }

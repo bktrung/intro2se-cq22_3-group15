@@ -19,10 +19,12 @@ import com.example.youmanage.screens.activity_logs.ActivityLogScreen
 
 import com.example.youmanage.screens.chat.ChatScreenWithViewModel
 import com.example.youmanage.screens.project_management.AddProjectScreen
+import com.example.youmanage.screens.project_management.GanttChartScreen
 import com.example.youmanage.screens.project_management.HomeScreen
 import com.example.youmanage.screens.project_management.MainScreen
 import com.example.youmanage.screens.project_management.ProjectDetailScreen
 import com.example.youmanage.screens.project_management.ProjectMenuScreen
+import com.example.youmanage.screens.project_management.UpdateProjectScreen
 import com.example.youmanage.screens.project_management.UserProfileScreen
 import com.example.youmanage.screens.role.RolesScreen
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
@@ -48,7 +50,7 @@ fun ProjectManagementNavGraph(
                     rootNavController.navigate(ProjectManagementRouteScreen.AddProject.route)
                 },
                 onViewProject = {
-                    id->
+                        id->
                     rootNavController.navigate("project_detail/${id}")
                 }
             )
@@ -124,7 +126,25 @@ fun NavGraphBuilder.projectManagementNavGraph(
                 onDisableAction = {
                     rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
                 },
+                onUpdateProject = {
+                    rootNavController.navigate("update_project/${id}")
+                },
                 id = id!!.toInt()
+            )
+        }
+
+        composable(
+            route = ProjectManagementRouteScreen.UpdateProject.route
+        ){
+            val id = it.arguments?.getString("id")
+            UpdateProjectScreen(
+                onNavigateBack = {
+                    rootNavController.navigateUp()
+                },
+                projectId = id!!.toString(),
+                onDisableAction = {
+                    rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
+                }
             )
         }
 
@@ -167,7 +187,10 @@ fun NavGraphBuilder.projectManagementNavGraph(
                     rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
                 },
                 onRoles = {
-                  rootNavController.navigate("roles/${id}")
+                    rootNavController.navigate("roles/${id}")
+                },
+                onGanttChart = {
+                    rootNavController.navigate("gantt_chart/${id}")
                 },
                 id = id.toString()
             )
@@ -203,6 +226,16 @@ fun NavGraphBuilder.projectManagementNavGraph(
             RolesScreen(
                 projectId = projectId ?: "",
                 onNavigateBack = { rootNavController.navigateUp() }
+            )
+        }
+
+        composable(ProjectManagementRouteScreen.GanttChart.route) { backStackEntry ->
+            val projectId = backStackEntry.arguments?.getString("projectId")
+            GanttChartScreen(
+                projectId = projectId ?: "",
+                onNavigateBack = {
+                    rootNavController.navigateUp()
+                }
             )
         }
 

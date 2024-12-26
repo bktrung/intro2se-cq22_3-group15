@@ -153,8 +153,8 @@ fun ChatScreen(
                             MessageBubble(
                                 message = messages[index],
                                 isSentByUser = messages[index].author.id == userId,
-                                username = messages[index].author.username,
-                                avatarUrl = messages[index].author.username
+                                username = messages[index].author.username ?: "Unknown",
+                                avatarUrl = messages[index].author.username ?: "Unknown"
                             )
                             Spacer(modifier = Modifier.height(5.dp))
                         }

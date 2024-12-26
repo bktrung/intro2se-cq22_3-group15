@@ -5,11 +5,13 @@ import com.example.youmanage.data.remote.ApiInterface
 import com.example.youmanage.factory.WebSocketFactory
 import com.example.youmanage.repository.ActivityLogRepository
 import com.example.youmanage.repository.AuthenticationRepository
+import com.example.youmanage.repository.ChangeRequestRepository
 import com.example.youmanage.repository.ChatRepository
 import com.example.youmanage.repository.ProjectManagementRepository
 import com.example.youmanage.repository.TaskManagementRepository
 import com.example.youmanage.repository.WebSocketRepository
 import com.example.youmanage.utils.Constants.BASE_URL
+import com.example.youmanage.viewmodel.SnackBarViewModel
 import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
@@ -124,4 +126,14 @@ object AppModule {
     @Singleton
     fun provideActivityLogRepository(api: ApiInterface) = ActivityLogRepository(api)
 
+    @Provides
+    @Singleton
+    fun provideChangeRequestRepository(api: ApiInterface) = ChangeRequestRepository(api)
+
+
+    @Provides
+    @Singleton
+    fun provideSnackBarViewModel(webSocketRepository: WebSocketRepository): SnackBarViewModel {
+        return SnackBarViewModel(webSocketRepository)
+    }
 }
