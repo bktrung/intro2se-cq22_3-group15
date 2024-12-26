@@ -59,7 +59,7 @@ class ChatRepository @Inject constructor(
                     println("WebSocket closed: $reason")
                 }
             })
-            Resource.Success(MessageResponse(0, "Connected", "", ""))
+            Resource.Success(MessageResponse(0, "Connected", "", "",""))
         } catch (e: Exception) {
             Resource.Error("Error with WebSocket: ${e.localizedMessage}")
         }

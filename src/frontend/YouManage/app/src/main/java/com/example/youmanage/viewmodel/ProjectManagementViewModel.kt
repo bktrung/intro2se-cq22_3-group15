@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.youmanage.data.remote.projectmanagement.GanttChartData
 import com.example.youmanage.data.remote.projectmanagement.Id
 import com.example.youmanage.data.remote.projectmanagement.Progress
 import com.example.youmanage.data.remote.projectmanagement.Project
@@ -48,6 +49,9 @@ class ProjectManagementViewModel @Inject constructor(
 
     private val _members = MutableLiveData<Resource<List<User>>>()
     val members: LiveData<Resource<List<User>>> get() = _members
+
+    private val _ganttChartData = MutableLiveData<Resource<List<GanttChartData>>>()
+    val ganttChartData: LiveData<Resource<List<GanttChartData>>> get() = _ganttChartData
 
     private val _projectSocket = MutableLiveData<Resource<WebSocketResponse<Project>>>()
     val projectSocket: LiveData<Resource<WebSocketResponse<Project>>> get() = _projectSocket
@@ -151,6 +155,15 @@ class ProjectManagementViewModel @Inject constructor(
                 url,
                 object : TypeToken<WebSocketResponse<MemberObject>>() {},
                 _memberSocket
+            )
+        }
+    }
+
+    fun getGanttChartData(id: String, authorization: String) {
+        viewModelScope.launch {
+            _ganttChartData.value = repository.getGanttChartData(
+                id = id,
+                authorization = authorization
             )
         }
     }

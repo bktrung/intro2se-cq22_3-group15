@@ -37,13 +37,12 @@ import com.example.youmanage.viewmodel.TaskManagementViewModel
 fun GanttChartScreen(
     onNavigateBack: () -> Unit = {},
     projectId: String,
-    taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
 ) {
     val backgroundColor = Color(0xffBAE5F5)
 
-    val tasks by taskManagementViewModel.tasks.observeAsState()
+    val ganttChartData by projectManagementViewModel.ganttChartData.observeAsState()
     val project by projectManagementViewModel.project.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
 
@@ -51,8 +50,8 @@ fun GanttChartScreen(
     // Lấy danh sách task
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
-            taskManagementViewModel.getTasks(
-                projectId = projectId,
+            projectManagementViewModel.getGanttChartData(
+                id = projectId,
                 authorization = "Bearer $token"
             )
         }
@@ -82,11 +81,11 @@ fun GanttChartScreen(
                 .background(backgroundColor)
                 .padding(paddingValues)
         ) {
-            if (tasks?.data != null && project?.data != null) {
+            if (ganttChartData?.data != null && project?.data != null) {
                 GanttChart(
                     generateChartData(
-                        tasks = tasks!!.data!!,
-                        project = project!!.data!!
+                        tasks = ganttChartData!!.data!!,
+                        projectDueDate = project!!.data!!.dueDate
                     )
                 )
 
