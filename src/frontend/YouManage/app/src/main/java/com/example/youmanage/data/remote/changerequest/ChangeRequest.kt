@@ -26,5 +26,7 @@ data class ChangeRequest(
     @SerializedName("target_table")
     val targetTable: String? = null,
     @SerializedName("target_table_id")
-    val targetTableId: Int? = null
+    val targetTableId: Int? = null,
+    @SerializedName("system_description")
+    val systemDescription: String? = null
 )

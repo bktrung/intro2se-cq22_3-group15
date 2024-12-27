@@ -75,11 +75,11 @@ val bottomNavigationItems = listOf(
     ),
 
     BottomNavigationItem(
-        title = "Bug",
-        icon = R.drawable.bug_icon,
+        title = "Setting",
+        icon = R.drawable.setting_icon,
         selectedColor = Color.Black,
         unselectedColor = Color.Gray,
-        route = ProjectManagementRouteScreen.Issue.route
+        route = ProjectManagementRouteScreen.Setting.route
     ),
 
     BottomNavigationItem(
@@ -135,7 +135,6 @@ fun MainScreen(
             paddingValues = paddingValues,
             rootNavController = rootNavController,
             homeNavController = navController
-
         )
     }
 }

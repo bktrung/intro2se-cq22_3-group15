@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.youmanage.data.remote.authentication.Message
 import com.example.youmanage.data.remote.projectmanagement.GanttChartData
 import com.example.youmanage.data.remote.projectmanagement.Id
 import com.example.youmanage.data.remote.projectmanagement.Progress
@@ -11,6 +12,7 @@ import com.example.youmanage.data.remote.projectmanagement.Project
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
 import com.example.youmanage.data.remote.projectmanagement.Projects
 import com.example.youmanage.data.remote.projectmanagement.User
+import com.example.youmanage.data.remote.projectmanagement.UserId
 import com.example.youmanage.data.remote.taskmanagement.Detail
 import com.example.youmanage.data.remote.taskmanagement.Username
 import com.example.youmanage.data.remote.websocket.MemberObject
@@ -61,6 +63,12 @@ class ProjectManagementViewModel @Inject constructor(
 
     private val _updateProjectResponse = MutableLiveData<Resource<Project>>()
     val updateProjectResponse: LiveData<Resource<Project>> get() = _updateProjectResponse
+
+    private val _quitResponse = MutableLiveData<Resource<Detail>>()
+    val quitResponse: LiveData<Resource<Detail>> get() = _quitResponse
+
+    private val _empowerResponse = MutableLiveData<Resource<Message>>()
+    val empowerResponse: LiveData<Resource<Message>> get() = _empowerResponse
 
     fun getProjectList(authorization: String) {
         viewModelScope.launch {
@@ -163,6 +171,32 @@ class ProjectManagementViewModel @Inject constructor(
         viewModelScope.launch {
             _ganttChartData.value = repository.getGanttChartData(
                 id = id,
+                authorization = authorization
+            )
+        }
+    }
+
+    fun quitProject(
+        id: String,
+        authorization: String
+    ){
+        viewModelScope.launch {
+            _quitResponse.value = repository.quitProject(
+                id = id,
+                authorization = authorization
+            )
+        }
+    }
+
+    fun empower(
+        id: String,
+        userId: UserId,
+        authorization: String
+    ){
+        viewModelScope.launch {
+            _empowerResponse.value = repository.empower(
+                id = id,
+                userId,
                 authorization = authorization
             )
         }

@@ -23,6 +23,8 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,10 +47,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import com.example.youmanage.data.remote.authentication.RefreshToken
 import com.example.youmanage.screens.LoadingScreen
+import com.example.youmanage.screens.components.CustomSnackBar
+import com.example.youmanage.ui.theme.YouManageTheme
 import com.example.youmanage.utils.Constants.ACCESS_TOKEN_KEY
 import com.example.youmanage.utils.Constants.REFRESH_TOKEN_KEY
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Resource
+import com.example.youmanage.utils.ThemePreferences
 import com.example.youmanage.utils.isTokenExpired
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.NotificationViewModel
@@ -79,6 +85,7 @@ sealed class ProjectManagementRouteScreen(
     data object Main : ProjectManagementRouteScreen("main")
     data object Home : ProjectManagementRouteScreen("home")
     data object UserProfile : ProjectManagementRouteScreen("user_profile")
+    data object Setting : ProjectManagementRouteScreen("setting")
     data object Notification: ProjectManagementRouteScreen("notification")
 
     data object Calender : ProjectManagementRouteScreen("calender")
@@ -132,6 +139,10 @@ fun RootNavGraph(
 
     val navController = rememberNavController()
 
+    val context = LocalContext.current
+    val themePreferences = remember { ThemePreferences(context) }
+    val isDarkMode by themePreferences.isDarkMode.collectAsState(initial = false)
+
     fun seeMessage() {
         navController.navigate(ProjectManagementRouteScreen.Notification.route)
     }
@@ -143,7 +154,7 @@ fun RootNavGraph(
     }
 
     LaunchedEffect(user) {
-        if (user is Resource.Success) {
+        if (user is Resource.Success && user?.data?.id != null) {
             notificationViewModel.connectToWebSocket("${WEB_SOCKET}user/${user?.data?.id}/")
         }
     }
@@ -160,158 +171,97 @@ fun RootNavGraph(
         }
     }
 
-    Scaffold(
-        snackbarHost = {
-            SnackbarHost(hostState = snackBarHostState) { data ->
-                Snackbar(
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .padding(
-                            bottom = WindowInsets.systemBars
-                                .asPaddingValues()
-                                .calculateBottomPadding() * 4
-                        )
-                        .shadow(8.dp, RoundedCornerShape(10.dp))
-                    ,
+    YouManageTheme(
+        darkTheme = isDarkMode
+    ) {
+        Scaffold(
+            snackbarHost = {
+                SnackbarHost(hostState = snackBarHostState) { data ->
+                   CustomSnackBar(
+                       message = data.visuals.message,
+                       onSkipClick = {
+                           snackBarHostState.currentSnackbarData?.dismiss()
+                       },
+                       onSeeClick = {
+                           seeMessage()
+                           snackBarHostState.currentSnackbarData?.dismiss()
+                       }
+                   )
+                }
+            }
+        ) { paddingValues ->
 
-                    containerColor = MaterialTheme.colorScheme.onPrimary,
-                    contentColor = MaterialTheme.colorScheme.primary
-                ) {
+            val padding = paddingValues
 
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+            val refreshToken = authenticationViewModel.refreshToken.collectAsState(initial = null)
+            val newAccessToken = authenticationViewModel.refreshResponse.observeAsState()
+            var tokenExpired by rememberSaveable { mutableStateOf(false) }
+            var isLoading by remember { mutableStateOf(true) }
+            var startDestination by remember { mutableStateOf("") }
 
-                            Icon(
-                                imageVector = Icons.Default.Notifications,
-                                contentDescription = null,
-                                tint = Color(0xffFFC107),
-                                modifier = Modifier.size(40.dp)
-                            )
+            fun stayedLogIn(): Boolean {
+                return accessToken.value != null &&
+                        !isTokenExpired(accessToken.value!!) &&
+                        (newAccessToken.value !is Resource.Error)
+            }
 
-                            Text(
-                                text = data.visuals.message,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 20.sp,
-                                modifier = Modifier.padding(
-                                    horizontal = 16.dp,
-                                    vertical = 20.dp
-                                )
+            LaunchedEffect(accessToken.value) {
+                isLoading = true
+
+                accessToken.value?.let { token ->
+                    if (isTokenExpired(token)) {
+                        tokenExpired = true
+                        refreshToken.value?.let { refresh ->
+                            authenticationViewModel.refreshAccessToken(
+                                RefreshToken(refresh),
+                                "Bearer $token"
                             )
                         }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-
-                            TextButton(onClick = { data.performAction() }) {
-                                Text(
-                                    text = "Skip",
-                                    color = Color(0xFFBDBDBD),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp
-                                )
-                            }
-
-                            TextButton(onClick = { seeMessage() }) {
-                                Text(
-                                    text = "See",
-                                    color = Color(0xFF03A9F4),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp
-                                )
-                            }
-                        }
-
                     }
-
                 }
 
+                startDestination = if (stayedLogIn()) {
+                    Graph.PROJECT_MANAGEMENT
+                } else {
+                    Graph.AUTHENTICATION
+                }
+
+                delay(500)
+                isLoading = false
             }
-        }
-    ) { paddingValues ->
 
-        val padding = paddingValues
-
-        val refreshToken = authenticationViewModel.refreshToken.collectAsState(initial = null)
-        val newAccessToken = authenticationViewModel.refreshResponse.observeAsState()
-        var tokenExpired by rememberSaveable { mutableStateOf(false) }
-        var isLoading by remember { mutableStateOf(true) }
-        var startDestination by remember { mutableStateOf("") }
-
-        fun stayedLogIn(): Boolean {
-            return accessToken.value != null &&
-                    !isTokenExpired(accessToken.value!!) &&
-                    (newAccessToken.value !is Resource.Error)
-        }
-
-        LaunchedEffect(accessToken.value) {
-            isLoading = true
-
-            accessToken.value?.let { token ->
-                if (isTokenExpired(token)) {
-                    tokenExpired = true
-                    refreshToken.value?.let { refresh ->
-                        authenticationViewModel.refreshAccessToken(
-                            RefreshToken(refresh),
-                            "Bearer $token"
-                        )
+            LaunchedEffect(newAccessToken.value) {
+                if (newAccessToken.value is Resource.Success && refreshToken.value != null) {
+                    newAccessToken.value?.data?.access?.let { newToken ->
+                        refreshToken.value?.let { refresh ->
+                            authenticationViewModel.saveToken(
+                                newToken,
+                                refresh,
+                                ACCESS_TOKEN_KEY,
+                                REFRESH_TOKEN_KEY
+                            )
+                        }
                     }
+                }
+
+                if (!stayedLogIn()) {
+                    startDestination = Graph.AUTHENTICATION
                 }
             }
 
-            startDestination = if (stayedLogIn()) {
-                Graph.PROJECT_MANAGEMENT
+            if (isLoading) {
+                LoadingScreen()
             } else {
-                Graph.AUTHENTICATION
-            }
-
-            delay(500)
-            isLoading = false
-        }
-
-        LaunchedEffect(newAccessToken.value) {
-            if (newAccessToken.value is Resource.Success && refreshToken.value != null) {
-                newAccessToken.value?.data?.access?.let { newToken ->
-                    refreshToken.value?.let { refresh ->
-                        authenticationViewModel.saveToken(
-                            newToken,
-                            refresh,
-                            ACCESS_TOKEN_KEY,
-                            REFRESH_TOKEN_KEY
-                        )
-                    }
+                NavHost(
+                    navController = navController,
+                    route = Graph.ROOT,
+                    startDestination = startDestination
+                ) {
+                    authenticationNavGraph(rootNavController = navController)
+                    projectManagementNavGraph(rootNavController = navController)
+                    taskManagementNavGraph(rootNavController = navController)
+                    issuesManagementNavGraph(rootNavController = navController)
                 }
-            }
-
-            if (!stayedLogIn()) {
-                startDestination = Graph.AUTHENTICATION
-            }
-        }
-
-        if (isLoading) {
-            LoadingScreen()
-        } else {
-            NavHost(
-                navController = navController,
-                route = Graph.ROOT,
-                startDestination = startDestination
-            ) {
-                authenticationNavGraph(rootNavController = navController)
-                projectManagementNavGraph(rootNavController = navController)
-                taskManagementNavGraph(rootNavController = navController)
-                issuesManagementNavGraph(rootNavController = navController)
             }
         }
     }

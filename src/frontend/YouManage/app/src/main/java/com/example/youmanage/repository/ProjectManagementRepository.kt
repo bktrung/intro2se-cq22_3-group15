@@ -1,6 +1,7 @@
 package com.example.youmanage.repository
 
 import com.example.youmanage.data.remote.ApiInterface
+import com.example.youmanage.data.remote.authentication.Message
 import com.example.youmanage.data.remote.projectmanagement.Assign
 import com.example.youmanage.data.remote.projectmanagement.GanttChartData
 import com.example.youmanage.data.remote.projectmanagement.Id
@@ -11,6 +12,7 @@ import com.example.youmanage.data.remote.projectmanagement.Projects
 import com.example.youmanage.data.remote.projectmanagement.Role
 import com.example.youmanage.data.remote.projectmanagement.RoleRequest
 import com.example.youmanage.data.remote.projectmanagement.User
+import com.example.youmanage.data.remote.projectmanagement.UserId
 import com.example.youmanage.data.remote.taskmanagement.Detail
 import com.example.youmanage.data.remote.taskmanagement.Username
 import com.example.youmanage.utils.Resource
@@ -199,5 +201,27 @@ class ProjectManagementRepository @Inject constructor(
 
     suspend fun getGanttChartData(id: String, authorization: String): Resource<List<GanttChartData>> =
         safeApiCall { api.getGanttChartData(id,authorization) }
+
+    suspend fun quitProject(
+        id: String,
+        authorization: String
+    ): Resource<Detail> = safeApiCall {
+        api.quitProject(
+            id,
+            authorization
+        )
+    }
+
+    suspend fun empower(
+        id: String,
+        userId: UserId,
+        authorization: String
+    ): Resource<Message> = safeApiCall {
+        api.empower(
+            id,
+            userId,
+            authorization
+        )
+    }
 
 }

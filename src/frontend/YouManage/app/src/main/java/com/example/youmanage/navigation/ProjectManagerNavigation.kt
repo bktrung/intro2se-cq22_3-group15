@@ -8,11 +8,16 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navDeepLink
 import androidx.navigation.navigation
 import com.example.youmanage.screens.activity_logs.ActivityLogScreen
 
@@ -22,12 +27,14 @@ import com.example.youmanage.screens.project_management.GanttChartScreen
 import com.example.youmanage.screens.home.HomeScreen
 import com.example.youmanage.screens.home.MainScreen
 import com.example.youmanage.screens.home.NotificationScreen
+import com.example.youmanage.screens.home.SettingsScreen
 import com.example.youmanage.screens.project_management.MemberProfileScreen
 import com.example.youmanage.screens.project_management.ProjectDetailScreen
 import com.example.youmanage.screens.project_management.ProjectMenuScreen
 import com.example.youmanage.screens.project_management.UpdateProjectScreen
 import com.example.youmanage.screens.home.UserProfileScreen
 import com.example.youmanage.screens.role.RolesScreen
+import com.example.youmanage.utils.ThemePreferences
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -69,26 +76,23 @@ fun ProjectManagementNavGraph(
             )
         }
 
-        composable(ProjectManagementRouteScreen.Notification.route) {
+        composable(
+            route = ProjectManagementRouteScreen.Notification.route,
+            deepLinks = listOf(navDeepLink { uriPattern = "app://home/notification" })
+        ) {
             NotificationScreen(
                 paddingValues = paddingValues
             )
         }
 
-        composable(ProjectManagementRouteScreen.Issue.route) {
-            UserProfileScreen(
-                onLogout = {
-                    rootNavController.navigate(Graph.AUTHENTICATION) {
-                        popUpTo(Graph.PROJECT_MANAGEMENT) {
-                            inclusive = true
-                        }
-                    }
-                }
+        composable(ProjectManagementRouteScreen.Setting.route) {
+            val themePreferences = ThemePreferences(context = rootNavController.context)
+            SettingsScreen(
+                themePreferences,
+                paddingValues = paddingValues
             )
         }
-
     }
-
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -104,6 +108,16 @@ fun NavGraphBuilder.projectManagementNavGraph(
             MainScreen(
                 rootNavController = rootNavController
             )
+        }
+
+        composable(
+            route = ProjectManagementRouteScreen.Notification.route
+        ){
+
+                NotificationScreen(
+                    paddingValues = WindowInsets.systemBars.asPaddingValues()
+                )
+
         }
 
         composable(ProjectManagementRouteScreen.AddProject.route) {
@@ -196,6 +210,9 @@ fun NavGraphBuilder.projectManagementNavGraph(
                 },
                 onGanttChart = {
                     rootNavController.navigate("gantt_chart/${id}")
+                },
+                onQuitProjectSuccess = {
+                    rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
                 },
                 id = id.toString()
             )

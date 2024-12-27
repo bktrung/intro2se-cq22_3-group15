@@ -1,8 +1,12 @@
 package com.example.youmanage.screens.components
 
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,17 +29,14 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerColors
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
@@ -154,7 +155,10 @@ fun ErrorDialog(
     if (showDialog) {
         Dialog(
             onDismissRequest = onDismiss,
-            properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true)
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true
+            )
         ) {
             Card(
                 modifier = Modifier
@@ -201,17 +205,23 @@ fun ErrorDialog(
                     ) {
                         TextButton(
                             onClick = onDismiss,
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary
+                            )
                         ) {
                             Text("Cancel", fontFamily = fontFamily)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
                             onClick = onConfirm,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text("OK", color = Color.White, fontFamily = fontFamily)
+                            Text("OK",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontFamily = fontFamily)
                         }
                     }
                 }
@@ -535,7 +545,9 @@ fun CreateRoleDialog(
                 ) {
                     TextButton(
                         onClick = onDismiss,
-                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
                     ) {
                         Text(
                             "Cancel",
@@ -611,7 +623,7 @@ fun ChangeRequestDialog(
                         fontFamily = fontFamily,
                         fontSize = 16.sp,
                         color = Color.Gray,
-                        modifier = Modifier.padding(bottom = 24.dp)
+                        modifier = Modifier.padding(bottom = 16.dp)
                     )
 
                     OutlinedTextField(
@@ -678,7 +690,9 @@ fun AddMemberDialog(
                         shape = RoundedCornerShape(10.dp)
                     ),
                 shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.onPrimary
+                ),
 
                 ) {
                 Column(
@@ -693,7 +707,7 @@ fun AddMemberDialog(
                         text = title,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
@@ -709,7 +723,7 @@ fun AddMemberDialog(
 
                         Text(
                             "Username",
-                            color = Color.Black,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold
                         )
 
@@ -718,7 +732,7 @@ fun AddMemberDialog(
                             onChangeValue = { username = it },
                             placeholderContent = "Username",
                             placeholderColor = Color.Gray,
-                            containerColor = Color(0x1A000000),
+                            containerColor = MaterialTheme.colorScheme.onPrimary,
                             icon = R.drawable.member_icon
                         )
                     }
@@ -736,7 +750,9 @@ fun AddMemberDialog(
                             )
                         },
                         shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 20.dp)
@@ -744,10 +760,110 @@ fun AddMemberDialog(
                         Text(
                             "Add",
                             fontSize = 16.sp,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Bold
                         )
+                    }
+                }
+            }
+        }
+    }
+}
 
+@Preview
+@Composable
+fun ReplyChangeRequest(
+    title: String = "Your change requset ",
+    showDialog: Boolean = true,
+    onDismiss: () -> Unit = {},
+    onAprrove: () -> Unit = {},
+    onDecline: () -> Unit = {}
+) {
+    if (showDialog) {
+
+        var reason by remember { mutableStateOf("") }
+        var openReasonTextField by remember { mutableStateOf(false) }
+
+        Dialog(onDismissRequest = onDismiss) {
+            Column(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.onSurface)
+                    .padding(16.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .widthIn(min = 300.dp, max = 400.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+
+                Text(
+                    title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = {
+                            openReasonTextField = !openReasonTextField
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
+                    ) {
+                        Text("Decline", fontFamily = fontFamily)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = onAprrove,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                        ,
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("Approve",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontFamily = fontFamily)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                AnimatedVisibility(
+                    visible = openReasonTextField,
+                    enter = slideInVertically() + expandVertically(),
+                    exit = slideOutVertically() + shrinkVertically()
+                ) {
+                    Column {
+                        Text(
+                            "Declined Reason:",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        OutlinedTextField(
+                            value = reason,
+                            onValueChange = {
+                                reason = it
+                            },
+                            label = { Text("Declined Reason") },
+                            maxLines = 5,
+                            textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
+                        )
+
+                        Button(
+                            onClick = onDecline,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text("Ok",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontFamily = fontFamily)
+                        }
                     }
                 }
             }

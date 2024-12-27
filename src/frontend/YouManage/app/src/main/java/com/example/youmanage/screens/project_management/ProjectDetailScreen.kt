@@ -1,6 +1,7 @@
 package com.example.youmanage.screens.project_management
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -48,12 +49,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
+import com.example.youmanage.data.remote.projectmanagement.Host
 import com.example.youmanage.data.remote.projectmanagement.Id
 import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.taskmanagement.Username
@@ -103,6 +106,8 @@ fun ProjectDetailScreen(
 
     var isRemove by remember { mutableStateOf(false) }
     var isAdd by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
 
     LaunchedEffect(accessToken.value)
     {
@@ -262,7 +267,15 @@ fun ProjectDetailScreen(
                         Row(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IconButton(onClick = { onUpdateProject() }) {
+                            IconButton(onClick = {
+                                val userId = user?.data?.id ?: -1
+                                val hostId = project?.data?.host?.id ?: -2
+                                if(userId == hostId){
+                                    onUpdateProject()
+                                } else{
+                                    Toast.makeText(context, "You are not the host of this project", Toast.LENGTH_SHORT).show()
+                                }
+                            }) {
                                 Icon(
                                     imageVector = Icons.Default.Create,
                                     contentDescription = "Update"
@@ -340,6 +353,29 @@ fun ProjectDetailScreen(
                         description = project?.data?.description.toString()
                     )
 
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 36.dp),
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text(
+                            text = "Due date",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = project?.data?.dueDate.toString(),
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
                     MembersSection(
                         onAddNewMember = {
                             showAddMemberDialog = true
@@ -350,7 +386,9 @@ fun ProjectDetailScreen(
                             showDeleteDialog = true
                         },
                         members = project?.data?.members ?: emptyList(),
-                        onMemberProfile = onMemberProfile
+                        onMemberProfile = onMemberProfile,
+                        hostId = project?.data?.host?.id ?: -1,
+                        isHost = user?.data?.id == project?.data?.host?.id
                     )
                 }
             }
@@ -493,7 +531,9 @@ fun MembersSection(
     members: List<User> = emptyList(),
     onAddNewMember: () -> Unit = {},
     onDeleteMember: (String) -> Unit = {},
-    onMemberProfile: (Int) -> Unit
+    onMemberProfile: (Int) -> Unit,
+    hostId: Int = -1,
+    isHost: Boolean
 ) {
 
 
@@ -523,17 +563,11 @@ fun MembersSection(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
-//                modifier = Modifier.border(
-//                    1.dp,
-//                    Color.Black,
-//                    RoundedCornerShape(30.dp)
-//                )
             ) {
                 Text(text = "+ Add", fontSize = 16.sp)
             }
 
         }
-
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -556,13 +590,16 @@ fun MembersSection(
                         MemberItem(
                             username = members[index].username ?: "Unknown",
                             backgroundColor = Color.Transparent,
-                            avatar = R.drawable.avatar
+                            avatar = R.drawable.avatar,
                         ),
                         onDelete = {
                             onDeleteMember(members[index].id.toString())
                         },
                         onClick = { onMemberProfile(members[index].id) },
-                        modifier = Modifier.fillMaxWidth(0.7f)
+                        modifier = Modifier.fillMaxWidth(0.7f),
+                        hostId = hostId,
+                        userId = members[index].id,
+                        isHost = isHost
                     )
                 }
             }
