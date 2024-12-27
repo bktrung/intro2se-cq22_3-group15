@@ -7,6 +7,7 @@ from django.utils import timezone
 from .models import *
 from .serializers import *
 from .permissons import *
+from .paginations import ChangeRequestPagination
 
 User = get_user_model()    
 
@@ -336,8 +337,8 @@ class ProjectMemberRetrieveView(generics.RetrieveAPIView):
         return Project.objects.filter(members=self.request.user).select_related('host').prefetch_related('members')
     
 class ChangeRequestListCreateView(generics.ListCreateAPIView):
-    queryset = ChangeRequest.objects.all()
     serializer_class = ChangeRequestSerializer
+    pagination_class = ChangeRequestPagination
 
     def get_queryset(self):
         project_id = self.kwargs['project_id']
@@ -346,7 +347,15 @@ class ChangeRequestListCreateView(generics.ListCreateAPIView):
         if self.request.user not in project.members.all():
             raise PermissionDenied({"error": "You must be a project member to view change requests."})
 
-        return ChangeRequest.objects.filter(project=project)
+        status = self.request.query_params.get('status', None)        
+        queryset = ChangeRequest.objects.filter(project=project)
+        
+        if status:
+            if status not in RequestStatus.values:
+                raise ValidationError({"error": f"Invalid status. Must be one of: {', '.join(RequestStatus.values)}"})
+            queryset = queryset.filter(status=status)
+            
+        return queryset.order_by('-created_at')
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
