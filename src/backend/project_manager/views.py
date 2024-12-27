@@ -578,3 +578,17 @@ class TaskGanttChartListView(generics.ListAPIView):
         project_id = self.kwargs['project_id']
         project = get_object_or_404(Project, id=project_id)
         return project.tasks.all().order_by('start_date', 'end_date')
+    
+
+class ProjectMemberQuitView(generics.GenericAPIView):
+    def post(self, request, pk):
+        project = get_object_or_404(Project, pk=pk)
+        
+        if not project.members.filter(id=request.user.id).exists():
+            return Response({"detail": "You are not a member of this project."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if request.user == project.host:
+            return Response({"detail": "The project host cannot quit the project."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        project.remove_member(request.user)
+        return Response({"detail": "You have successfully quit the project."}, status=status.HTTP_200_OK)
