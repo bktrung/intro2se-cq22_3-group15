@@ -44,8 +44,8 @@ def send_object_notification(event_type, instance, serializer=None):
         {"type": "object.update", "data": data}
     )
     
-def log_notification(title, body, user):
-    NotificationLog.objects.create(title=title, body=body, user=user)
+def log_notification(title, body, user, object=None):
+    NotificationLog.objects.create(title=title, body=body, user=user, object=object)
     
 def send_batch_fcm_notification(access_token, device_tokens, title, body):
     for device in device_tokens:
@@ -57,14 +57,15 @@ def send_notification_to_user(title, body, user):
         access_token = get_firebase_access_token.delay().get()
         send_batch_fcm_notification(access_token, device_tokens, title, body)
         
-def send_notification_in_app(title, body, user):
+def send_notification_in_app(title, body, user, object=None):
     channel_layer = get_channel_layer()
     group_name = f"user_{user.id}"
     
     data = {
         "type": "notification",
         "title": title,
-        "body": body
+        "body": body,
+        "object": object
     }
     
     async_to_sync(channel_layer.group_send)(

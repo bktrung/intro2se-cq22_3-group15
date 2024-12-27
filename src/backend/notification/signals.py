@@ -108,12 +108,17 @@ def notify_group_membership(sender, instance, action, pk_set, **kwargs):
         users = User.objects.filter(pk__in=pk_set)
         title = "Project Membership Update"
         for user in users:
+            if user == instance.host:
+                continue
+            
             body = f"You have been {'added to' if action == 'post_add' else 'removed from'} project {instance.name}"
             
+            object = {"project_id": instance.id} if action == "post_add" else None
+            
             # Log notification
-            log_notification(title, body, user)
+            log_notification(title, body, user, object)
             send_notification_to_user(title, body, user)
-            send_notification_in_app(title, body, user)
+            send_notification_in_app(title, body, user, object)
             
 @receiver(post_save, sender=ChatMessage)
 def notify_new_chat_message(sender, instance, created, **kwargs):
@@ -189,11 +194,15 @@ def notify_task_assignee(sender, instance, created, **kwargs):
     # Format notification message
     title = "New Task Assignment"
     body = f"You have been assigned to task: {instance.title} in project {instance.project.name}"
+    object = {
+        "project_id": instance.project.id,
+        "task_id": instance.id
+    }
     
     # Send notifications
-    log_notification(title, body, instance.assignee)
+    log_notification(title, body, instance.assignee, object)
     send_notification_to_user(title, body, instance.assignee)
-    send_notification_in_app(title, body, instance.assignee)
+    send_notification_in_app(title, body, instance.assignee, object)
                 
 @receiver(post_save, sender=Task)
 def notify_task_completion_to_host(sender, instance, created, **kwargs):
@@ -203,10 +212,14 @@ def notify_task_completion_to_host(sender, instance, created, **kwargs):
         
     title = "Task Completed"
     body = f"Task: {instance.title} has been completed in project {instance.project.name}"
+    object = {
+        "project_id": instance.project.id,
+        "task_id": instance.id
+    }
     
-    log_notification(title, body, instance.project.host)
+    log_notification(title, body, instance.project.host, object)
     send_notification_to_user(title, body, instance.project.host)
-    send_notification_in_app(title, body, instance.project.host)
+    send_notification_in_app(title, body, instance.project.host, object)
     
 @receiver(pre_save, sender=Issue)
 def store_issue_state(sender, instance, **kwargs):
@@ -233,11 +246,15 @@ def notify_issue_assignee(sender, instance, created, **kwargs):
     # Format notification message
     title = "New Issue Assignment"
     body = f"You have been assigned to issue: {instance.title} in project {instance.project.name}"
+    object = {
+        "project_id": instance.project.id,
+        "issue_id": instance.id
+    }
     
     # Send notifications
-    log_notification(title, body, instance.assignee)
+    log_notification(title, body, instance.assignee, object)
     send_notification_to_user(title, body, instance.assignee)
-    send_notification_in_app(title, body, instance.assignee)
+    send_notification_in_app(title, body, instance.assignee, object)
     
 @receiver(post_save, sender=Issue)
 def notify_issue_completion_to_host(sender, instance, created, **kwargs):
@@ -247,10 +264,14 @@ def notify_issue_completion_to_host(sender, instance, created, **kwargs):
         
     title = "Issue Completed"
     body = f"Issue: {instance.title} has been completed in project {instance.project.name}"
+    object = {
+        "project_id": instance.project.id,
+        "issue_id": instance.id
+    }
     
-    log_notification(title, body, instance.project.host)
+    log_notification(title, body, instance.project.host, object)
     send_notification_to_user(title, body, instance.project.host)
-    send_notification_in_app(title, body, instance.project.host)
+    send_notification_in_app(title, body, instance.project.host, object)
     
 @receiver(post_save, sender=Issue)
 def notify_issue_creation(sender, instance, created, **kwargs):
@@ -259,10 +280,14 @@ def notify_issue_creation(sender, instance, created, **kwargs):
         
     title = "New Issue Created"
     body = f"New issue: {instance.title} has been created in project {instance.project.name}"
+    object = {
+        "project_id": instance.project.id,
+        "issue_id": instance.id
+    }
     
-    log_notification(title, body, instance.project.host)
+    log_notification(title, body, instance.project.host, object)
     send_notification_to_user(title, body, instance.project.host)
-    send_notification_in_app(title, body, instance.project.host)
+    send_notification_in_app(title, body, instance.project.host, object)
     
 @receiver(post_save, sender=Comment)
 def notify_comment_creation(sender, instance, created, **kwargs):
@@ -271,10 +296,14 @@ def notify_comment_creation(sender, instance, created, **kwargs):
         
     title = "New Comment"
     body = f"New comment by {instance.author.username} in task: {instance.task.title}"
+    object = {
+        "project_id": instance.task.project.id,
+        "task_id": instance.task.id
+    }
     
-    log_notification(title, body, instance.task.assignee)
+    log_notification(title, body, instance.task.assignee, object)
     send_notification_to_user(title, body, instance.task.assignee)
-    send_notification_in_app(title, body, instance.task.assignee)
+    send_notification_in_app(title, body, instance.task.assignee, object)
     
 @receiver(post_save, sender=ChangeRequest)
 def notify_change_request_creation(sender, instance, created, **kwargs):
@@ -283,10 +312,14 @@ def notify_change_request_creation(sender, instance, created, **kwargs):
         
     title = "New Change Request"
     body = f"New change request by {instance.requester.username} in project {instance.project.name}"
+    object = {
+        "project_id": instance.project.id,
+        "change_request_id": instance.id
+    }
     
-    log_notification(title, body, instance.project.host)
+    log_notification(title, body, instance.project.host, object)
     send_notification_to_user(title, body, instance.project.host)
-    send_notification_in_app(title, body, instance.project.host)
+    send_notification_in_app(title, body, instance.project.host, object)
     
 @receiver(post_save, sender=ChangeRequest)
 def notify_change_request_approval(sender, instance, created, **kwargs):
@@ -295,10 +328,14 @@ def notify_change_request_approval(sender, instance, created, **kwargs):
         
     title = "Change Request Approved"
     body = f"Your change request has been approved in project {instance.project.name}"
+    object = {
+        "project_id": instance.project.id,
+        "change_request_id": instance.id
+    }
     
-    log_notification(title, body, instance.requester)
+    log_notification(title, body, instance.requester, object)
     send_notification_to_user(title, body, instance.requester)
-    send_notification_in_app(title, body, instance.requester)
+    send_notification_in_app(title, body, instance.requester, object)
     
 @receiver(post_save, sender=ChangeRequest)
 def notify_change_request_rejection(sender, instance, created, **kwargs):
@@ -307,10 +344,14 @@ def notify_change_request_rejection(sender, instance, created, **kwargs):
         
     title = "Change Request Rejected"
     body = f"Your change request has been rejected in project {instance.project.name}"
+    object = {
+        "project_id": instance.project.id,
+        "change_request_id": instance.id
+    }
     
-    log_notification(title, body, instance.requester)
+    log_notification(title, body, instance.requester, object)
     send_notification_to_user(title, body, instance.requester)
-    send_notification_in_app(title, body, instance.requester)
+    send_notification_in_app(title, body, instance.requester, object)
     
 @receiver(m2m_changed, sender=Role.users.through)
 def notify_role_assignment(sender, instance, action, pk_set, **kwargs):
