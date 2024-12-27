@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save, pre_save, post_delete, m2m_changed
+from django.db.models.signals import post_save, pre_save, post_delete, pre_delete, m2m_changed
 from django.dispatch import receiver
 from project_manager.models import Task, Project, Issue, Comment, Role, ChangeRequest
 from chat.models import ChatMessage
@@ -152,15 +152,17 @@ def notify_new_chat_message(sender, instance, created, **kwargs):
             # Set throttle for 2 minutes
             cache.set(throttle_key, True, timeout=120)
             
-@receiver(post_delete, sender=Project)
-def notify_project_deleted(sender, instance, **kwargs):
-    title = f"Project {instance.name} has been deleted"
-    body = "This project has been deleted and all associated data has been removed"
-    
-    for member in instance.members.all():
-        log_notification(title, body, member)
-        send_notification_to_user(title, body, member)
-        send_notification_in_app(title, body, member)
+@receiver(m2m_changed, sender=Project.members.through)
+def notify_project_deleted(sender, instance, action, pk_set, **kwargs):
+    if action == "pre_clear":
+        title = f"Project {instance.name} has been deleted"
+        body = "This project has been deleted and all associated data has been removed"
+        
+        # Get members before they're cleared
+        for member in instance.members.all():
+            log_notification(title, body, member)
+            send_notification_to_user(title, body, member)
+            send_notification_in_app(title, body, member)
             
 @receiver(pre_save, sender=Task)
 def store_task_state(sender, instance, **kwargs):
