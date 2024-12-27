@@ -24,4 +24,5 @@ urlpatterns = [
     path('projects/<int:pk>/progress/track/', ProjectProgressTrackingView.as_view(), name='project-progress-track'),
     path('projects/<int:project_id>/gantt-chart/', TaskGanttChartListView.as_view(), name='task-gantt-chart-list'),
     path('my-tasks/', TaskUserListView.as_view(), name='user-task-list'),
+    path('projects/<int:pk>/quit/', ProjectMemberQuitView.as_view(), name='project-member-quit'),
 ]

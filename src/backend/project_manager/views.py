@@ -7,6 +7,7 @@ from django.utils import timezone
 from .models import *
 from .serializers import *
 from .permissons import *
+from .paginations import ChangeRequestPagination
 
 User = get_user_model()    
 
@@ -336,8 +337,8 @@ class ProjectMemberRetrieveView(generics.RetrieveAPIView):
         return Project.objects.filter(members=self.request.user).select_related('host').prefetch_related('members')
     
 class ChangeRequestListCreateView(generics.ListCreateAPIView):
-    queryset = ChangeRequest.objects.all()
     serializer_class = ChangeRequestSerializer
+    pagination_class = ChangeRequestPagination
 
     def get_queryset(self):
         project_id = self.kwargs['project_id']
@@ -346,7 +347,15 @@ class ChangeRequestListCreateView(generics.ListCreateAPIView):
         if self.request.user not in project.members.all():
             raise PermissionDenied({"error": "You must be a project member to view change requests."})
 
-        return ChangeRequest.objects.filter(project=project)
+        status = self.request.query_params.get('status', None)        
+        queryset = ChangeRequest.objects.filter(project=project)
+        
+        if status:
+            if status not in RequestStatus.values:
+                raise ValidationError({"error": f"Invalid status. Must be one of: {', '.join(RequestStatus.values)}"})
+            queryset = queryset.filter(status=status)
+            
+        return queryset.order_by('-created_at')
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -578,10 +587,24 @@ class TaskGanttChartListView(generics.ListAPIView):
         project_id = self.kwargs['project_id']
         project = get_object_or_404(Project, id=project_id)
         return project.tasks.all().order_by('start_date', 'end_date')
-    
+ 
     
 class TaskUserListView(generics.ListAPIView):
     serializer_class = TaskSerializer
     
     def get_queryset(self):
         return Task.objects.filter(assignee=self.request.user).select_related('project')
+      
+
+class ProjectMemberQuitView(generics.GenericAPIView):
+    def post(self, request, pk):
+        project = get_object_or_404(Project, pk=pk)
+        
+        if not project.members.filter(id=request.user.id).exists():
+            return Response({"detail": "You are not a member of this project."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if request.user == project.host:
+            return Response({"detail": "The project host cannot quit the project."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        project.remove_member(request.user)
+        return Response({"detail": "You have successfully quit the project."}, status=status.HTTP_200_OK)
