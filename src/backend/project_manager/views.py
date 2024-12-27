@@ -587,7 +587,14 @@ class TaskGanttChartListView(generics.ListAPIView):
         project_id = self.kwargs['project_id']
         project = get_object_or_404(Project, id=project_id)
         return project.tasks.all().order_by('start_date', 'end_date')
+ 
     
+class TaskUserListView(generics.ListAPIView):
+    serializer_class = TaskSerializer
+    
+    def get_queryset(self):
+        return Task.objects.filter(assignee=self.request.user).select_related('project')
+      
 
 class ProjectMemberQuitView(generics.GenericAPIView):
     def post(self, request, pk):

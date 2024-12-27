@@ -69,8 +69,6 @@ class TaskSerializer(serializers.ModelSerializer):
             'description', 
             'start_date', 
             'end_date', 
-            'actual_start_date', 
-            'actual_end_date', 
             'status',
             'priority',
             'project', 

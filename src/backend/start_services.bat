@@ -20,7 +20,7 @@ timeout /t 10 /nobreak
 
 REM Start Django ASGI server with Uvicorn
 echo Starting Django ASGI server...
-start cmd /k "uvicorn project_management.asgi:application --host 0.0.0.0 --port 8000"
+start cmd /k "python manage.py runserver 127.0.0.1:8000"
 
 REM Start Celery worker with solo pool in windows, remove it in linux
 echo Starting Celery worker...
