@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import generics, status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.backends.db import SessionStore
 from django.utils import timezone
@@ -266,4 +266,26 @@ class ForgotPasswordView(APIView):
         del request.session[f'pwd_reset_{reset_token}']
         OTPModel.objects.filter(user=user).delete()
 
+        return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
+    
+class ResetPasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        current_password = request.data.get('current_password')
+        new_password = request.data.get('new_password')
+        confirm_password = request.data.get('confirm_password')
+        
+        if not current_password or not new_password or not confirm_password:
+            return Response({'error': 'All fields are required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if new_password != confirm_password:
+            return Response({'error': 'Passwords do not match'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not request.user.check_password(current_password):
+            return Response({'error': 'Invalid current password'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        request.user.set_password(new_password)
+        request.user.save()
+        
         return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)

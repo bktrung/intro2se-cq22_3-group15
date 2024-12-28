@@ -20,6 +20,9 @@ class Project(TimeStampedModel):
     host = models.ForeignKey(User, on_delete=models.CASCADE, related_name='hosted_projects')
     members = models.ManyToManyField(User, related_name='projects')
     
+    def __str__(self):
+        return self.name
+    
     def delete(self, *args, **kwargs):
         # Delete tasks first since they may have related issues
         self.tasks.all().delete()
@@ -71,15 +74,13 @@ class Task(TimeStampedModel):
     description = models.TextField(blank=True, null=True)
     start_date = models.DateField()
     end_date = models.DateField()
-    # consider delele this field
-    actual_start_date = models.DateField(blank=True, null=True)
-    actual_end_date = models.DateField(blank=True, null=True)
-    # -------------------------
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     priority = models.CharField(max_length=20, choices=Priority.choices, blank=True, null=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks')
     assignee = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='assigned_tasks', blank=True, null=True)
   
+    def __str__(self):
+        return self.title
 
 class Comment(TimeStampedModel):
     content = models.TextField()
@@ -105,6 +106,9 @@ class Issue(TimeStampedModel):
     reporter = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='reported_issues', null=True)
     assignee = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='assigned_issues', blank=True, null=True)
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='task_issues', blank=True, null=True)
+    
+    def __str__(self):
+        return self.title
 
     
 # Why do i use uppercase name (Ex: "TASK" instead of "Task")? Because it is a convention to use uppercase for constants in Python

@@ -12,4 +12,5 @@ urlpatterns = [
     path('test_token/', Home.as_view(), name='test_token'),
     path('email_auth/<str:action>/', EmailAuthenticationView.as_view(), name='email_auth'),
     path('forgot_password/<str:action>/', ForgotPasswordView.as_view(), name='forgot_password'),
+    path('reset_password/', ResetPasswordView.as_view(), name='reset_password'),
 ]
