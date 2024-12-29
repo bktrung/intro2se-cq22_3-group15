@@ -19,6 +19,7 @@ urlpatterns = [
     path('projects/<int:project_id>/issues/<int:pk>/', IssueRetrieveUpdateDestroyView.as_view(), name='issue-retrieve-update-destroy'),
     path('projects/<int:project_id>/change-requests/', ChangeRequestListCreateView.as_view(), name='change-request-list-create'),
     path('projects/<int:project_id>/change-requests/<int:pk>/', ChangeRequestActionView.as_view(), name='change-request-action'),
+    path('projects/<int:project_id>/change-requests/view/<int:pk>/', ChangeRequestRetrieveView.as_view(), name='change-request-retrieve'),
     path('users/self/', UserRetrieveView.as_view(), name='user-retrieve'),
     path('projects/<int:pk>/empower/', ProjectHostEmpowerView.as_view(), name='project-host-empower'),
     path('projects/<int:pk>/progress/track/', ProjectProgressTrackingView.as_view(), name='project-progress-track'),

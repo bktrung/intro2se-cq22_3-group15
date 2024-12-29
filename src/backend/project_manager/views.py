@@ -531,6 +531,13 @@ class ChangeRequestActionView(generics.GenericAPIView):
             change_request.save()
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
+   
+class ChangeRequestRetrieveView(generics.RetrieveAPIView):
+    serializer_class = ChangeRequestSerializer
+    
+    def get_queryset(self):
+        return ChangeRequest.objects.filter(project_id=self.kwargs['project_id'])        
+        
         
 class UserRetrieveView(generics.RetrieveAPIView):
     serializer_class = UserSerializer
