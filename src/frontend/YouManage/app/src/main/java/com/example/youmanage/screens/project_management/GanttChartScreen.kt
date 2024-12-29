@@ -130,12 +130,15 @@ fun GanttChartScreen(
                 }
 
             } else {
-                GanttChart(
-                    generateChartData(
-                        tasks = tasks,
-                        projectDueDate = projectDueDate
+                if(tasks.isNotEmpty()) {
+                    GanttChart(
+                        generateChartData(
+                            tasks = tasks,
+                            projectDueDate = projectDueDate
+                        )
                     )
-                )
+                }
+
             }
 
         }

@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -41,10 +43,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
+import com.example.youmanage.data.remote.projectmanagement.Project
 import com.example.youmanage.data.remote.projectmanagement.Projects
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.randomColor
@@ -75,6 +79,15 @@ fun HomeScreen(
         }
     }
 
+    var projectList by remember { mutableStateOf<List<Project>>(emptyList()) }
+
+    fun onSearch(query: String) {
+        val filteredList = projectList.filter { project ->
+            project.name.contains(query, ignoreCase = true)
+        }
+        projectList = filteredList
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -97,6 +110,14 @@ fun HomeScreen(
                         tint = MaterialTheme.colorScheme.primary
                     )
                 },
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        onSearch(searchQuery) // Gọi hàm tìm kiếm khi nhấn "Enter"
+                    }
+                ),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.Done // Thay đổi hành động IME thành "Done" (Enter)
+                ),
                 modifier = Modifier
                     .fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
@@ -158,7 +179,7 @@ fun HomeScreen(
 
             when (projects) {
                 is Resource.Success -> {
-                    val projectList = (projects as Resource.Success<Projects>).data!!
+                    projectList = (projects as Resource.Success<Projects>).data!!
 
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -167,7 +188,7 @@ fun HomeScreen(
                             ProjectItem(
                                 title = projectList[item].name,
                                 team = "",
-                                backgroundColor = Color(randomColor(item)),
+                                backgroundColor = Color(randomColor(projectList[item].id)),
                                 onViewProject = {
                                     val id = projectList[item].id
                                     if(id >= 0){
