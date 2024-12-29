@@ -13,5 +13,5 @@ class DeviceTokenSerializer(serializers.ModelSerializer):
 class NotificationLogSerializer(serializers.ModelSerializer):    
     class Meta:
         model = NotificationLog
-        fields = ['id', 'title', 'body', 'created_at', 'is_read']
-        read_only_fields = ['id', 'title', 'body', 'created_at']
+        fields = ['id', 'title', 'body', 'created_at', 'is_read', 'object']
+        read_only_fields = ['id', 'title', 'body', 'created_at', 'object']
