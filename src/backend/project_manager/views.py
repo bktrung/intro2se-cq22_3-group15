@@ -216,6 +216,10 @@ class RoleManagementView(generics.GenericAPIView):
     def post(self, request, project_id, pk, action):
         project = get_object_or_404(Project, id=project_id)
         role = get_object_or_404(Role, pk=pk, project=project)
+        
+        if action == 'unassign' and request.data.get('user_id') == str(request.user.id):
+            return self.unassign_role(request, project, role)
+            
         self.check_object_permissions(request, role)
         
         if action == 'assign':
