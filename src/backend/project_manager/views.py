@@ -615,3 +615,9 @@ class ProjectMemberQuitView(generics.GenericAPIView):
         
         project.remove_member(request.user)
         return Response({"detail": "You have successfully quit the project."}, status=status.HTTP_200_OK)
+
+
+class ProjectHostCheckView(generics.GenericAPIView):
+    def get(self, request, pk):
+        project = get_object_or_404(Project, pk=pk)
+        return Response({"is_host": project.host == request.user}, status=status.HTTP_200_OK)
