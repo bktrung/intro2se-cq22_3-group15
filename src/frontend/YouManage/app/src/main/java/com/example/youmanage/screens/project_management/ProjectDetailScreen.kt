@@ -95,6 +95,8 @@ fun ProjectDetailScreen(
     val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
     val taskSocket by taskManagementViewModel.taskSocket.observeAsState()
 
+    val isHost by projectManagementViewModel.isHost.observeAsState()
+
     val user by authenticationViewModel.user.observeAsState()
 
     var pieChartInputList by remember { mutableStateOf<List<PieChartInput>>(emptyList()) }
@@ -118,12 +120,14 @@ fun ProjectDetailScreen(
                 id = id.toString(),
                 authorization = authorization
             )
-
             projectManagementViewModel.getProgressTrack(
                 id = id.toString(),
                 authorization = authorization
             )
-
+            projectManagementViewModel.isHost(
+                id = id.toString(),
+                authorization = authorization
+            )
         }
     }
 
@@ -268,9 +272,7 @@ fun ProjectDetailScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             IconButton(onClick = {
-                                val userId = user?.data?.id ?: -1
-                                val hostId = project?.data?.host?.id ?: -2
-                                if(userId == hostId){
+                                if(isHost == true){
                                     onUpdateProject()
                                 } else{
                                     Toast.makeText(context, "You are not the host of this project", Toast.LENGTH_SHORT).show()
@@ -378,7 +380,11 @@ fun ProjectDetailScreen(
 
                     MembersSection(
                         onAddNewMember = {
-                            showAddMemberDialog = true
+                            if(isHost == true){
+                                showAddMemberDialog = true
+                            } else{
+                                Toast.makeText(context, "You are not the host of this project", Toast.LENGTH_SHORT).show()
+                            }
                         },
 
                         onDeleteMember = {
@@ -535,7 +541,6 @@ fun MembersSection(
     hostId: Int = -1,
     isHost: Boolean
 ) {
-
 
     Column(
         modifier = Modifier

@@ -20,6 +20,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.navigation
 import com.example.youmanage.screens.activity_logs.ActivityLogScreen
+import com.example.youmanage.screens.authetication.ChangePasswordScreen
 import com.example.youmanage.screens.changerequest.ChangeRequestScreen
 
 import com.example.youmanage.screens.chat.ChatScreenWithViewModel
@@ -27,6 +28,7 @@ import com.example.youmanage.screens.project_management.AddProjectScreen
 import com.example.youmanage.screens.project_management.GanttChartScreen
 import com.example.youmanage.screens.home.HomeScreen
 import com.example.youmanage.screens.home.MainScreen
+import com.example.youmanage.screens.home.MyTaskScreen
 import com.example.youmanage.screens.home.NotificationScreen
 import com.example.youmanage.screens.home.SettingsScreen
 import com.example.youmanage.screens.project_management.MemberProfileScreen
@@ -73,6 +75,9 @@ fun ProjectManagementNavGraph(
                             inclusive = true
                         }
                     }
+                },
+                onChangePassword = {
+                    rootNavController.navigate(ProjectManagementRouteScreen.ChangePassword.route)
                 }
             )
         }
@@ -93,6 +98,17 @@ fun ProjectManagementNavGraph(
                 paddingValues = paddingValues
             )
         }
+
+        composable(ProjectManagementRouteScreen.MyTask.route){
+            MyTaskScreen(
+                paddingValues = paddingValues,
+                onClick = {
+                    taskId, projectId ->
+                    rootNavController.navigate("task_detail/${projectId}/${taskId}")
+                }
+            )
+        }
+
     }
 }
 
@@ -290,6 +306,23 @@ fun NavGraphBuilder.projectManagementNavGraph(
                 memberId = memberId ?: "",
                 onNavigateBack = {
                     rootNavController.navigateUp()
+                }
+            )
+        }
+
+        composable(ProjectManagementRouteScreen.ChangePassword.route){
+            ChangePasswordScreen(
+                onNavigateBack = {
+                    rootNavController.navigate(AuthRouteScreen.Login.route)
+                },
+                onChangePasswordSuccess = {
+                    rootNavController.navigate(AuthRouteScreen.Login.route) {
+                        popUpTo(Graph.PROJECT_MANAGEMENT) {
+                            inclusive = true
+                        }
+
+                        launchSingleTop = true
+                    }
                 }
             )
         }

@@ -46,7 +46,8 @@ import com.example.youmanage.viewmodel.AuthenticationViewModel
 @Composable
 fun UserProfileScreen(
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onChangePassword:() -> Unit
 ) {
     val accessToken by authenticationViewModel.accessToken.collectAsState(initial = null)
     val refreshToken by authenticationViewModel.refreshToken.collectAsState(initial = null)
@@ -102,6 +103,26 @@ fun UserProfileScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+
+            Button(
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                ),
+                onClick = {
+                    onChangePassword()
+                }) {
+                Text(
+                    "Change Password",
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             Button(
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -118,6 +139,8 @@ fun UserProfileScreen(
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
+
+
 
             AnimatedVisibility(
                 visible = logOutResponse is Resource.Loading,

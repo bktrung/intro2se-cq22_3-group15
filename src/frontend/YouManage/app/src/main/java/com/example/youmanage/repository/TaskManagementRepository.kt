@@ -30,6 +30,19 @@ class TaskManagementRepository @Inject constructor(
         return response
     }
 
+    suspend fun getMyTask(
+        authorization: String
+    ): Resource<List<Task>> {
+        val response = try {
+            Resource.Success(api.getMyTask(authorization))
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Resource.Error(e.message.toString())
+        }
+
+        return response
+    }
+
     suspend fun createTask(
         projectId: String,
         task: TaskCreate,

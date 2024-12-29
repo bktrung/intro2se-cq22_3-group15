@@ -4,6 +4,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import com.example.youmanage.screens.authetication.ChangePasswordScreen
 import com.example.youmanage.screens.authetication.CreateAccountScreen
 import com.example.youmanage.screens.authetication.FindUserScreen
 import com.example.youmanage.screens.authetication.LoginScreen

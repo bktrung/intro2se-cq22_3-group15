@@ -65,6 +65,10 @@ class TaskManagementViewModel @Inject constructor(
     val members: LiveData<List<User>>
         get() = _members
 
+    private val _myTask = MutableLiveData<List<Task>>(emptyList())
+    val myTask: LiveData<List<Task>>
+        get() = _myTask
+
     private val _isHost = MutableLiveData<Boolean>(false)
     val isHost: LiveData<Boolean>
         get() = _isHost
@@ -100,6 +104,19 @@ class TaskManagementViewModel @Inject constructor(
             _tasks.value = repository.getTasks(projectId, authorization)
         }
     }
+
+
+    fun getMyTask(authorization: String){
+        viewModelScope.launch {
+            val response = repository.getMyTask(authorization)
+            if (response is Resource.Success) {
+                _myTask.value = response.data ?: emptyList()
+            } else {
+                _myTask.value = emptyList()
+            }
+        }
+    }
+
 
     fun createTask(
         projectId: String,

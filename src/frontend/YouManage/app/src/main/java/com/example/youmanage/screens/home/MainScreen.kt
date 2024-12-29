@@ -67,11 +67,11 @@ val bottomNavigationItems = listOf(
 
     ),
     BottomNavigationItem(
-        title = "Task",
+        title = "My Task",
         icon = R.drawable.task_icon,
         selectedColor = Color.Black,
         unselectedColor = Color.Gray,
-        route = ""
+        route = ProjectManagementRouteScreen.MyTask.route
     ),
 
     BottomNavigationItem(

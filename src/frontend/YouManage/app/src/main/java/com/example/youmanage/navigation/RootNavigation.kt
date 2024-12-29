@@ -1,6 +1,7 @@
 package com.example.youmanage.navigation
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -77,6 +78,7 @@ sealed class AuthRouteScreen(
     data object OTPVerification : AuthRouteScreen("otp_verification/{email}/{from}")
     data object FindUser : AuthRouteScreen("find_user")
     data object ResetPassword : AuthRouteScreen("reset_password/{token}")
+
 }
 
 sealed class ProjectManagementRouteScreen(
@@ -86,9 +88,9 @@ sealed class ProjectManagementRouteScreen(
     data object Home : ProjectManagementRouteScreen("home")
     data object UserProfile : ProjectManagementRouteScreen("user_profile")
     data object Setting : ProjectManagementRouteScreen("setting")
-    data object Notification: ProjectManagementRouteScreen("notification")
+    data object Notification : ProjectManagementRouteScreen("notification")
 
-    data object Calender : ProjectManagementRouteScreen("calender")
+    data object MyTask : ProjectManagementRouteScreen("my_task")
     data object Issue : ProjectManagementRouteScreen("issue")
     data object AddProject : ProjectManagementRouteScreen("add_project")
     data object UpdateProject : ProjectManagementRouteScreen("update_project/{id}")
@@ -97,6 +99,8 @@ sealed class ProjectManagementRouteScreen(
     data object MemberProfile :
         ProjectManagementRouteScreen("member_profile/{project_id}/{member_id}")
 
+
+    data object ChangePassword: ProjectManagementRouteScreen("change_password")
     data object ActivityLogs : ProjectManagementRouteScreen("activity_logs/{projectId}")
     data object Roles : ProjectManagementRouteScreen("roles/{projectId}")
     data object GanttChart : ProjectManagementRouteScreen("gantt_chart/{projectId}")
@@ -144,10 +148,6 @@ fun RootNavGraph(
     val themePreferences = remember { ThemePreferences(context) }
     val isDarkMode by themePreferences.isDarkMode.collectAsState(initial = false)
 
-    fun seeMessage() {
-        navController.navigate(ProjectManagementRouteScreen.Notification.route)
-    }
-
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let {
             authenticationViewModel.getUser("Bearer $it")
@@ -159,6 +159,7 @@ fun RootNavGraph(
             notificationViewModel.connectToWebSocket("${WEB_SOCKET}user/${user?.data?.id}/")
         }
     }
+    var routeMessage by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(notification) {
         if (notification is Resource.Success) {
@@ -168,7 +169,35 @@ fun RootNavGraph(
                     withDismissAction = true,
                     duration = SnackbarDuration.Indefinite
                 )
+
+                val objectContent = it.objectContent
+
+                if (objectContent?.projectId != null) {
+                    routeMessage = if (objectContent.taskId != null) {
+                        "task_detail/${objectContent.projectId}/${objectContent.taskId}"
+                    } else if (objectContent.issueId != null) {
+                        "issue_detail/${objectContent.projectId}/${objectContent.issueId}"
+                    } else if (objectContent.changeRequestId != null) {
+                        "change_requests/${objectContent.projectId}"
+                    } else {
+                        "project_detail/${objectContent.projectId}"
+                    }
+                }
+
+                Log.d("RootNavGraph", routeMessage)
             }
+        }
+    }
+
+    var seeDetail by remember { mutableStateOf(false) }
+
+    LaunchedEffect(
+        key1 = routeMessage,
+        key2 = seeDetail
+    ) {
+        if (routeMessage.isNotEmpty() && seeDetail) {
+            navController.navigate(routeMessage)
+            seeDetail = false
         }
     }
 
@@ -178,16 +207,16 @@ fun RootNavGraph(
         Scaffold(
             snackbarHost = {
                 SnackbarHost(hostState = snackBarHostState) { data ->
-                   CustomSnackBar(
-                       message = data.visuals.message,
-                       onSkipClick = {
-                           snackBarHostState.currentSnackbarData?.dismiss()
-                       },
-                       onSeeClick = {
-                           seeMessage()
-                           snackBarHostState.currentSnackbarData?.dismiss()
-                       }
-                   )
+                    CustomSnackBar(
+                        message = data.visuals.message,
+                        onSkipClick = {
+                            snackBarHostState.currentSnackbarData?.dismiss()
+                        },
+                        onSeeClick = {
+                            seeDetail = true
+                            snackBarHostState.currentSnackbarData?.dismiss()
+                        }
+                    )
                 }
             }
         ) { paddingValues ->

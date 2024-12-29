@@ -48,8 +48,7 @@ class ChangeRequestViewModel @Inject constructor(
         projectId: Int,
         cursor: String? = null,
         status: String? = null,
-        authorization: String,
-        isChangeStatus: Boolean = false
+        authorization: String
     ) {
         viewModelScope.launch {
 
@@ -119,7 +118,7 @@ class ChangeRequestViewModel @Inject constructor(
         authorization: String
     ) {
         viewModelScope.launch {
-            val response = repository.replyChangeRequest(projectId, reply, requestId, authorization)
+            _reply.value = repository.replyChangeRequest(projectId, reply, requestId, authorization)
             if(_reply.value is Resource.Success){
                 _requests.value = _requests.value?.filter { it.id != requestId }
             }
