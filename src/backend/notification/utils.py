@@ -58,6 +58,9 @@ def send_notification_to_user(title, body, user):
         send_batch_fcm_notification(access_token, device_tokens, title, body)
         
 def send_notification_in_app(title, body, user, object=None):
+    if user is None:
+        return
+    
     channel_layer = get_channel_layer()
     group_name = f"user_{user.id}"
     

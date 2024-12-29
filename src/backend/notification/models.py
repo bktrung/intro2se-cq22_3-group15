@@ -12,7 +12,7 @@ class DeviceToken(TimeStampedModel):
 class NotificationLog(models.Model):
     title = models.CharField(max_length=255)
     body = models.TextField()
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='notifications')
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
     object = models.JSONField(null=True, blank=True)
