@@ -3,6 +3,7 @@ package com.example.youmanage.data.remote
 import com.example.youmanage.data.remote.authentication.Message
 import com.example.youmanage.data.remote.projectmanagement.GanttChartData
 import com.example.youmanage.data.remote.projectmanagement.Id
+import com.example.youmanage.data.remote.projectmanagement.IsHost
 import com.example.youmanage.data.remote.projectmanagement.Project
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
 import com.example.youmanage.data.remote.projectmanagement.Projects
@@ -101,4 +102,10 @@ interface ProjectAPI {
         @Body userId: UserId,
         @Header("Authorization") authentication: String
     ): Message
+
+    @GET("/projects/{projectId}/check-host")
+    suspend fun isHost(
+        @Path("projectId") id: String,
+        @Header("Authorization") authentication: String
+    ): IsHost
 }

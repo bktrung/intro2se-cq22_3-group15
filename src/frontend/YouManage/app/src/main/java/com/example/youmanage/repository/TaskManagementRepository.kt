@@ -39,7 +39,12 @@ class TaskManagementRepository @Inject constructor(
             Resource.Success(api.createTask(projectId, task, authorization))
         } catch (e: HttpException) {
             e.printStackTrace()
-            Resource.Error(e.message.toString())
+            val errorMessage = try {
+                e.response()?.errorBody()?.string() ?: "Unknown error"
+            } catch (parseException: Exception) {
+                "Error parsing error body: ${parseException.message}"
+            }
+            Resource.Error(errorMessage)
         } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message.toString())

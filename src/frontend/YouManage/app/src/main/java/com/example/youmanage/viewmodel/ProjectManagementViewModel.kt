@@ -70,6 +70,23 @@ class ProjectManagementViewModel @Inject constructor(
     private val _empowerResponse = MutableLiveData<Resource<Message>>()
     val empowerResponse: LiveData<Resource<Message>> get() = _empowerResponse
 
+    private val _isHost = MutableLiveData<Boolean>(false)
+    val isHost: LiveData<Boolean> get() = _isHost
+
+    fun isHost(
+        id: String,
+        authorization: String
+    ){
+        viewModelScope.launch {
+            val response = repository.isHost(id, authorization)
+            if(response is Resource.Success){
+                _isHost.value = response.data?.isHost ?: false
+            } else{
+                _isHost.value = false
+            }
+        }
+    }
+
     fun getProjectList(authorization: String) {
         viewModelScope.launch {
             _projects.value = repository.getProjectList(authorization = authorization)

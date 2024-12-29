@@ -16,6 +16,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -67,7 +68,7 @@ fun ResetPasswordScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         IconButton(
@@ -81,7 +82,8 @@ fun ResetPasswordScreen(
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.back_arrow_icon),
-                contentDescription = "Back"
+                contentDescription = "Back",
+                tint = MaterialTheme.colorScheme.primary
             )
         }
 
@@ -102,7 +104,8 @@ fun ResetPasswordScreen(
             Text(
                 text = "Reset Password",
                 fontSize = 30.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
             )
 
             Spacer(modifier = Modifier.height(50.dp))
@@ -112,7 +115,7 @@ fun ResetPasswordScreen(
                 onChangeValue = { newPassword = it },
                 placeholderContent = "Password",
                 placeholderColor = Color.Gray,
-                containerColor = Color.White
+                containerColor = MaterialTheme.colorScheme.surface
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -123,7 +126,7 @@ fun ResetPasswordScreen(
                 onChangeValue = { confirmPassword = it },
                 placeholderContent = "Confirm Password",
                 placeholderColor = Color.Gray,
-                containerColor = Color.White
+                containerColor = MaterialTheme.colorScheme.surface
             )
 
             Spacer(modifier = Modifier.height(40.dp))
@@ -144,7 +147,8 @@ fun ResetPasswordScreen(
                     }
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier

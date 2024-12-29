@@ -1,13 +1,16 @@
 package com.example.youmanage.screens.changerequest
 
 import android.os.Build
+import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -20,15 +23,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -37,6 +37,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -47,23 +48,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
 import com.example.youmanage.data.remote.changerequest.ChangeRequest
-import com.example.youmanage.data.remote.notification.Notification
-import com.example.youmanage.screens.home.IconWithDropdownMenu
-import com.example.youmanage.screens.home.NotificationItem
+import com.example.youmanage.data.remote.changerequest.Reply
+import com.example.youmanage.screens.components.ReplyChangeRequest
 import com.example.youmanage.screens.project_management.TopBar
+import com.example.youmanage.screens.task_management.ButtonSection
+import com.example.youmanage.screens.task_management.TaskItem
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.HandleOutProjectWebSocket
-import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.formatToRelativeTime
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ChangeRequestViewModel
-import com.example.youmanage.viewmodel.NotificationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import com.example.youmanage.viewmodel.requestStatus
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -80,24 +81,32 @@ fun ChangeRequestScreen(
     val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
     val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
     val user by authenticationViewModel.user.observeAsState()
+    val isHost by projectManagementViewModel.isHost.observeAsState()
+    val replyResponse by changeRequestViewModel.reply.observeAsState()
+
+    val isLoading by changeRequestViewModel.isLoading.collectAsState()
+    val currentStatus by changeRequestViewModel.currentStatus.collectAsState()
 
     val changeRequests by changeRequestViewModel.requests.observeAsState()
 
     val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
 
+    var showReplyDialog by remember { mutableStateOf(false) }
+    var selectedChangeRequest by remember { mutableStateOf(ChangeRequest()) }
+
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let {
-            changeRequestViewModel.getChangeRequest(
+            changeRequestViewModel.getChangeRequests(
                 projectId = projectId,
+                status = "PENDING",
                 authorization = "Bearer $it"
             )
+            projectManagementViewModel.isHost(projectId.toString(), "Bearer $it")
             projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
             projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
             authenticationViewModel.getUser("Bearer $it")
         }
     }
-
-
 
     HandleOutProjectWebSocket(
         projectSocket = projectSocket,
@@ -106,6 +115,18 @@ fun ChangeRequestScreen(
         projectId = projectId.toString(),
         onDisableAction = onDisableAction
     )
+
+    var isSelectedButton by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(
+        key1 = isSelectedButton
+    ) {
+        changeRequestViewModel.getChangeRequests(
+            projectId = projectId,
+            status = requestStatus[isSelectedButton].second,
+            authorization = "Bearer ${accessToken.value}"
+        )
+    }
 
     Scaffold(
         modifier = Modifier
@@ -142,95 +163,167 @@ fun ChangeRequestScreen(
             verticalArrangement = Arrangement.Center
         ) {
 
-            // Show "No Activity Log" when no logs are available
-            if (changeRequests is Resource.Success) {
+            ButtonSection(
+                isSelectedButton = isSelectedButton,
+                onClick = {
+                    isSelectedButton = it
+                    changeRequestViewModel.getChangeRequests(
+                        projectId = projectId,
+                        status = requestStatus[it].second,
+                        authorization = "Bearer ${accessToken.value}"
+                    )
+                },
+                status = requestStatus
+            )
+
+            Column {
                 LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                        .fillMaxWidth()
+                        .padding(10.dp)
+                        .height(550.dp)
+
                 ) {
-                    // Display each activity
-                    itemsIndexed(changeRequests?.data ?: emptyList()) { index, item ->
+                    itemsIndexed(changeRequests ?: emptyList()) { index, item ->
+                        ChangeRequestItem(
+                            item,
+                            onClick = {
+                                if (isHost == true && item.status == "PENDING") {
+                                    selectedChangeRequest = item
+                                    showReplyDialog = true
+                                }
+                            }
+                        )
+
+                        if (index == changeRequests?.size?.minus(1) && !isLoading) {
+                            changeRequestViewModel.loadMore(
+                                projectId = projectId,
+                                status = requestStatus[isSelectedButton].second,
+                                authorization = "Bearer ${accessToken.value}"
+                            )
+                        }
                     }
                 }
-            } else {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Text(
-                        text = "No Change Request",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.align(Alignment.Center)
+
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .padding(bottom = 100.dp)
+                            .align(Alignment.CenterHorizontally)
                     )
                 }
             }
+
+        }
+
+
+    }
+
+    ReplyChangeRequest(
+        title = selectedChangeRequest.systemDescription ?: "",
+        showDialog = showReplyDialog,
+        onDismiss = {
+            showReplyDialog = false
+        },
+        onApprove = {
+            changeRequestViewModel.replyRequest(
+                projectId = projectId,
+                requestId = selectedChangeRequest.id ?: -1,
+                reply = Reply(
+                    action = "approve",
+                    declinedReason = null
+                ),
+                authorization = "Bearer ${accessToken.value}"
+            )
+            showReplyDialog = false
+        },
+        onDecline = {
+            changeRequestViewModel.replyRequest(
+                projectId = projectId,
+                requestId = selectedChangeRequest.id ?: -1,
+                reply = Reply(
+                    action = "reject",
+                    declinedReason = it
+                ),
+                authorization = "Bearer ${accessToken.value}"
+            )
+            showReplyDialog = false
+        }
+    )
+}
+
+
+@Preview
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun ChangeRequestItem(
+    request: ChangeRequest = ChangeRequest(),
+    onClick: () -> Unit = {}
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(10.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .clickable { onClick() },
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(
+            2.dp,
+            if (request.status == "PENDING") Color.Green else MaterialTheme.colorScheme.primaryContainer
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp)
+                .padding(vertical = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Image(
+                    painter = painterResource(R.drawable.request),
+                    contentDescription = "icon",
+                    modifier = Modifier.size(30.dp)
+                )
+
+                Text(
+                    request.systemDescription ?: "",
+                    textAlign = TextAlign.Start,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(start = 10.dp)
+
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            if(request.status == "REJECTED"){
+                Text(
+                    "Declined Reason: ${request.declinedReason ?: "No reason"}"
+                )
+            }
+            Text(
+                formatToRelativeTime(request.createdAt ?: ""),
+                textAlign = TextAlign.Start,
+                color = Color.Gray,
+                modifier = Modifier.padding(start = 10.dp)
+            )
+
+
         }
     }
 }
 
 
-//@RequiresApi(Build.VERSION_CODES.O)
-//@Composable
-//fun ChangeRequestItem(
-//    request: ChangeRequest = ChangeRequest(),
-//    onClick: () -> Unit = {}
-//) {
-//    Card(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(10.dp)
-//            .clip(RoundedCornerShape(10.dp)),
-//        shape = RoundedCornerShape(10.dp),
-//        border = BorderStroke(
-//            2.dp,
-//            Color.Green
-//        ),
-//        colors = CardDefaults.cardColors(
-//            containerColor = MaterialTheme.colorScheme.primaryContainer
-//        )
-//    ) {
-//        Column(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(horizontal = 18.dp)
-//                .padding(vertical = 20.dp),
-//            horizontalAlignment = Alignment.CenterHorizontally
-//        ) {
-//            Row(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .padding(10.dp),
-//                horizontalArrangement = Arrangement.SpaceBetween,
-//                verticalAlignment = Alignment.CenterVertically
-//            ) {
-//
-//                Text(
-//                    request.systemDescription ?: "",
-//                    textAlign = TextAlign.Start,
-//                    fontWeight = FontWeight.SemiBold,
-//                    modifier = Modifier.padding(start = 10.dp)
-//
-//                )
-//            }
-//
-//            Text(
-//                notification.body ?: "",
-//                textAlign = TextAlign.Start,
-//                color = MaterialTheme.colorScheme.primary,
-//                modifier = Modifier.padding(start = 10.dp)
-//            )
-//
-//            Spacer(modifier = Modifier.height(10.dp))
-//
-//            Text(
-//                if (notification.createdAt !== null) formatToRelativeTime(notification.createdAt) else "",
-//                textAlign = TextAlign.Start,
-//                color = Color.Gray,
-//                modifier = Modifier.padding(start = 10.dp)
-//            )
-//        }
-//    }
-//}
-//
-//

@@ -2,13 +2,10 @@ package com.example.youmanage.repository
 
 import com.example.youmanage.data.remote.ApiInterface
 import com.example.youmanage.data.remote.changerequest.ChangeRequest
+import com.example.youmanage.data.remote.changerequest.ChangeRequests
 import com.example.youmanage.data.remote.changerequest.Reply
 import com.example.youmanage.data.remote.changerequest.SendChangeRequest
-import com.example.youmanage.data.remote.projectmanagement.RoleRequest
-import com.example.youmanage.data.remote.taskmanagement.TaskUpdate
 import com.example.youmanage.utils.Resource
-import com.google.gson.Gson
-import com.google.gson.JsonObject
 import dagger.hilt.android.scopes.ActivityScoped
 import retrofit2.HttpException
 import javax.inject.Inject
@@ -44,8 +41,15 @@ class ChangeRequestRepository @Inject constructor(
 
     suspend fun getChangeRequests(
         projectId: Int,
+        cursor: String? = null,
+        status: String? = null,
         authorization: String
-    ): Resource<List<ChangeRequest>> = safeApiCall { api.getRequest(projectId, authorization) }
+    ): Resource<ChangeRequests> = safeApiCall {
+        api.getChangeRequests(
+            projectId,
+            cursor,
+            status,
+            authorization) }
 
     suspend fun createChangeRequest(
         projectId: Int,

@@ -69,6 +69,7 @@ data class ProjectMenuItem(
 
 @Composable
 fun ProjectMenuScreen(
+    id: String,
     onNavigateBack: () -> Unit = {},
     onTaskList: () -> Unit = {},
     onIssueList: () -> Unit = {},
@@ -79,7 +80,7 @@ fun ProjectMenuScreen(
     onDeleteProjectSuccess: () -> Unit = {},
     onDisableAction: () -> Unit = {},
     onGanttChart: () -> Unit = {},
-    id: String,
+    onChangeRequests: () -> Unit = {},
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
 ) {
@@ -154,6 +155,14 @@ fun ProjectMenuScreen(
             color = MaterialTheme.colorScheme.primary,
             onClick = { onActivityLog() }
         ),
+
+        ProjectMenuItem(
+            title = "Change Request",
+            icon = R.drawable.activity_logs,
+            color = MaterialTheme.colorScheme.primary,
+            onClick = { onChangeRequests() }
+        ),
+
         ProjectMenuItem(
             title = "Roles",
             icon = R.drawable.task_icon,

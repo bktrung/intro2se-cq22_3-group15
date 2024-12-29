@@ -20,6 +20,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.navigation
 import com.example.youmanage.screens.activity_logs.ActivityLogScreen
+import com.example.youmanage.screens.changerequest.ChangeRequestScreen
 
 import com.example.youmanage.screens.chat.ChatScreenWithViewModel
 import com.example.youmanage.screens.project_management.AddProjectScreen
@@ -214,6 +215,9 @@ fun NavGraphBuilder.projectManagementNavGraph(
                 onQuitProjectSuccess = {
                     rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
                 },
+                onChangeRequests = {
+                    rootNavController.navigate("change_requests/${id}")
+                },
                 id = id.toString()
             )
         }
@@ -253,12 +257,26 @@ fun NavGraphBuilder.projectManagementNavGraph(
 
         composable(ProjectManagementRouteScreen.GanttChart.route) { backStackEntry ->
             val projectId = backStackEntry.arguments?.getString("projectId")
-            GanttChartScreen(
-                projectId = projectId ?: "",
-                onNavigateBack = {
-                    rootNavController.navigateUp()
-                }
-            )
+            if (projectId != null) {
+                GanttChartScreen(
+                    projectId = projectId,
+                    onNavigateBack = {
+                        rootNavController.navigateUp()
+                    }
+                )
+            }
+        }
+        composable(route = ProjectManagementRouteScreen.ChangeRequest.route){
+            val projectId = it.arguments?.getString("projectId")
+            if (projectId != null) {
+                ChangeRequestScreen(
+                    projectId.toInt(),
+                    onDisableAction = {},
+                    onNavigateBack = {
+                        rootNavController.navigateUp()
+                    }
+                )
+            }
         }
 
         composable(

@@ -1,23 +1,32 @@
 package com.example.youmanage.data.remote
 
 import com.example.youmanage.data.remote.changerequest.ChangeRequest
+import com.example.youmanage.data.remote.changerequest.ChangeRequests
 import com.example.youmanage.data.remote.changerequest.Reply
 import com.example.youmanage.data.remote.changerequest.SendChangeRequest
-import com.example.youmanage.utils.Resource
-import okhttp3.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ChangeRequestAPI {
 
     @GET("/projects/{project_id}/change-requests/")
-    suspend fun getRequest(
-        @Path("project_id") project_id: Int,
+    suspend fun getChangeRequests(
+        @Path("project_id") projectId: Int,
+        @Query("cursor") cursor: String? = null,
+        @Query("status") status: String? = null,
         @Header("Authorization") authorization: String
-    ): List<ChangeRequest>
+    ): ChangeRequests
+
+    @GET("/projects/{project_id}/change-requests/view/{change_request_id}")
+    suspend fun getChangeRequest(
+        @Path("project_id") projectId: Int,
+        @Path("change_request_id") changeRequestId: Int,
+        @Header("Authorization") authorization: String
+    ): ChangeRequest
 
     @POST("/projects/{project_id}/change-requests/")
     suspend fun createRequest(

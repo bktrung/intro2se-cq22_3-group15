@@ -5,6 +5,7 @@ import com.example.youmanage.data.remote.authentication.Message
 import com.example.youmanage.data.remote.projectmanagement.Assign
 import com.example.youmanage.data.remote.projectmanagement.GanttChartData
 import com.example.youmanage.data.remote.projectmanagement.Id
+import com.example.youmanage.data.remote.projectmanagement.IsHost
 import com.example.youmanage.data.remote.projectmanagement.Progress
 import com.example.youmanage.data.remote.projectmanagement.Project
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
@@ -222,6 +223,13 @@ class ProjectManagementRepository @Inject constructor(
             userId,
             authorization
         )
+    }
+
+    suspend fun isHost(
+        id: String,
+        authorization: String
+    ): Resource<IsHost> = safeApiCall {
+        api.isHost(id, authorization)
     }
 
 }
