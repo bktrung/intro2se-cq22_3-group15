@@ -368,7 +368,8 @@ fun CreateTaskScreen(
 
             AssigneeSelector(
                 label = "Assign to",
-                avatarRes = R.drawable.avatar,
+                avatarRes = R.drawable.no_avatar,
+                userId = assignedMemberId,
                 username = assignedMember,
                 onClick = {
                     showChooseMember = true

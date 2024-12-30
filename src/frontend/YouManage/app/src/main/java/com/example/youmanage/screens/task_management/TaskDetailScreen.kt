@@ -88,6 +88,7 @@ import com.example.youmanage.utils.Constants.statusMapping
 import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.formatToRelativeTime
+import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ChangeRequestViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
@@ -409,7 +410,8 @@ fun TaskDetailScreen(
 
             AssigneeSelector(
                 label = "Assignee",
-                avatarRes = R.drawable.avatar,
+                avatarRes = R.drawable.no_avatar,
+                userId = taskState.memberId,
                 username = taskState.username,
                 onClick = {
                     showMemberDialog = true
@@ -683,9 +685,10 @@ fun CommentSection(
         ) {
             items(comments.size) { index ->
                 CommentItem(
-                    comments[index].author.username ?: "Unknown",
-                    comments[index].content,
-                    comments[index].createdAt,
+                   username = comments[index].author.username ?: "Unknown",
+                    comment =comments[index].content,
+                    userId = comments[index].author.id,
+                    createAt = comments[index].createdAt,
                     onClick = { onClick(comments[index]) }
                 )
                 Spacer(
@@ -726,6 +729,7 @@ fun CommentSection(
 @Composable
 fun CommentItem(
     username: String = "Tuong",
+    userId: Int = -1,
     comment: String = "Hello",
     createAt: String = "2024-10-09T15:08:57.555682Z",
     onClick: () -> Unit = {}
@@ -753,7 +757,7 @@ fun CommentItem(
             ) {
                 Image(
                     painter = painterResource(
-                        id = R.drawable.avatar
+                        id = randomAvatar(userId)
                     ),
                     contentDescription = "",
                     contentScale = ContentScale.Crop,

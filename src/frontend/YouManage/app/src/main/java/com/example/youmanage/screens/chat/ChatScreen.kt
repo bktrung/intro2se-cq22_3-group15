@@ -75,9 +75,12 @@ import com.example.youmanage.data.remote.chat.MessageRequest
 import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.utils.Constants.BASE_URL
 import com.example.youmanage.utils.Constants.WEB_SOCKET
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
+import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ChatViewModel
+import com.example.youmanage.viewmodel.ProjectManagementViewModel
 
 @Preview(showBackground = true)
 @Composable
@@ -209,7 +212,12 @@ fun MessageBubble(
 
             // Avatar for received messages
             if (!isSentByUser) {
-                Avatar(icon = Icons.Default.Person, contentDescription = "Your Avatar")
+                Image(
+                    painter = painterResource(randomAvatar(message?.author?.id ?: -1)),
+                    contentDescription = "Avatar",
+                    modifier = Modifier.size(40.dp)
+                        .clip(CircleShape)
+                )
             }
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -261,7 +269,7 @@ fun MessageBubble(
 }
 
 @Composable
-fun Avatar(icon: ImageVector, contentDescription: String) {
+fun Avatar(image: Int, contentDescription: String) {
     Box(
         modifier = Modifier
             .size(40.dp) // Size of the avatar
@@ -270,8 +278,8 @@ fun Avatar(icon: ImageVector, contentDescription: String) {
             .border(2.dp, AppColors.BackgroundColor, CircleShape) // Border color and shape
             .padding(8.dp) // Padding around the icon
     ) {
-        Icon(
-            imageVector = icon,
+        Image(
+            painter = painterResource(image),
             contentDescription = contentDescription,
             modifier = Modifier.fillMaxSize(),
         )
@@ -578,8 +586,10 @@ fun ChatInputBar(
 fun ChatScreenWithViewModel(
     projectId: String,
     onNavigateBack: () -> Unit,
+    onDisableAction: () -> Unit,
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    chatViewModel: ChatViewModel = hiltViewModel()
+    chatViewModel: ChatViewModel = hiltViewModel(),
+    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
 ) {
 
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
@@ -587,8 +597,14 @@ fun ChatScreenWithViewModel(
     val messages by chatViewModel.messages.observeAsState()
     val message by chatViewModel.messageSocket.observeAsState()
 
+    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
+    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
+
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
+            val url = "${WEB_SOCKET}project/${projectId}"
+            projectManagementViewModel.connectToProjectWebsocket(url)
+            projectManagementViewModel.connectToMemberWebsocket(url)
 
             authenticationViewModel.getUser("Bearer $token")
 
@@ -605,6 +621,14 @@ fun ChatScreenWithViewModel(
             chatViewModel.connectToSocket(webSocketUrl)
         }
     }
+
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = projectId,
+        onDisableAction = onDisableAction
+    )
 
     LaunchedEffect(message) {
         chatViewModel.getNewSocketMessage(

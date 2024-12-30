@@ -62,17 +62,19 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
 import com.example.youmanage.data.remote.notification.Notification
+import com.example.youmanage.data.remote.notification.Object
 import com.example.youmanage.screens.activity_logs.ActivityItems
 import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.utils.formatToRelativeTime
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.NotificationViewModel
 
-@Preview
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NotificationScreen(
     paddingValues: PaddingValues = PaddingValues(),
+    onItemClick: (Object) -> Unit,
+    haveLeading: Boolean,
     notificationViewModel: NotificationViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
 ) {
@@ -99,9 +101,7 @@ fun NotificationScreen(
             TopBar(
                 title = "Notifications",
                 color = Color.Transparent,
-                leading = {
-                    Box(modifier = Modifier.size(10.dp))
-                },
+                haveLeading = haveLeading,
                 trailing = {
                     IconButton(
                         onClick = { notificationViewModel.readAll("Bearer ${accessToken.value}") },
@@ -164,6 +164,14 @@ fun NotificationScreen(
                                         authorization = "Bearer ${accessToken.value}"
                                     )
                                 }
+                            },
+
+                            onClick = {
+                                notificationViewModel.markAsRead(
+                                    notificationId = item.id ?: -1,
+                                    authorization = "Bearer ${accessToken.value}"
+                                )
+                                onItemClick(it)
                             }
                         )
 
@@ -194,6 +202,7 @@ fun NotificationScreen(
 @Composable
 fun NotificationItem(
     notification: Notification = Notification(),
+    onClick: (com.example.youmanage.data.remote.notification.Object) -> Unit,
     onMarkAsRead: () -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
@@ -201,7 +210,10 @@ fun NotificationItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(10.dp)
-            .clip(RoundedCornerShape(10.dp)),
+            .clip(RoundedCornerShape(10.dp))
+            .clickable {
+                onClick(notification.objectContent ?: Object())
+            },
         shape = RoundedCornerShape(10.dp),
         border = BorderStroke(
             2.dp,

@@ -102,6 +102,7 @@ fun MyTaskScreen(
             TopBar(
                 title = "My Task",
                 color = Color.Transparent,
+                haveLeading = false,
                 trailing = {
                     Box(
                         modifier = Modifier.size(24.dp)

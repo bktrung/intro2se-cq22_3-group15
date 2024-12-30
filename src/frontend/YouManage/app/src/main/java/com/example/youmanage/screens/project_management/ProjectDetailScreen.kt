@@ -68,6 +68,7 @@ import com.example.youmanage.screens.components.pieChartInput
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
+import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
@@ -474,6 +475,7 @@ fun ProjectDetailScreen(
 fun TopBar(
     title: String,
     color: Color,
+    haveLeading: Boolean = true,
     leading: @Composable (() -> Unit)? = null,
     trailing: @Composable (() -> Unit)? = null,
     onNavigateBack: () -> Unit = {}
@@ -487,13 +489,18 @@ fun TopBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = { onNavigateBack() }) {
-            Icon(
-                painter = painterResource(id = R.drawable.back_arrow_icon),
-                contentDescription = "Back",
-                tint = MaterialTheme.colorScheme.primary
-            )
+        if(haveLeading){
+            IconButton(onClick = { onNavigateBack() }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.back_arrow_icon),
+                    contentDescription = "Back",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        } else {
+            Box(modifier = Modifier.size(24.dp))
         }
+
         Text(
             text = title,
             fontSize = 30.sp,
@@ -595,7 +602,7 @@ fun MembersSection(
                         MemberItem(
                             username = members[index].username ?: "Unknown",
                             backgroundColor = Color.Transparent,
-                            avatar = R.drawable.avatar,
+                            avatar = randomAvatar(index = members[index].id),
                         ),
                         onDelete = {
                             onDeleteMember(members[index].id.toString())

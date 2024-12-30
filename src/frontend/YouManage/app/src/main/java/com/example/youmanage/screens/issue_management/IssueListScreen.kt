@@ -57,6 +57,7 @@ import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Constants.statusMapping
 import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
+import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.IssuesViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
@@ -208,6 +209,7 @@ fun IssueListScreen(
                             IssueItem(
                                 title = filterIssues[index].title,
                                 reporter = filterIssues[index].reporter.username ?: "Unassigned",
+                                reporterId = filterIssues[index].reporter.id,
                                 onIssueClick = { onIssueDetail(filterIssues[index].id) }
                             )
                         }
@@ -222,6 +224,7 @@ fun IssueListScreen(
 fun IssueItem(
     title: String,
     reporter: String,
+    reporterId: Int = -1,
     onIssueClick: () -> Unit = {}
 ) {
     Card(
@@ -269,7 +272,7 @@ fun IssueItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.avatar),
+                    painter = painterResource(id = randomAvatar(reporterId)),
                     contentDescription = "Reporter Avatar",
                     modifier = Modifier
                         .size(50.dp)

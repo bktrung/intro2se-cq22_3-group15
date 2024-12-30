@@ -7,6 +7,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Color
+import com.example.youmanage.R
 import com.example.youmanage.data.remote.projectmanagement.Project
 import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.websocket.MemberObject
@@ -43,6 +44,19 @@ fun randomColor(index: Int): Int {
     )
 
     return colors[index % colors.size].hashCode()
+}
+
+fun randomAvatar(index: Int): Int {
+    val avatars = listOf(
+        R.drawable.avatar_01,
+        R.drawable.avatar_02,
+        R.drawable.avatar_03,
+        R.drawable.avatar_04,
+        R.drawable.avatar_05
+    )
+    if(index == -1) return R.drawable.no_avatar
+
+    return avatars[index % avatars.size]
 }
 
 fun randomVibrantLightColor(): Color {
