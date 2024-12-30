@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.youmanage.R
 import com.example.youmanage.ui.theme.fontFamily
+import com.example.youmanage.utils.randomAvatar
 
 
 @Composable
@@ -227,6 +228,7 @@ fun DatePickerField(
 fun AssigneeSelector(
     label: String,
     avatarRes: Int,
+    userId: Int = -1,
     username: String,
     onClick: () -> Unit
 ) {
@@ -251,7 +253,7 @@ fun AssigneeSelector(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Image(
-                    painter = painterResource(id = avatarRes),
+                    painter = painterResource(id = randomAvatar(userId)),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier

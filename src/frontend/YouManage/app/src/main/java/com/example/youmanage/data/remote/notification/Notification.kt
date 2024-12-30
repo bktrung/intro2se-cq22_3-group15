@@ -9,5 +9,7 @@ data class Notification(
     val id: Int? = null,
     @SerializedName("is_read")
     val isRead: Boolean? = null,
-    val title: String? = null
+    val title: String? = null,
+    @SerializedName("object")
+    val objectContent: Object? = null
 )

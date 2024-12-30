@@ -132,7 +132,7 @@ fun ProjectMenuScreen(
 
     val projectMenuItems = listOf(
         ProjectMenuItem(
-            title = "Task List",
+            title = "Tasks List",
             icon = R.drawable.task_icon,
             color = MaterialTheme.colorScheme.primary,
             onClick = { onTaskList() }
@@ -144,7 +144,7 @@ fun ProjectMenuScreen(
             onClick = { onGanttChart() }
         ),
         ProjectMenuItem(
-            title = "Issue List",
+            title = "Issues List",
             icon = R.drawable.bug_icon,
             color = MaterialTheme.colorScheme.primary,
             onClick = { onIssueList() }
@@ -157,15 +157,15 @@ fun ProjectMenuScreen(
         ),
 
         ProjectMenuItem(
-            title = "Change Request",
-            icon = R.drawable.activity_logs,
+            title = "Change Requests",
+            icon = R.drawable.change_icon,
             color = MaterialTheme.colorScheme.primary,
             onClick = { onChangeRequests() }
         ),
 
         ProjectMenuItem(
             title = "Roles",
-            icon = R.drawable.task_icon,
+            icon = R.drawable.role_icon,
             color = MaterialTheme.colorScheme.primary,
             onClick = { onRoles() }
         ),

@@ -182,6 +182,8 @@ fun RootNavGraph(
                     } else {
                         "project_detail/${objectContent.projectId}"
                     }
+                } else {
+                    routeMessage = "notification"
                 }
 
                 Log.d("RootNavGraph", routeMessage)
