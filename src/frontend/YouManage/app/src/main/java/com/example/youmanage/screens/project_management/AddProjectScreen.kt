@@ -248,7 +248,9 @@ fun AddProjectScreen(
                                 unfocusedContainerColor = textFieldColor,
                                 focusedIndicatorColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent
-                            )
+                            ),
+
+                            textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
                         )
                     }
 
@@ -331,7 +333,10 @@ fun MemberItem(
     member: MemberItem,
     onDelete: (String) -> Unit,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    hostId: Int = -1,
+    userId: Int = -2,
+    isHost: Boolean
 ) {
 
     Box(
@@ -370,13 +375,25 @@ fun MemberItem(
 
             Spacer(modifier = Modifier.width(10.dp))
 
-            Icon(
-                painter = painterResource(id = R.drawable.delete_icon),
-                contentDescription = "Delete",
-                modifier = Modifier.clickable {
-                    onDelete(member.username)
-                }
-            )
+            if (userId == hostId) {
+                Image(
+                    painter = painterResource(R.drawable.key),
+                    contentDescription = "Key",
+                    modifier = Modifier.size(24.dp)
+                )
+            } else if (isHost) {
+                Icon(
+                    painter = painterResource(id = R.drawable.delete_icon),
+                    contentDescription = "Delete",
+                    modifier = Modifier.clickable {
+                        onDelete(member.username)
+                    }
+                )
+            } else {
+                Box(
+                    modifier = Modifier.size(24.dp)
+                )
+            }
 
         }
     }

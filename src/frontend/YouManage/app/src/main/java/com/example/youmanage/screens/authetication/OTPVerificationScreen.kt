@@ -391,8 +391,8 @@ fun OTPVerificationScreen(
                     }
                 },
                 colors = ButtonDefaults.buttonColors(
-                    contentColor = Color.White,
-                    containerColor = Color.Black
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    containerColor = MaterialTheme.colorScheme.primary
                 ),
                 shape = RoundedCornerShape(8.dp)
             ) {

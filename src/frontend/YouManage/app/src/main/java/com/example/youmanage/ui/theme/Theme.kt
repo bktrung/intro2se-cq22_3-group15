@@ -125,6 +125,5 @@ fun YouManageTheme(
         colorScheme = colorScheme,
         typography = Typography,
         content = content
-
     )
 }

@@ -91,6 +91,7 @@ fun IssueDetailScreen(
     var description by rememberSaveable { mutableStateOf("") }
     var selectedTask by rememberSaveable { mutableStateOf<Task?>(null) }
     var reporter by remember { mutableStateOf("Unassigned") }
+    var reporterId by remember { mutableIntStateOf(-1) }
     var assignedMember by remember { mutableStateOf("Unassigned") }
     var assignedMemberId by remember { mutableIntStateOf(-1) }
     var selectedStatus by rememberSaveable { mutableStateOf("PENDING") }
@@ -129,6 +130,7 @@ fun IssueDetailScreen(
             selectedTask = data.task
             selectedStatus = data.status
             reporter = data.reporter.username ?: "Unassigned"
+            reporterId = data.reporter.id
         }
         if (issue is Resource.Error) {
             openErrorDialog = true
@@ -269,7 +271,8 @@ fun IssueDetailScreen(
 
                 AssigneeSelector(
                     label = "Reporter",
-                    avatarRes = R.drawable.avatar,
+                    avatarRes = R.drawable.no_avatar,
+                    userId = reporterId,
                     username = reporter,
                     onClick = { }
                 )
@@ -284,7 +287,8 @@ fun IssueDetailScreen(
                 // Choose Assignee
                 AssigneeSelector(
                     label = "Assign to",
-                    avatarRes = R.drawable.avatar,
+                    avatarRes = R.drawable.no_avatar,
+                    userId = assignedMemberId,
                     username = assignedMember,
                     onClick = { showChooseMember.value = true }
                 )

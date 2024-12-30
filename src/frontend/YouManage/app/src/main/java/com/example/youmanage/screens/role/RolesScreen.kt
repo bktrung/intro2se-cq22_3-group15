@@ -54,14 +54,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.youmanage.data.remote.changerequest.SendChangeRequest
 import com.example.youmanage.data.remote.projectmanagement.Assign
 import com.example.youmanage.data.remote.projectmanagement.RoleRequest
 import com.example.youmanage.screens.components.AlertDialog
+import com.example.youmanage.screens.components.ChangeRequestDialog
 import com.example.youmanage.screens.components.ChooseItemDialog
 import com.example.youmanage.screens.components.CreateRoleDialog
+import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.ChangeRequestViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.RoleViewmodel
 
@@ -73,7 +77,8 @@ fun RolesScreen(
     roleViewmodel: RoleViewmodel = hiltViewModel(),
     onDisableAction: () -> Unit = {},
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel()
+    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
+    changeRequestViewModel: ChangeRequestViewModel = hiltViewModel()
 ) {
 
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
@@ -81,24 +86,36 @@ fun RolesScreen(
     val response by roleViewmodel.response.observeAsState()
     val deleteResponse by roleViewmodel.deleteResponse.observeAsState()
     val members by roleViewmodel.members.observeAsState()
+    val isHost by projectManagementViewModel.isHost.observeAsState()
+    val responseRequest by changeRequestViewModel.response.observeAsState()
 
     // WebSocket
     val user by authenticationViewModel.user.observeAsState()
     val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
     val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
 
+    val context = LocalContext.current
+
     var showCreateRoleDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showUpdateRoleDialog by remember { mutableStateOf(false) }
     var showAssignRoleDialog by remember { mutableStateOf(false) }
+    var showRequestDialog by remember { mutableStateOf(false) }
 
     var roleName by rememberSaveable { mutableStateOf("") }
     var roleDescription by rememberSaveable { mutableStateOf("") }
     var selectedRole by rememberSaveable { mutableIntStateOf(-1) }
+    var requestMessage by rememberSaveable { mutableStateOf("") }
+
+    var requestSelection by remember { mutableStateOf(-1) }
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             roleViewmodel.getRoles(
+                projectId,
+                "Bearer $token"
+            )
+            projectManagementViewModel.isHost(
                 projectId,
                 "Bearer $token"
             )
@@ -136,10 +153,14 @@ fun RolesScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(WindowInsets.statusBars.asPaddingValues())
-            .padding(bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()),
+            .padding(
+                bottom = WindowInsets.systemBars
+                    .asPaddingValues()
+                    .calculateBottomPadding()
+            ),
 
         topBar = {
-            com.example.youmanage.screens.project_management.TopBar(
+            TopBar(
                 title = "Roles",
                 trailing = {
                     Spacer(modifier = Modifier.size(24.dp))
@@ -159,6 +180,7 @@ fun RolesScreen(
             ) {
                 Button(
                     onClick = {
+                        requestSelection = 1
                         showCreateRoleDialog = true
                     },
                     shape = RoundedCornerShape(30.dp),
@@ -199,20 +221,36 @@ fun RolesScreen(
                             name = roles?.data?.get(it)?.name ?: "",
                             onDelete = {
                                 selectedRole = roles?.data?.get(it)?.id ?: -1
-                                showDeleteDialog = true
+                                if(isHost == true){
+                                    showDeleteDialog = true
+                                } else {
+                                    requestSelection = 3
+                                    requestMessage = "Send request to delete this role?"
+                                    showRequestDialog = true
+                                }
+
                             },
                             onUpdate = {
+                                requestSelection = 2
                                 selectedRole = roles?.data?.get(it)?.id ?: -1
                                 showUpdateRoleDialog = true
                             },
                             onAssign = {
-                                showAssignRoleDialog = true
-                                selectedRole = roles?.data?.get(it)?.id ?: -1
-                                roleViewmodel.getListMemberOfRole(
-                                    projectId,
-                                    selectedRole.toString(),
-                                    "Bearer ${accessToken.value}"
-                                )
+                                if (isHost == true) {
+                                    showAssignRoleDialog = true
+                                    selectedRole = roles?.data?.get(it)?.id ?: -1
+                                    roleViewmodel.getListMemberOfRole(
+                                        projectId,
+                                        selectedRole.toString(),
+                                        "Bearer ${accessToken.value}"
+                                    )
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Only host can assign role",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                             }
                         )
                     }
@@ -246,14 +284,20 @@ fun RolesScreen(
         },
         showDialog = showCreateRoleDialog,
         onConfirm = {
-            roleViewmodel.createRole(
-                projectId,
-                role = RoleRequest(
-                    roleName,
-                    roleDescription
-                ),
-                "Bearer ${accessToken.value}"
-            )
+            if (isHost == true) {
+                roleViewmodel.createRole(
+                    projectId,
+                    role = RoleRequest(
+                        roleName,
+                        roleDescription
+                    ),
+                    "Bearer ${accessToken.value}"
+                )
+            } else {
+                requestMessage = "Send request to create this role?"
+                showRequestDialog = true
+            }
+
             showCreateRoleDialog = false
         },
 
@@ -265,7 +309,6 @@ fun RolesScreen(
         }
     )
 
-
     CreateRoleDialog(
         title = "Update Role",
         showDialog = showUpdateRoleDialog,
@@ -275,15 +318,20 @@ fun RolesScreen(
             showUpdateRoleDialog = false
         },
         onConfirm = {
-            roleViewmodel.updateRole(
-                projectId,
-                selectedRole.toString(),
-                role = RoleRequest(
-                    roleName,
-                    roleDescription
-                ),
-                "Bearer ${accessToken.value}"
-            )
+            if (isHost == true) {
+                roleViewmodel.updateRole(
+                    projectId,
+                    selectedRole.toString(),
+                    role = RoleRequest(
+                        roleName,
+                        roleDescription
+                    ),
+                    "Bearer ${accessToken.value}"
+                )
+            } else {
+                requestMessage = "Send request to update this role?"
+                showRequestDialog = true
+            }
 
             showUpdateRoleDialog = false
         },
@@ -310,8 +358,6 @@ fun RolesScreen(
             showDeleteDialog = false
         }
     )
-    Log.d("selectedRole", members?.flatMap { it.keys }?.toList().toString())
-    Log.d("selectedRole", members?.flatMap { it.values }?.toList().toString())
 
     ChooseItemDialog(
         showDialog = showAssignRoleDialog,
@@ -334,6 +380,68 @@ fun RolesScreen(
             showAssignRoleDialog = false
         }
     )
+    var requestDescription by remember { mutableStateOf("") }
+
+    ChangeRequestDialog(
+        title = "Send Request?",
+        content = requestMessage,
+        showDialog = showRequestDialog,
+        onDismiss = { showRequestDialog = false },
+        onConfirm = {
+            showRequestDialog = false
+            if(requestSelection == 1) {
+                changeRequestViewModel.createChangeRequest(
+                    projectId = projectId.toInt(),
+                    changeRequest = SendChangeRequest(
+                        requestType = "CREATE",
+                        targetTable = "ROLE",
+                        targetTableId = null,
+                        description = requestMessage,
+                        newData = RoleRequest(
+                            roleName,
+                            roleDescription
+                        )
+                    ),
+                    authorization = "Bearer ${accessToken.value}"
+                )
+                showRequestDialog = false
+            } else if(requestSelection == 2) {
+                changeRequestViewModel.createChangeRequest(
+                    projectId = projectId.toInt(),
+                    changeRequest = SendChangeRequest(
+                        requestType = "UPDATE",
+                        targetTable = "ROLE",
+                        targetTableId = selectedRole,
+                        description = requestMessage,
+                        newData = RoleRequest(
+                            roleName,
+                            roleDescription
+                        )
+                    ),
+                    authorization = "Bearer ${accessToken.value}"
+                )
+                showRequestDialog = false
+            } else if(requestSelection == 3) {
+                changeRequestViewModel.createChangeRequest(
+                    projectId = projectId.toInt(),
+                    changeRequest = SendChangeRequest(
+                        requestType = "DELETE",
+                        targetTable = "ROLE",
+                        targetTableId = selectedRole,
+                        description = requestMessage,
+                        newData = null
+                    ),
+                    authorization = "Bearer ${accessToken.value}"
+                )
+                showRequestDialog = false
+            }
+
+            requestSelection = -1
+
+        },
+        onDescriptionChange = { requestDescription = it}
+    )
+
 
 }
 

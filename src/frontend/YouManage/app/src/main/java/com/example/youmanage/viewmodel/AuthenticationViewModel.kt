@@ -7,7 +7,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.youmanage.data.remote.authentication.AccessToken
-import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
+import com.example.youmanage.data.remote.authentication.ChangePassword
+import com.example.youmanage.data.remote.authentication.ResetPassword
 import com.example.youmanage.data.remote.authentication.Email
 import com.example.youmanage.data.remote.authentication.Message
 import com.example.youmanage.data.remote.authentication.RefreshToken
@@ -120,10 +121,17 @@ class AuthenticationViewModel @Inject constructor(
         }
     }
 
-    fun changePassword(request: ChangePasswordRequest){
+    fun resetPassword(request: ResetPassword){
         viewModelScope.launch {
             Log.d("changePassword", "changePassword: 1")
-            _message.value = repository.changePassword(request)
+            _message.value = repository.resetPassword(request)
+        }
+    }
+
+    fun changePassword(request: ChangePassword, authorization: String){
+        viewModelScope.launch {
+            Log.d("changePassword", "changePassword: 1")
+            _message.value = repository.changePassword(request, authorization)
         }
     }
 

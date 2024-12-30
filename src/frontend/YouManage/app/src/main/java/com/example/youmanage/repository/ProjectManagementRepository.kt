@@ -1,9 +1,11 @@
 package com.example.youmanage.repository
 
 import com.example.youmanage.data.remote.ApiInterface
+import com.example.youmanage.data.remote.authentication.Message
 import com.example.youmanage.data.remote.projectmanagement.Assign
 import com.example.youmanage.data.remote.projectmanagement.GanttChartData
 import com.example.youmanage.data.remote.projectmanagement.Id
+import com.example.youmanage.data.remote.projectmanagement.IsHost
 import com.example.youmanage.data.remote.projectmanagement.Progress
 import com.example.youmanage.data.remote.projectmanagement.Project
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
@@ -11,6 +13,7 @@ import com.example.youmanage.data.remote.projectmanagement.Projects
 import com.example.youmanage.data.remote.projectmanagement.Role
 import com.example.youmanage.data.remote.projectmanagement.RoleRequest
 import com.example.youmanage.data.remote.projectmanagement.User
+import com.example.youmanage.data.remote.projectmanagement.UserId
 import com.example.youmanage.data.remote.taskmanagement.Detail
 import com.example.youmanage.data.remote.taskmanagement.Username
 import com.example.youmanage.utils.Resource
@@ -19,33 +22,34 @@ import org.json.JSONObject
 import retrofit2.HttpException
 import javax.inject.Inject
 
+suspend fun <T> safeApiCall(apiCall: suspend () -> T): Resource<T> {
+    return try {
+        Resource.Success(apiCall())
+    } catch (e: HttpException) {
+        handleHttpException(e)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Resource.Error(e.message.toString())
+    }
+}
+
+fun <T> handleHttpException(e: HttpException): Resource.Error<T> {
+    return when (e.code()) {
+        400 -> {
+            val errorBody = e.response()?.errorBody()?.string()
+            Resource.Error(errorBody.toString())
+        }
+
+        404 -> Resource.Error("User not found")
+        else -> Resource.Error("HTTP Error: ${e.code()}")
+    }
+}
+
 @ActivityScoped
 class ProjectManagementRepository @Inject constructor(
     private val api: ApiInterface
 ) {
 
-    private suspend fun <T> safeApiCall(apiCall: suspend () -> T): Resource<T> {
-        return try {
-            Resource.Success(apiCall())
-        } catch (e: HttpException) {
-            handleHttpException(e)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Resource.Error(e.message.toString())
-        }
-    }
-
-    private fun <T> handleHttpException(e: HttpException): Resource.Error<T> {
-        return when (e.code()) {
-            400 -> {
-                val errorBody = e.response()?.errorBody()?.string()
-                Resource.Error(errorBody.toString())
-            }
-
-            404 -> Resource.Error("User not found")
-            else -> Resource.Error("HTTP Error: ${e.code()}")
-        }
-    }
 
     suspend fun getProjectList(authorization: String): Resource<Projects> =
         safeApiCall { api.getProjectList(authorization) }
@@ -198,5 +202,34 @@ class ProjectManagementRepository @Inject constructor(
 
     suspend fun getGanttChartData(id: String, authorization: String): Resource<List<GanttChartData>> =
         safeApiCall { api.getGanttChartData(id,authorization) }
+
+    suspend fun quitProject(
+        id: String,
+        authorization: String
+    ): Resource<Detail> = safeApiCall {
+        api.quitProject(
+            id,
+            authorization
+        )
+    }
+
+    suspend fun empower(
+        id: String,
+        userId: UserId,
+        authorization: String
+    ): Resource<Message> = safeApiCall {
+        api.empower(
+            id,
+            userId,
+            authorization
+        )
+    }
+
+    suspend fun isHost(
+        id: String,
+        authorization: String
+    ): Resource<IsHost> = safeApiCall {
+        api.isHost(id, authorization)
+    }
 
 }

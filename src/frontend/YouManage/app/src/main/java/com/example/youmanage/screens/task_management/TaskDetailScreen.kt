@@ -1,7 +1,7 @@
 package com.example.youmanage.screens.task_management
 
 import android.os.Build
-import android.util.Log
+import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
@@ -33,7 +33,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -58,6 +57,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -68,13 +68,14 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
-import com.example.youmanage.data.remote.projectmanagement.User
+import com.example.youmanage.data.remote.changerequest.SendChangeRequest
 import com.example.youmanage.data.remote.taskmanagement.Comment
 import com.example.youmanage.data.remote.taskmanagement.Content
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdateStatus
 import com.example.youmanage.screens.components.AlertDialog
 import com.example.youmanage.screens.components.AssigneeSelector
+import com.example.youmanage.screens.components.ChangeRequestDialog
 import com.example.youmanage.screens.components.ChooseItemDialog
 import com.example.youmanage.screens.components.DatePickerField
 import com.example.youmanage.screens.components.DatePickerModal
@@ -87,7 +88,9 @@ import com.example.youmanage.utils.Constants.statusMapping
 import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.formatToRelativeTime
+import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.ChangeRequestViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
 import kotlinx.coroutines.delay
@@ -119,14 +122,10 @@ fun TaskDetailScreen(
     onDisableAction: () -> Unit = {},
     taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
-    authenticationViewModel: AuthenticationViewModel = hiltViewModel()
+    authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
+    changeRequestViewModel: ChangeRequestViewModel = hiltViewModel()
 ) {
 
-    val task by taskManagementViewModel.task.observeAsState()
-    val taskUpdate by taskManagementViewModel.taskUpdate.observeAsState()
-    val members by projectManagementViewModel.members.observeAsState()
-    val comments by taskManagementViewModel.comments.observeAsState()
-    val comment by taskManagementViewModel.comment.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     val response by taskManagementViewModel.response.observeAsState()
     val commentDelete by taskManagementViewModel.deleteCommentResponse.observeAsState()
@@ -135,11 +134,25 @@ fun TaskDetailScreen(
     val user by authenticationViewModel.user.observeAsState()
     var update by remember { mutableStateOf(false) }
 
+    val isHost by taskManagementViewModel.isHost.observeAsState()
+    val task by taskManagementViewModel.task.observeAsState()
+    val taskUpdate by taskManagementViewModel.taskUpdate.observeAsState()
+
+    val changeRequestResponse by changeRequestViewModel.response.observeAsState()
+
+    val members by taskManagementViewModel.members.observeAsState()
+
+    val comments by taskManagementViewModel.comments.observeAsState()
+    val comment by taskManagementViewModel.comment.observeAsState()
+
+    var requestDescription by remember { mutableStateOf("") }
+
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             taskManagementViewModel.getTask(projectId, taskId, "Bearer $token")
             taskManagementViewModel.getComments(projectId, taskId, "Bearer $token")
-            projectManagementViewModel.getMembers(projectId, "Bearer $token")
+            taskManagementViewModel.getMembers(projectId, "Bearer $token")
+            taskManagementViewModel.isHost(projectId, "Bearer $token")
             authenticationViewModel.getUser("Bearer $token")
         }
     }
@@ -149,7 +162,7 @@ fun TaskDetailScreen(
     LaunchedEffect(Unit) {
         projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
         projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
-        taskManagementViewModel.connectToTaskWebSocket(webSocketUrl)
+        taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
     }
 
     HandleOutProjectWebSocket(
@@ -168,26 +181,24 @@ fun TaskDetailScreen(
     var showSaveDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showCommentEditor by remember { mutableStateOf(false) }
+    var showRequestDialog by remember { mutableStateOf(false) }
 
     var taskState by remember { mutableStateOf(TaskState()) }
     var newTask by remember { mutableStateOf(TaskUpdate()) }
     var isTime by rememberSaveable { mutableIntStateOf(0) }
+    var currentComment by remember { mutableStateOf(Comment()) }
 
-    var currentComment by remember {
-        mutableStateOf(
-            Comment(
-                id = 0,
-                content = "",
-                author = User("", 0, ""),
-                createdAt = "", updatedAt = ""
-            )
-        )
-    }
+    var requestMessage by remember { mutableStateOf("") }
+    var requestBody by remember { mutableStateOf(SendChangeRequest()) }
+
+    val context = LocalContext.current
 
     LaunchedEffect(response) {
         if (response is Resource.Success) {
             showDeleteDialog = false
             onNavigateBack()
+        } else if (response is Resource.Error){
+            Toast.makeText(context, "Something went wrong. Try again!", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -248,6 +259,14 @@ fun TaskDetailScreen(
         }
     }
 
+    LaunchedEffect(changeRequestResponse){
+        if(changeRequestResponse is Resource.Success){
+            Toast.makeText(context, "Request sent successfully!", Toast.LENGTH_SHORT).show()
+        } else if (changeRequestResponse is Resource.Error){
+            Toast.makeText(context, "Something went wrong. Try again!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -269,19 +288,50 @@ fun TaskDetailScreen(
             )
         },
         bottomBar = {
-            TaskBottomBar(
+            ButtonBottomBar(
                 onSaveClick = {
-                    newTask = TaskUpdate(
-                        title = taskState.editTitle,
-                        description = taskState.description,
-                        startDate = taskState.startDate,
-                        endDate = taskState.endDate,
-                        priority = if (taskState.priority == -1) null else priorityChoice[taskState.priority].uppercase()
-                    )
-                    showSaveDialog = true
+                    if(isHost == true){
+                        newTask = TaskUpdate(
+                            title = taskState.editTitle,
+                            description = taskState.description,
+                            startDate = taskState.startDate,
+                            endDate = taskState.endDate,
+                            priority = if (taskState.priority == -1) null else priorityChoice[taskState.priority].uppercase()
+                        )
+
+                        showSaveDialog = true
+                    } else {
+                        requestMessage = "Send request to update this task?"
+                        requestBody = SendChangeRequest(
+                            requestType = "UPDATE",
+                            targetTable = "TASK",
+                            targetTableId = taskId.toInt(),
+                            description = requestMessage,
+                            newData = TaskUpdate(
+                                title = taskState.editTitle,
+                                description = taskState.description,
+                                startDate = taskState.startDate,
+                                endDate = taskState.endDate,
+                                priority = if (taskState.priority == -1) null else priorityChoice[taskState.priority].uppercase()
+                            )
+                        )
+                        showRequestDialog = true
+                    }
+
                 },
                 onDeleteClick = {
-                    showDeleteDialog = true
+                    if(isHost == true){
+                        showDeleteDialog = true
+                    } else {
+                        requestMessage = "Send request to delete this task?"
+                        requestBody = SendChangeRequest(
+                            requestType = "DELETE",
+                            targetTable = "TASK",
+                            targetTableId = taskId.toInt(),
+                            description = requestMessage
+                        )
+                        showRequestDialog = true
+                    }
                 }
             )
         }
@@ -360,7 +410,8 @@ fun TaskDetailScreen(
 
             AssigneeSelector(
                 label = "Assignee",
-                avatarRes = R.drawable.avatar,
+                avatarRes = R.drawable.no_avatar,
+                userId = taskState.memberId,
                 username = taskState.username,
                 onClick = {
                     showMemberDialog = true
@@ -424,12 +475,10 @@ fun TaskDetailScreen(
             }
         )
 
-        val memberList = if (members is Resource.Success) members?.data!! else emptyList()
-
         ChooseItemDialog(
             title = "Choose Member",
             showDialog = showMemberDialog,
-            items = memberList,
+            items = members?.dropLast(1) ?: emptyList(),
             displayText = { it.username ?: "Unknown" },
             onDismiss = { showMemberDialog = false },
             onConfirm = { user ->
@@ -501,6 +550,24 @@ fun TaskDetailScreen(
                 )
                 showDeleteDialog = false
                 onNavigateBack()
+            }
+        )
+
+        ChangeRequestDialog(
+            title = "Send request?",
+            content = "Are you sure you want to quit this project?",
+            showDialog = showRequestDialog,
+            onDismiss = { showRequestDialog = false },
+            onConfirm = {
+                changeRequestViewModel.createChangeRequest(
+                    projectId.toInt(),
+                    requestBody,
+                    "Bearer ${accessToken.value}"
+                )
+                showRequestDialog = false
+            },
+            onDescriptionChange = {
+                requestDescription = it
             }
         )
 
@@ -618,9 +685,10 @@ fun CommentSection(
         ) {
             items(comments.size) { index ->
                 CommentItem(
-                    comments[index].author.username ?: "Unknown",
-                    comments[index].content,
-                    comments[index].createdAt,
+                   username = comments[index].author.username ?: "Unknown",
+                    comment =comments[index].content,
+                    userId = comments[index].author.id,
+                    createAt = comments[index].createdAt,
                     onClick = { onClick(comments[index]) }
                 )
                 Spacer(
@@ -661,6 +729,7 @@ fun CommentSection(
 @Composable
 fun CommentItem(
     username: String = "Tuong",
+    userId: Int = -1,
     comment: String = "Hello",
     createAt: String = "2024-10-09T15:08:57.555682Z",
     onClick: () -> Unit = {}
@@ -688,7 +757,7 @@ fun CommentItem(
             ) {
                 Image(
                     painter = painterResource(
-                        id = R.drawable.avatar
+                        id = randomAvatar(userId)
                     ),
                     contentDescription = "",
                     contentScale = ContentScale.Crop,
@@ -729,7 +798,9 @@ fun CommentItem(
 }
 
 @Composable
-fun TaskBottomBar(
+fun ButtonBottomBar(
+    titleYes: String = "Save",
+    titleNo: String = "Delete",
     onSaveClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
@@ -754,7 +825,7 @@ fun TaskBottomBar(
                 )
             ) {
                 Text(
-                    "Save", fontWeight = FontWeight.Bold, fontSize = 16.sp,
+                    titleYes, fontWeight = FontWeight.Bold, fontSize = 16.sp,
                     modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp)
                 )
             }
@@ -770,7 +841,7 @@ fun TaskBottomBar(
                 )
             ) {
                 Text(
-                    "Delete", fontWeight = FontWeight.Bold, fontSize = 16.sp,
+                    titleNo, fontWeight = FontWeight.Bold, fontSize = 16.sp,
                     modifier = Modifier.padding(vertical = 10.dp)
                 )
             }

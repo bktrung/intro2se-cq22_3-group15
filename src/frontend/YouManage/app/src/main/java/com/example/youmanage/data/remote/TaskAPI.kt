@@ -117,4 +117,9 @@ interface TaskAPI {
         @Header("Authorization") authorization: String
     ): Messages
 
+    @GET("/my-tasks/")
+    suspend fun getMyTask(
+        @Header("Authorization") authorization: String
+    ): List<Task>
+
 }

@@ -90,13 +90,12 @@ fun CreateTaskScreen(
     changeRequestViewModel: ChangeRequestViewModel = hiltViewModel(),
     showSnackBarViewModel: SnackBarViewModel = hiltViewModel()
 ) {
-
     // Data from API
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     val user by authenticationViewModel.user.observeAsState()
-    val members by projectManagementViewModel.members.observeAsState()
+    val members by taskManagementViewModel.members.observeAsState()
     val task by taskManagementViewModel.task.observeAsState()
-    val project by projectManagementViewModel.project.observeAsState()
+    val isHost by taskManagementViewModel.isHost.observeAsState()
     val changeRequestResponse by changeRequestViewModel.response.observeAsState()
 
     // WebSocket
@@ -104,12 +103,14 @@ fun CreateTaskScreen(
     val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
 
     var send by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
     var openErrorDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(task) {
         if (task is Resource.Success) {
             onCreateTask()
         } else if (task is Resource.Error) {
+            errorMessage = (task as Resource.Error).message ?: "Something went wrong"
             openErrorDialog = true
         }
     }
@@ -117,9 +118,9 @@ fun CreateTaskScreen(
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             val webSocketUrl = "${WEB_SOCKET}project/${projectId}/"
-            projectManagementViewModel.getMembers(projectId, "Bearer $token")
+            taskManagementViewModel.getMembers(projectId, "Bearer $token")
+            taskManagementViewModel.isHost(projectId, "Bearer $token")
             authenticationViewModel.getUser("Bearer $token")
-            projectManagementViewModel.getProject(projectId, "Bearer $token")
             taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
             projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
             projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
@@ -137,13 +138,8 @@ fun CreateTaskScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     val textFieldColor = MaterialTheme.colorScheme.surface
 
-    var showChooseMember by remember {
-        mutableStateOf(false)
-    }
-
-    var showChangeRequestDialog by remember {
-        mutableStateOf(false)
-    }
+    var showChooseMember by remember { mutableStateOf(false) }
+    var showChangeRequestDialog by remember { mutableStateOf(false) }
 
     var isTime by rememberSaveable { mutableIntStateOf(0) }
 
@@ -153,29 +149,23 @@ fun CreateTaskScreen(
     var endDate by rememberSaveable { mutableStateOf("") }
     var priority by rememberSaveable { mutableIntStateOf(-1) }
 
-    var assignedMemberId by remember {
-        mutableIntStateOf(-1)
-    }
-    var assignedMember by remember {
-        mutableStateOf("Unassigned")
-    }
-
-
-    val context = LocalContext.current
-
-
-    LaunchedEffect(changeRequestResponse){
-        if (changeRequestResponse is Resource.Success) {
-            Toast.makeText(context, "Request sent successfully!", Toast.LENGTH_SHORT).show()
-        } else{
-            Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show()
-        }
-    }
+    var assignedMemberId by remember { mutableIntStateOf(-1) }
+    var assignedMember by remember { mutableStateOf("Unassigned") }
 
     var requestDescription by remember { mutableStateOf("") }
 
-    LaunchedEffect(send){
-        if(send){
+    val context = LocalContext.current
+
+    LaunchedEffect(changeRequestResponse) {
+        if (changeRequestResponse is Resource.Success) {
+            Toast.makeText(context, "Request sent successfully!", Toast.LENGTH_SHORT).show()
+        } else if (changeRequestResponse is Resource.Error) {
+            Toast.makeText(context, "Something went wrong. Try again!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    LaunchedEffect(send) {
+        if (send) {
             changeRequestViewModel.createChangeRequest(
                 projectId = projectId.toInt(),
                 SendChangeRequest(
@@ -193,10 +183,6 @@ fun CreateTaskScreen(
                     )
                 ),
                 "Bearer ${accessToken.value}"
-            )
-
-            showSnackBarViewModel.showSnackBar(
-                "Check your inbox to see the request!"
             )
         }
     }
@@ -223,27 +209,21 @@ fun CreateTaskScreen(
             ) {
                 Button(
                     onClick = {
-                        val currentUserId = user?.data?.id
-                        val hostId = project?.data?.host?.id
-
-                        if(currentUserId != null && hostId != null) {
-                            if (currentUserId != hostId) {
-                                showChangeRequestDialog = true
-                            } else{
-                                taskManagementViewModel.createTask(
-                                    projectId = projectId,
-                                    TaskCreate(
-                                        title = title,
-                                        description = description,
-                                        startDate = startDate,
-                                        endDate = endDate,
-                                        assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
-                                        priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
-                                    ),
-                                    authorization = "Bearer ${accessToken.value}"
-                                )
-                            }
-
+                        if (isHost == false) {
+                            showChangeRequestDialog = true
+                        } else {
+                            taskManagementViewModel.createTask(
+                                projectId = projectId,
+                                TaskCreate(
+                                    title = title,
+                                    description = description,
+                                    startDate = startDate,
+                                    endDate = endDate,
+                                    assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
+                                    priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
+                                ),
+                                authorization = "Bearer ${accessToken.value}"
+                            )
                         }
                     },
                     shape = RoundedCornerShape(8.dp),
@@ -264,12 +244,13 @@ fun CreateTaskScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(
-                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
+                top = WindowInsets.statusBars
+                    .asPaddingValues()
+                    .calculateTopPadding(),
                 bottom = WindowInsets.systemBars
                     .asPaddingValues()
                     .calculateBottomPadding()
             )
-            .background(Color.White)
     ) { paddingValues ->
 
         val scrollState = rememberScrollState()
@@ -280,122 +261,121 @@ fun CreateTaskScreen(
                 .padding(paddingValues)
                 .padding(horizontal = 36.dp)
                 .padding(bottom = 10.dp)
-                .verticalScroll(scrollState)
-            ,
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
 
-                    Text(
-                        "Task Title",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-
-                    LeadingTextFieldComponent(
-                        content = title,
-                        onChangeValue = { title = it },
-                        placeholderContent = "Enter project title",
-                        placeholderColor = MaterialTheme.colorScheme.primary,
-                        containerColor = textFieldColor,
-                        icon = R.drawable.project_title_icon
-                    )
-                }
-
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-
-                    Text(
-                        "Description",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-
-                    TextField(
-                        value = description,
-                        onValueChange = { description = it },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = textFieldColor,
-                            unfocusedContainerColor = textFieldColor,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.description_icon),
-                                contentDescription = "",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        placeholder = {
-                            Text(
-                                "Enter project description",
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        maxLines = Int.MAX_VALUE,
-                        shape = RoundedCornerShape(10.dp),
-                        textStyle = TextStyle(MaterialTheme.colorScheme.primary,)
-                    )
-                }
-
-                DatePickerField(
-                    label = "Start date",
-                    date = startDate,
-                    onDateClick = {
-                        isTime = 1
-                        showDatePicker = true
-                    },
-                    iconResource = R.drawable.calendar_icon,
-                    placeholder = "Enter start date",
-                    containerColor = textFieldColor
+                Text(
+                    "Task Title",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
                 )
 
-                DatePickerField(
-                    label = "End date",
-                    date = endDate,
-                    onDateClick = {
-                        isTime = 2
-                        showDatePicker = true
-                    },
-                    iconResource = R.drawable.calendar_icon,
-                    placeholder = "Enter end date",
-                    containerColor = textFieldColor
-                )
-
-                PrioritySelector(
-                    priorityChoice = priorityChoice,
-                    priority = priority,
-                    onPrioritySelected = {
-                        priority = it
-                    }
-                )
-
-                AssigneeSelector(
-                    label = "Assign to",
-                    avatarRes = R.drawable.avatar,
-                    username = assignedMember,
-                    onClick = {
-                        showChooseMember = true
-                    }
+                LeadingTextFieldComponent(
+                    content = title,
+                    onChangeValue = { title = it },
+                    placeholderContent = "Enter project title",
+                    placeholderColor = MaterialTheme.colorScheme.primary,
+                    containerColor = textFieldColor,
+                    icon = R.drawable.project_title_icon
                 )
             }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+
+                Text(
+                    "Description",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                )
+
+                TextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = textFieldColor,
+                        unfocusedContainerColor = textFieldColor,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.description_icon),
+                            contentDescription = "",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    placeholder = {
+                        Text(
+                            "Enter project description",
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    maxLines = Int.MAX_VALUE,
+                    shape = RoundedCornerShape(10.dp),
+                    textStyle = TextStyle(MaterialTheme.colorScheme.primary)
+                )
+            }
+
+            DatePickerField(
+                label = "Start date",
+                date = startDate,
+                onDateClick = {
+                    isTime = 1
+                    showDatePicker = true
+                },
+                iconResource = R.drawable.calendar_icon,
+                placeholder = "Enter start date",
+                containerColor = textFieldColor
+            )
+
+            DatePickerField(
+                label = "End date",
+                date = endDate,
+                onDateClick = {
+                    isTime = 2
+                    showDatePicker = true
+                },
+                iconResource = R.drawable.calendar_icon,
+                placeholder = "Enter end date",
+                containerColor = textFieldColor
+            )
+
+            PrioritySelector(
+                priorityChoice = priorityChoice,
+                priority = priority,
+                onPrioritySelected = {
+                    priority = it
+                }
+            )
+
+            AssigneeSelector(
+                label = "Assign to",
+                avatarRes = R.drawable.no_avatar,
+                userId = assignedMemberId,
+                username = assignedMember,
+                onClick = {
+                    showChooseMember = true
+                }
+            )
+        }
     }
 
     if (showDatePicker) {
@@ -428,13 +408,11 @@ fun CreateTaskScreen(
         }
     )
 
-    var memberList = if (members is Resource.Success) members?.data!! else emptyList()
-    memberList = memberList + User(username = "Unassigned", id = -1, email = "")
 
     ChooseItemDialog(
         title = "Choose Member",
         showDialog = showChooseMember,
-        items = memberList,
+        items = members ?: emptyList(),
         displayText = { it.username ?: "Unassigned" },
         onDismiss = { showChooseMember = false },
         onConfirm = {
@@ -446,11 +424,10 @@ fun CreateTaskScreen(
 
     ErrorDialog(
         title = "Something wrong?",
-        content = "Something went wrong. Try again!",
+        content = errorMessage,
         showDialog = openErrorDialog,
         onDismiss = { openErrorDialog = false },
         onConfirm = { openErrorDialog = false }
-
     )
 }
 

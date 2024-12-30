@@ -30,6 +30,19 @@ class TaskManagementRepository @Inject constructor(
         return response
     }
 
+    suspend fun getMyTask(
+        authorization: String
+    ): Resource<List<Task>> {
+        val response = try {
+            Resource.Success(api.getMyTask(authorization))
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Resource.Error(e.message.toString())
+        }
+
+        return response
+    }
+
     suspend fun createTask(
         projectId: String,
         task: TaskCreate,
@@ -39,7 +52,12 @@ class TaskManagementRepository @Inject constructor(
             Resource.Success(api.createTask(projectId, task, authorization))
         } catch (e: HttpException) {
             e.printStackTrace()
-            Resource.Error(e.message.toString())
+            val errorMessage = try {
+                e.response()?.errorBody()?.string() ?: "Unknown error"
+            } catch (parseException: Exception) {
+                "Error parsing error body: ${parseException.message}"
+            }
+            Resource.Error(errorMessage)
         } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message.toString())

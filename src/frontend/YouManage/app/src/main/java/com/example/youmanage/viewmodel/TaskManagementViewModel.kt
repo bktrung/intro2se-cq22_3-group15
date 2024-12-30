@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.taskmanagement.Comment
 import com.example.youmanage.data.remote.taskmanagement.Content
 import com.example.youmanage.data.remote.taskmanagement.Task
@@ -11,11 +12,14 @@ import com.example.youmanage.data.remote.taskmanagement.TaskCreate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdateStatus
 import com.example.youmanage.data.remote.websocket.WebSocketResponse
+import com.example.youmanage.repository.AuthenticationRepository
+import com.example.youmanage.repository.ProjectManagementRepository
 import com.example.youmanage.repository.TaskManagementRepository
 import com.example.youmanage.repository.WebSocketRepository
 import com.example.youmanage.utils.Resource
 import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import retrofit2.Response
 import javax.inject.Inject
@@ -23,6 +27,7 @@ import javax.inject.Inject
 @HiltViewModel
 class TaskManagementViewModel @Inject constructor(
     private val repository: TaskManagementRepository,
+    private val projectManagementRepository: ProjectManagementRepository,
     private val webSocketRepository: WebSocketRepository
 ) : ViewModel() {
 
@@ -56,6 +61,41 @@ class TaskManagementViewModel @Inject constructor(
     val taskSocket: LiveData<Resource<WebSocketResponse<Task>>>
         get() = _taskSocket
 
+    private val _members = MutableLiveData<List<User>>(emptyList())
+    val members: LiveData<List<User>>
+        get() = _members
+
+    private val _myTask = MutableLiveData<List<Task>>(emptyList())
+    val myTask: LiveData<List<Task>>
+        get() = _myTask
+
+    private val _isHost = MutableLiveData<Boolean>(false)
+    val isHost: LiveData<Boolean>
+        get() = _isHost
+
+    fun isHost(projectId: String, authorization: String) {
+        viewModelScope.launch {
+            val response = projectManagementRepository.isHost(projectId, authorization)
+            if (response is Resource.Success) {
+                _isHost.value = response.data?.isHost ?:false
+            } else {
+                _isHost.value = false
+            }
+        }
+    }
+
+    fun getMembers(projectId: String, authorization: String) {
+        viewModelScope.launch {
+            val response = projectManagementRepository.getMembers(projectId, authorization)
+            if (response is Resource.Success) {
+                _members.value = response.data ?: emptyList()
+                _members.value = members.value?.plus(User(id = -1, username = "Unassigned"))
+            } else {
+                _members.value = emptyList()
+            }
+        }
+    }
+
     fun getTasks(
         projectId: String,
         authorization: String
@@ -64,6 +104,19 @@ class TaskManagementViewModel @Inject constructor(
             _tasks.value = repository.getTasks(projectId, authorization)
         }
     }
+
+
+    fun getMyTask(authorization: String){
+        viewModelScope.launch {
+            val response = repository.getMyTask(authorization)
+            if (response is Resource.Success) {
+                _myTask.value = response.data ?: emptyList()
+            } else {
+                _myTask.value = emptyList()
+            }
+        }
+    }
+
 
     fun createTask(
         projectId: String,

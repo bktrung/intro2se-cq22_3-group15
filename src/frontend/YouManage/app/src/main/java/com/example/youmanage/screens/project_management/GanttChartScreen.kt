@@ -23,6 +23,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
+import com.example.youmanage.data.remote.projectmanagement.GanttChartData
+import com.example.youmanage.data.remote.projectmanagement.Project
 import com.example.youmanage.screens.components.GanttChart
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Resource
@@ -53,19 +58,17 @@ fun GanttChartScreen(
     val project by projectManagementViewModel.project.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
 
-    // Lấy danh sách task
+    var tasks by remember { mutableStateOf<List<GanttChartData>>(emptyList()) }
+    var projectDueDate by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             projectManagementViewModel.getGanttChartData(
                 id = projectId,
                 authorization = "Bearer $token"
             )
-        }
-    }
 
-    // Lấy thông tin Project
-    LaunchedEffect(accessToken.value) {
-        accessToken.value?.let { token ->
             projectManagementViewModel.getProject(
                 id = projectId,
                 authorization = "Bearer $token"
@@ -73,19 +76,20 @@ fun GanttChartScreen(
         }
     }
 
-    LaunchedEffect(key1 = ganttChartData) {
-        if (ganttChartData is Resource.Success) {
-            println("ganttChartData: ${ganttChartData?.data}")
+    LaunchedEffect(
+        key1 = ganttChartData,
+        key2 = project
+    ) {
+        if (ganttChartData is Resource.Success && project is Resource.Success) {
+            isLoading = false
+            tasks = ganttChartData?.data ?: emptyList()
+            projectDueDate = project?.data?.dueDate ?: "No Data"
         } else {
-            println("ganttChartData: ${ganttChartData?.message}")
+            isLoading = true
         }
-
     }
 
 
-    LaunchedEffect(ganttChartData) {
-
-    }
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -114,27 +118,34 @@ fun GanttChartScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+
         ) {
-            if (ganttChartData is Resource.Success && project is Resource.Success) {
-                println("ganttChartData is Render: ${ganttChartData?.data}")
-                println("project: ${project?.data}")
-                GanttChart(
-                    generateChartData(
-                        tasks = ganttChartData!!.data!!,
-                        projectDueDate = project!!.data!!.dueDate
-                    )
-                )
+
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = "Loading...")
+                }
+
             } else {
-                Text(
-                    text = "Loading...",
-                    modifier = Modifier.align(Alignment.Center),
-                    fontSize = 18.sp,
-                    color = Color.Gray
-                )
+                if(tasks.isNotEmpty()) {
+                    GanttChart(
+                        generateChartData(
+                            tasks = tasks,
+                            projectDueDate = projectDueDate
+                        )
+                    )
+                }
+
             }
+
         }
+
     }
 }
+
 
 
 @Composable

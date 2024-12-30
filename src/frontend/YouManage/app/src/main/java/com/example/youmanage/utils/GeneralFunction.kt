@@ -7,6 +7,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Color
+import com.example.youmanage.R
 import com.example.youmanage.data.remote.projectmanagement.Project
 import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.websocket.MemberObject
@@ -33,16 +34,29 @@ fun extractMessages(jsonResponse: String): String {
 
 fun randomColor(index: Int): Int {
     val colors = listOf(
-        Color.Red.copy(alpha = 0.6f),
-        Color.Blue.copy(alpha = 0.6f),
-        Color.Green.copy(alpha = 0.6f),
-        Color.Yellow.copy(alpha = 0.6f),
-        Color.Magenta.copy(alpha = 0.6f),
+        Color(0xffb6f36a),
+        Color(0xFFDAB00A),
+        Color(0xfffe9b64),
+        Color(0xff94dafb),
+        Color(0xffc9a0ff),
         Color.Cyan.copy(alpha = 0.6f),
         Color(0xFFF44336).copy(alpha = 0.6f)
     )
 
     return colors[index % colors.size].hashCode()
+}
+
+fun randomAvatar(index: Int): Int {
+    val avatars = listOf(
+        R.drawable.avatar_01,
+        R.drawable.avatar_02,
+        R.drawable.avatar_03,
+        R.drawable.avatar_04,
+        R.drawable.avatar_05
+    )
+    if(index == -1) return R.drawable.no_avatar
+
+    return avatars[index % avatars.size]
 }
 
 fun randomVibrantLightColor(): Color {

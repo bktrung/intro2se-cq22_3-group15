@@ -86,6 +86,8 @@ fun PieChart(
         )
 
         val semiCircleColor = MaterialTheme.colorScheme.primaryContainer
+        var donePercentColor = MaterialTheme.colorScheme.primary
+
         Spacer(modifier = Modifier.height(30.dp))
 
         Box(
@@ -137,7 +139,7 @@ fun PieChart(
                     val subTextSize = innerRadius * 0.17f
 
                     val textMainPaint = Paint().apply {
-                        color = Color.White.toArgb()
+                        color = donePercentColor.toArgb()
                         textSize = mainTextSize
                         isFakeBoldText = true
                         textAlign = Paint.Align.CENTER

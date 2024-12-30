@@ -1,6 +1,8 @@
 package com.example.youmanage.utils
 
 import android.content.Context
+import android.content.Intent
+import android.provider.Settings
 import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
@@ -41,13 +43,21 @@ object GoogleSignIn {
                     request = request,
                     context = context
                 )
+
                 handleSignIn(result, viewModel)
             } catch (e: Exception) {
                 Log.d("Error", e.toString())
+                redirectToGoogleLoginPage(context)
             }
 
-            delay(2000)
         }
+    }
+
+    private fun redirectToGoogleLoginPage(context: Context) {
+        val intent = Intent(Settings.ACTION_ADD_ACCOUNT).apply {
+            putExtra(Settings.EXTRA_ACCOUNT_TYPES, arrayOf("com.google"))
+        }
+        context.startActivity(intent)
     }
 
     private fun handleSignIn(

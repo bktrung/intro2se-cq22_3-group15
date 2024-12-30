@@ -1,14 +1,14 @@
 package com.example.youmanage.repository
 
 import android.content.Context
-import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.youmanage.data.remote.ApiInterface
 import com.example.youmanage.data.remote.authentication.AccessToken
-import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
+import com.example.youmanage.data.remote.authentication.ChangePassword
+import com.example.youmanage.data.remote.authentication.ResetPassword
 import com.example.youmanage.data.remote.authentication.RefreshToken
 import com.example.youmanage.data.remote.authentication.Message
 import com.example.youmanage.data.remote.authentication.Email
@@ -98,6 +98,13 @@ class AuthenticationRepository @Inject constructor(
         return safeApiCall { api.checkEmail(email) }
     }
 
+    suspend fun changePassword(
+        request: ChangePassword,
+        authorization: String
+    ): Resource<Message> = safeApiCall {
+        api.changePassword(request, authorization)
+    }
+
     suspend fun sendOPT(email: Email): Resource<Message> {
         return safeApiCall { api.sendOTP(email) }
     }
@@ -106,8 +113,8 @@ class AuthenticationRepository @Inject constructor(
         return safeApiCall { api.forgotPasswordSendOTP(email) }
     }
 
-    suspend fun changePassword(request: ChangePasswordRequest): Resource<Message> {
-        return safeApiCall { api.changePassword(request) }
+    suspend fun resetPassword(request: ResetPassword): Resource<Message> {
+        return safeApiCall { api.resetPassword(request) }
     }
 
     suspend fun getUser(authorization: String): Resource<User>{

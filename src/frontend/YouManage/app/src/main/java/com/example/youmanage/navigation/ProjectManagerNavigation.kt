@@ -8,28 +8,43 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.runtime.Composable
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navDeepLink
 import androidx.navigation.navigation
 import com.example.youmanage.screens.activity_logs.ActivityLogScreen
+import com.example.youmanage.screens.authetication.ChangePasswordScreen
+import com.example.youmanage.screens.changerequest.ChangeRequestScreen
 
 import com.example.youmanage.screens.chat.ChatScreenWithViewModel
 import com.example.youmanage.screens.project_management.AddProjectScreen
 import com.example.youmanage.screens.project_management.GanttChartScreen
-import com.example.youmanage.screens.project_management.HomeScreen
-import com.example.youmanage.screens.project_management.MainScreen
+import com.example.youmanage.screens.home.HomeScreen
+import com.example.youmanage.screens.home.MainScreen
+import com.example.youmanage.screens.home.MyTaskScreen
+import com.example.youmanage.screens.home.NotificationScreen
+import com.example.youmanage.screens.home.SettingsScreen
 import com.example.youmanage.screens.project_management.MemberProfileScreen
 import com.example.youmanage.screens.project_management.ProjectDetailScreen
 import com.example.youmanage.screens.project_management.ProjectMenuScreen
 import com.example.youmanage.screens.project_management.UpdateProjectScreen
-import com.example.youmanage.screens.project_management.UserProfileScreen
+import com.example.youmanage.screens.home.UserProfileScreen
 import com.example.youmanage.screens.role.RolesScreen
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import com.example.youmanage.utils.ThemePreferences
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ProjectManagementNavGraph(
     paddingValues: PaddingValues,
@@ -65,26 +80,69 @@ fun ProjectManagementNavGraph(
                             inclusive = true
                         }
                     }
+                },
+                onChangePassword = {
+                    rootNavController.navigate(ProjectManagementRouteScreen.ChangePassword.route)
                 }
             )
         }
 
-        composable(ProjectManagementRouteScreen.Calender.route) {}
+        composable(
+            route = ProjectManagementRouteScreen.Notification.route,
+            deepLinks = listOf(navDeepLink { uriPattern = "app://home/notification" })
+        ) {
 
-        composable(ProjectManagementRouteScreen.Issue.route) {
-            UserProfileScreen(
-                onLogout = {
-                    rootNavController.navigate(Graph.AUTHENTICATION) {
-                        popUpTo(Graph.PROJECT_MANAGEMENT) {
-                            inclusive = true
+            var routeMessage by remember { mutableStateOf("notification") }
+
+            NotificationScreen(
+                paddingValues = paddingValues,
+                onItemClick = {
+                    val objectContent = it
+
+                    if (objectContent.projectId != null) {
+                        routeMessage = if (objectContent.taskId != null) {
+                            "task_detail/${objectContent.projectId}/${objectContent.taskId}"
+                        } else if (objectContent.issueId != null) {
+                            "issue_detail/${objectContent.projectId}/${objectContent.issueId}"
+                        } else if (objectContent.changeRequestId != null) {
+                            "change_requests/${objectContent.projectId}"
+                        } else {
+                            "project_detail/${objectContent.projectId}"
                         }
+                    } else {
+                        routeMessage = "notification"
                     }
+
+                    try{
+                        rootNavController.navigate(routeMessage)
+                    } catch (e: Exception){
+                        rootNavController.navigate("notification")
+                    }
+
+                },
+                haveLeading = false
+            )
+        }
+
+        composable(ProjectManagementRouteScreen.Setting.route) {
+            val themePreferences = ThemePreferences(context = rootNavController.context)
+            SettingsScreen(
+                themePreferences,
+                paddingValues = paddingValues
+            )
+        }
+
+        composable(ProjectManagementRouteScreen.MyTask.route){
+            MyTaskScreen(
+                paddingValues = paddingValues,
+                onClick = {
+                    taskId, projectId ->
+                    rootNavController.navigate("task_detail/${projectId}/${taskId}")
                 }
             )
         }
 
     }
-
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -98,11 +156,44 @@ fun NavGraphBuilder.projectManagementNavGraph(
 
         composable(ProjectManagementRouteScreen.Main.route) {
             MainScreen(
-                rootNavController = rootNavController,
-                onViewProject = {
-                    rootNavController.navigate("project_detail/${it}")
-                }
+                rootNavController = rootNavController
             )
+        }
+
+        composable(
+            route = ProjectManagementRouteScreen.Notification.route
+        ){
+
+               var routeMessage by remember { mutableStateOf("notification") }
+
+                NotificationScreen(
+                    paddingValues = WindowInsets.systemBars.asPaddingValues(),
+                    onItemClick = {
+                        val objectContent = it
+
+                        routeMessage = if (objectContent.projectId != null) {
+                            if (objectContent.taskId != null) {
+                                "task_detail/${objectContent.projectId}/${objectContent.taskId}"
+                            } else if (objectContent.issueId != null) {
+                                "issue_detail/${objectContent.projectId}/${objectContent.issueId}"
+                            } else if (objectContent.changeRequestId != null) {
+                                "change_requests/${objectContent.projectId}"
+                            } else {
+                                "project_detail/${objectContent.projectId}"
+                            }
+                        } else {
+                            "notification"
+                        }
+                        try{
+                            rootNavController.navigate(routeMessage)
+                        } catch (e: Exception){
+                            rootNavController.navigate("notification")
+                        }
+
+                    },
+                    haveLeading = true
+                )
+
         }
 
         composable(ProjectManagementRouteScreen.AddProject.route) {
@@ -196,6 +287,12 @@ fun NavGraphBuilder.projectManagementNavGraph(
                 onGanttChart = {
                     rootNavController.navigate("gantt_chart/${id}")
                 },
+                onQuitProjectSuccess = {
+                    rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
+                },
+                onChangeRequests = {
+                    rootNavController.navigate("change_requests/${id}")
+                },
                 id = id.toString()
             )
         }
@@ -235,12 +332,26 @@ fun NavGraphBuilder.projectManagementNavGraph(
 
         composable(ProjectManagementRouteScreen.GanttChart.route) { backStackEntry ->
             val projectId = backStackEntry.arguments?.getString("projectId")
-            GanttChartScreen(
-                projectId = projectId ?: "",
-                onNavigateBack = {
-                    rootNavController.navigateUp()
-                }
-            )
+            if (projectId != null) {
+                GanttChartScreen(
+                    projectId = projectId,
+                    onNavigateBack = {
+                        rootNavController.navigateUp()
+                    }
+                )
+            }
+        }
+        composable(route = ProjectManagementRouteScreen.ChangeRequest.route){
+            val projectId = it.arguments?.getString("projectId")
+            if (projectId != null) {
+                ChangeRequestScreen(
+                    projectId.toInt(),
+                    onDisableAction = {},
+                    onNavigateBack = {
+                        rootNavController.navigateUp()
+                    }
+                )
+            }
         }
 
         composable(
@@ -254,6 +365,23 @@ fun NavGraphBuilder.projectManagementNavGraph(
                 memberId = memberId ?: "",
                 onNavigateBack = {
                     rootNavController.navigateUp()
+                }
+            )
+        }
+
+        composable(ProjectManagementRouteScreen.ChangePassword.route){
+            ChangePasswordScreen(
+                onNavigateBack = {
+                    rootNavController.navigate(AuthRouteScreen.Login.route)
+                },
+                onChangePasswordSuccess = {
+                    rootNavController.navigate(AuthRouteScreen.Login.route) {
+                        popUpTo(Graph.PROJECT_MANAGEMENT) {
+                            inclusive = true
+                        }
+
+                        launchSingleTop = true
+                    }
                 }
             )
         }

@@ -60,6 +60,7 @@ import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Constants.statusMapping
 import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
+import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
@@ -226,6 +227,7 @@ fun TaskListScreen(
                                 priority = filterTasks[index].priority,
                                 assignee = filterTasks[index].assignee?.username ?: "No Assignee",
                                 endDate = filterTasks[index].endDate,
+                                userId = filterTasks[index].assignee?.id ?: -1,
                                 comments = filterTasks[index].commentsCount,
                                 onCommentClick = {},
                                 onTaskClick = { onTaskDetail(filterTasks[index].id) }
@@ -244,6 +246,7 @@ fun TaskItem(
     title: String,
     priority: String?,
     assignee: String,
+    userId: Int = -1,
     endDate: String,
     comments: Int,
     onCommentClick: () -> Unit = {},
@@ -309,8 +312,11 @@ fun TaskItem(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+
+                val id = if(userId > 0) userId else -1
+
                 Image(
-                    painter = painterResource(id = R.drawable.avatar),
+                    painter = painterResource(id = randomAvatar(id)),
                     contentDescription = "Avatar",
                     modifier = Modifier
                         .size(50.dp)

@@ -1,8 +1,14 @@
 package com.example.youmanage.screens.components
 
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,17 +31,14 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerColors
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
@@ -62,6 +65,7 @@ import com.example.youmanage.R
 import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.screens.project_management.MemberItem
 import com.example.youmanage.ui.theme.fontFamily
+import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.utils.randomVibrantLightColor
 import java.time.Instant
 import java.time.LocalDate
@@ -154,7 +158,10 @@ fun ErrorDialog(
     if (showDialog) {
         Dialog(
             onDismissRequest = onDismiss,
-            properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true)
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true
+            )
         ) {
             Card(
                 modifier = Modifier
@@ -201,17 +208,25 @@ fun ErrorDialog(
                     ) {
                         TextButton(
                             onClick = onDismiss,
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary
+                            )
                         ) {
                             Text("Cancel", fontFamily = fontFamily)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
                             onClick = onConfirm,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text("OK", color = Color.White, fontFamily = fontFamily)
+                            Text(
+                                "OK",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontFamily = fontFamily
+                            )
                         }
                     }
                 }
@@ -241,14 +256,12 @@ fun DatePickerModal(
         }
     }
 
-
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = currentTimeMillis,
         selectableDates = selectableDates
     )
 
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.getDefault())
-
 
     DatePickerDialog(
         onDismissRequest = onDismiss,
@@ -301,7 +314,8 @@ fun DatePickerModal(
                     focusedTextColor = MaterialTheme.colorScheme.primary,
                     unfocusedTextColor = MaterialTheme.colorScheme.primary,
                     disabledTextColor = Color.Gray,
-                    errorTextColor = MaterialTheme.colorScheme.onError)
+                    errorTextColor = MaterialTheme.colorScheme.onError
+                )
             )
         )
     }
@@ -334,8 +348,6 @@ fun <T> ChooseItemDialog(
                 dismissOnClickOutside = true
             )
         ) {
-
-
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -395,8 +407,10 @@ fun <T> ChooseItemDialog(
                                 ) {
 
                                     if (items[index] is User) {
+                                        val user = items[index] as User
+                                        val id = if(user.id > 0) user.id else 0
                                         Image(
-                                            painter = painterResource(id = R.drawable.avatar),
+                                            painter = painterResource(id = randomAvatar(id)),
                                             contentDescription = null,
                                             modifier = Modifier
                                                 .size(40.dp)
@@ -535,7 +549,9 @@ fun CreateRoleDialog(
                 ) {
                     TextButton(
                         onClick = onDismiss,
-                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
                     ) {
                         Text(
                             "Cancel",
@@ -591,7 +607,9 @@ fun ChangeRequestDialog(
                         shape = RoundedCornerShape(10.dp)
                     ),
                 shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
                 Column(
                     modifier = Modifier
@@ -603,7 +621,7 @@ fun ChangeRequestDialog(
                         fontSize = 22.sp,
                         fontFamily = fontFamily,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                     Text(
@@ -611,7 +629,7 @@ fun ChangeRequestDialog(
                         fontFamily = fontFamily,
                         fontSize = 16.sp,
                         color = Color.Gray,
-                        modifier = Modifier.padding(bottom = 24.dp)
+                        modifier = Modifier.padding(bottom = 16.dp)
                     )
 
                     OutlinedTextField(
@@ -621,7 +639,13 @@ fun ChangeRequestDialog(
                             onDescriptionChange(it)
                         },
                         label = { Text("Enter description") },
-                        maxLines = Int.MAX_VALUE
+                        maxLines = Int.MAX_VALUE,
+                        colors = TextFieldDefaults.colors(
+                            focusedTextColor = MaterialTheme.colorScheme.primary,
+                            unfocusedTextColor = MaterialTheme.colorScheme.primary,
+                            focusedContainerColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.onSurface
+                        )
                     )
 
                     Row(
@@ -678,7 +702,9 @@ fun AddMemberDialog(
                         shape = RoundedCornerShape(10.dp)
                     ),
                 shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.onPrimary
+                ),
 
                 ) {
                 Column(
@@ -693,7 +719,7 @@ fun AddMemberDialog(
                         text = title,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
@@ -709,7 +735,7 @@ fun AddMemberDialog(
 
                         Text(
                             "Username",
-                            color = Color.Black,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold
                         )
 
@@ -718,7 +744,7 @@ fun AddMemberDialog(
                             onChangeValue = { username = it },
                             placeholderContent = "Username",
                             placeholderColor = Color.Gray,
-                            containerColor = Color(0x1A000000),
+                            containerColor = MaterialTheme.colorScheme.onPrimary,
                             icon = R.drawable.member_icon
                         )
                     }
@@ -736,7 +762,9 @@ fun AddMemberDialog(
                             )
                         },
                         shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 20.dp)
@@ -744,13 +772,128 @@ fun AddMemberDialog(
                         Text(
                             "Add",
                             fontSize = 16.sp,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Bold
                         )
-
                     }
                 }
             }
         }
     }
 }
+
+@Composable
+fun ReplyChangeRequest(
+    title: String = "Your change request",
+    showDialog: Boolean,
+    onDismiss: () -> Unit = {},
+    onApprove: (String) -> Unit = {},
+    onDecline: (String) -> Unit = {}
+) {
+    if (showDialog) {
+        var reason by remember { mutableStateOf("") }
+        var openReasonTextField by remember { mutableStateOf(false) }
+
+        Dialog(onDismissRequest = onDismiss) {
+            Column(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.onPrimary)
+                    .padding(16.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .widthIn(min = 300.dp, max = 400.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+
+                Text(
+                    title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = {
+                            openReasonTextField = !openReasonTextField
+                        },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text(
+                            "Decline",
+                            fontFamily = fontFamily
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = { onApprove(reason) },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text(
+                            "Approve",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontFamily = fontFamily
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = openReasonTextField,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    Column {
+                        Text(
+                            "Declined Reason:",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        OutlinedTextField(
+                            value = reason,
+                            onValueChange = {
+                                reason = it
+                            },
+                            label = { Text("Declined Reason") },
+                            maxLines = 5,
+                            textStyle = TextStyle(
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        )
+
+                        Button(
+                            onClick = {
+                                onDecline(reason)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ),
+                            shape = RoundedCornerShape(10.dp),
+                            enabled = reason.isNotEmpty()
+                        ) {
+                            Text(
+                                "OK",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontFamily = fontFamily
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

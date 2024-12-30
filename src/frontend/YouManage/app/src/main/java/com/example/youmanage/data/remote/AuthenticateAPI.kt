@@ -1,7 +1,8 @@
 package com.example.youmanage.data.remote
 
 import com.example.youmanage.data.remote.authentication.AccessToken
-import com.example.youmanage.data.remote.authentication.ChangePasswordRequest
+import com.example.youmanage.data.remote.authentication.ChangePassword
+import com.example.youmanage.data.remote.authentication.ResetPassword
 import com.example.youmanage.data.remote.authentication.Email
 import com.example.youmanage.data.remote.authentication.Message
 import com.example.youmanage.data.remote.authentication.RefreshToken
@@ -48,6 +49,12 @@ interface AuthenticateAPI {
         @Header("Authorization") authorization: String
     ): String
 
+    @POST("auth/reset_password/")
+    suspend fun changePassword(
+        @Body request: ChangePassword,
+        @Header("Authorization") authorization: String
+    ): Message
+
     @POST("auth/token/refresh/")
     suspend fun refreshAccessToken(
         @Body logout: RefreshToken,
@@ -75,8 +82,8 @@ interface AuthenticateAPI {
     ): Message
 
     @POST("/auth/forgot_password/change_password/")
-    suspend fun changePassword(
-        @Body request: ChangePasswordRequest,
+    suspend fun resetPassword(
+        @Body request: ResetPassword,
     ): Message
 
     @POST("/auth/forgot_password/verify_otp/")
