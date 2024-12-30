@@ -304,7 +304,11 @@ fun NavGraphBuilder.projectManagementNavGraph(
 
             ChatScreenWithViewModel(
                 projectId = projectId ?: "",
-                onNavigateBack = { rootNavController.navigateUp() })
+                onNavigateBack = { rootNavController.navigateUp() },
+                onDisableAction = {
+                    rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
+                }
+            )
         }
 
         composable(
@@ -337,6 +341,9 @@ fun NavGraphBuilder.projectManagementNavGraph(
                     projectId = projectId,
                     onNavigateBack = {
                         rootNavController.navigateUp()
+                    },
+                    onDisableAction = {
+                        rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
                     }
                 )
             }

@@ -39,6 +39,7 @@ import com.example.youmanage.data.remote.projectmanagement.GanttChartData
 import com.example.youmanage.data.remote.projectmanagement.Project
 import com.example.youmanage.screens.components.GanttChart
 import com.example.youmanage.utils.Constants.WEB_SOCKET
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.generateChartData
 import com.example.youmanage.viewmodel.AuthenticationViewModel
@@ -48,8 +49,10 @@ import com.example.youmanage.viewmodel.TaskManagementViewModel
 @Composable
 fun GanttChartScreen(
     onNavigateBack: () -> Unit = {},
+    onDisableAction: () -> Unit = {},
     projectId: String,
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
+    taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
 ) {
     val backgroundColor = Color(0xffBAE5F5)
@@ -57,12 +60,17 @@ fun GanttChartScreen(
     val ganttChartData by projectManagementViewModel.ganttChartData.observeAsState()
     val project by projectManagementViewModel.project.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
+    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
+    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
+    val user by authenticationViewModel.user.observeAsState()
+    val taskSocket by taskManagementViewModel.taskSocket.observeAsState()
 
     var tasks by remember { mutableStateOf<List<GanttChartData>>(emptyList()) }
     var projectDueDate by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
     LaunchedEffect(accessToken.value) {
+        val url = "${WEB_SOCKET}project/$projectId/"
         accessToken.value?.let { token ->
             projectManagementViewModel.getGanttChartData(
                 id = projectId,
@@ -72,6 +80,27 @@ fun GanttChartScreen(
             projectManagementViewModel.getProject(
                 id = projectId,
                 authorization = "Bearer $token"
+            )
+            projectManagementViewModel.connectToProjectWebsocket(url)
+            projectManagementViewModel.connectToMemberWebsocket(url)
+            taskManagementViewModel.connectToTaskWebSocket(url)
+            authenticationViewModel.getUser("Bearer $token")
+        }
+    }
+
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = projectId,
+        onDisableAction = onDisableAction
+    )
+
+    LaunchedEffect(taskSocket){
+        if(taskSocket is Resource.Success) {
+            projectManagementViewModel.getGanttChartData(
+                id = projectId,
+                authorization = "Bearer ${accessToken.value}"
             )
         }
     }
@@ -88,7 +117,6 @@ fun GanttChartScreen(
             isLoading = true
         }
     }
-
 
     Scaffold(
         modifier = Modifier
