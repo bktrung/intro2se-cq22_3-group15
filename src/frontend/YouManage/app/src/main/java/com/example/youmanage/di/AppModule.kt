@@ -7,6 +7,7 @@ import com.example.youmanage.repository.ActivityLogRepository
 import com.example.youmanage.repository.AuthenticationRepository
 import com.example.youmanage.repository.ChangeRequestRepository
 import com.example.youmanage.repository.ChatRepository
+import com.example.youmanage.repository.FirebaseService
 import com.example.youmanage.repository.NotificationRepository
 import com.example.youmanage.repository.ProjectManagementRepository
 import com.example.youmanage.repository.TaskManagementRepository
@@ -81,6 +82,12 @@ object AppModule {
         api: ApiInterface,
         @ApplicationContext context: Context
     ) = AuthenticationRepository(api, context)
+
+    @Provides
+    fun provideFirebaseService(
+        api: ApiInterface,
+    ) = FirebaseService(api)
+
 
     @Provides
     @Singleton

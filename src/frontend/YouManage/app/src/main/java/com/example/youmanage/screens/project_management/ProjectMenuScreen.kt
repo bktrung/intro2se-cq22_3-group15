@@ -179,6 +179,23 @@ fun ProjectMenuScreen(
             }
         ),
         ProjectMenuItem(
+            title = "Change Project Owner",
+            icon = R.drawable.member_role_icon,
+            color = MaterialTheme.colorScheme.primary,
+            onClick = {
+                val size = project?.data?.members?.size ?: 1
+                if(size > 1){
+                    if(userId == hostId){
+                        showChooseMemberDialog = true
+                    } else {
+                        Toast.makeText(context, "You are not the project owner", Toast.LENGTH_SHORT).show()
+                    }
+                } else{
+                    Toast.makeText(context, "You are the last member of this project", Toast.LENGTH_SHORT).show()
+                }
+            }
+        ),
+        ProjectMenuItem(
             title = "Delete Project",
             icon = R.drawable.trash_icon,
             color = MaterialTheme.colorScheme.primary,

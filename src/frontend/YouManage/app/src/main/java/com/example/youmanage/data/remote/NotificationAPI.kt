@@ -3,8 +3,10 @@ package com.example.youmanage.data.remote
 import android.database.Cursor
 import com.example.youmanage.data.remote.authentication.Message
 import com.example.youmanage.data.remote.notification.Count
+import com.example.youmanage.data.remote.notification.DeviceTokenRequest
 import com.example.youmanage.data.remote.notification.Notifications
 import retrofit2.Response
+import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -42,5 +44,21 @@ interface NotificationAPI {
         @Header("Authorization") authorization: String
     ):Response<Unit>
 
+    @POST("/device-token/")
+    suspend fun sendDeviceToken(
+        @Body token: DeviceTokenRequest
+    ): Response<Unit>
+
+    @POST("/device-token/user/assign/")
+    suspend fun assignDeviceToken(
+        @Body token: DeviceTokenRequest,
+        @Header("Authorization") authorization: String
+    ): Response<Unit>
+
+    @POST("/device-token/user/unassign/")
+    suspend fun unassignDeviceToken(
+        @Body token: DeviceTokenRequest,
+        @Header("Authorization") authorization: String
+    ): Response<Unit>
 
 }
