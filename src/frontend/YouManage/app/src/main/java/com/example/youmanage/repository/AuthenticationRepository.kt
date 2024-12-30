@@ -19,14 +19,17 @@ import com.example.youmanage.data.remote.authentication.UserLogInResponse
 import com.example.youmanage.data.remote.authentication.UserSignUp
 import com.example.youmanage.data.remote.authentication.UserSignUpResponse
 import com.example.youmanage.data.remote.authentication.VerifyRequest
+import com.example.youmanage.data.remote.notification.DeviceTokenRequest
 import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.utils.Constants.ACCESS_TOKEN_KEY
 import com.example.youmanage.utils.Constants.REFRESH_TOKEN_KEY
 import com.example.youmanage.utils.Resource
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.scopes.ActivityScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.tasks.await
 import retrofit2.HttpException
 import javax.inject.Inject
 
@@ -71,7 +74,12 @@ class AuthenticationRepository @Inject constructor(
     }
 
     suspend fun logIn(user: UserLogIn): Resource<UserLogInResponse> {
-        return safeApiCall { api.logIn(user) }
+        val loginResponse = safeApiCall { api.logIn(user) }
+        if (loginResponse is Resource.Success) {
+            val token = FirebaseMessaging.getInstance().token.await()
+            safeApiCall { api.assignDeviceToken(DeviceTokenRequest(token), "Bearer ${loginResponse.data!!.access}") }
+        }
+        return loginResponse
     }
 
     suspend fun logInWithGoogle(user: UserGoogleLogIn): Resource<UserLogInResponse> {
@@ -79,7 +87,13 @@ class AuthenticationRepository @Inject constructor(
     }
 
     suspend fun logOut(logoutRequest: RefreshToken, authorization: String): Resource<Message> {
-        return safeApiCall { api.logOut(logoutRequest, authorization = authorization) }
+        val logoutResponse = safeApiCall { api.logOut(logoutRequest, authorization = authorization) }
+        if (logoutResponse is Resource.Success) {
+            val token = FirebaseMessaging.getInstance().token.await()
+            safeApiCall { api.unassignDeviceToken(DeviceTokenRequest(token),authorization) }
+        }
+
+        return logoutResponse
     }
 
     suspend fun refreshAccessToken(refreshToken: RefreshToken, authorization: String): Resource<AccessToken> {

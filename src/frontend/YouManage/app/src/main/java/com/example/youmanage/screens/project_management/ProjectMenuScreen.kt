@@ -102,6 +102,8 @@ fun ProjectMenuScreen(
     var hostId by remember { mutableIntStateOf(-1) }
     var userId by remember { mutableIntStateOf(-2) }
 
+    var onlyEmpower by remember { mutableStateOf(false) }
+
     val context = LocalContext.current
 
     LaunchedEffect(deleteProjectResponse) {
@@ -179,6 +181,24 @@ fun ProjectMenuScreen(
             }
         ),
         ProjectMenuItem(
+            title = "Change Project Owner",
+            icon = R.drawable.member_role_icon,
+            color = MaterialTheme.colorScheme.primary,
+            onClick = {
+                val size = project?.data?.members?.size ?: 1
+                onlyEmpower = true
+                if(size > 1){
+                    if(userId == hostId){
+                        showChooseMemberDialog = true
+                    } else {
+                        Toast.makeText(context, "You are not the project owner", Toast.LENGTH_SHORT).show()
+                    }
+                } else{
+                    Toast.makeText(context, "You are the last member of this project", Toast.LENGTH_SHORT).show()
+                }
+            }
+        ),
+        ProjectMenuItem(
             title = "Delete Project",
             icon = R.drawable.trash_icon,
             color = MaterialTheme.colorScheme.primary,
@@ -211,7 +231,7 @@ fun ProjectMenuScreen(
     )
 
     LaunchedEffect(empowerResponse){
-        if(empowerResponse is Resource.Success && accessToken.value != null){
+        if(empowerResponse is Resource.Success && accessToken.value != null && !onlyEmpower){
             if(user?.data?.id != null){
                 Log.d("Quit", accessToken.value.toString())
                 projectManagementViewModel.quitProject(
@@ -219,6 +239,11 @@ fun ProjectMenuScreen(
                     authorization = "Bearer ${accessToken.value}"
                 )
             }
+        }
+
+        if(empowerResponse is Resource.Success && onlyEmpower){
+            onlyEmpower = false
+            Toast.makeText(context, "You are not now the project owner", Toast.LENGTH_SHORT).show()
         }
     }
 

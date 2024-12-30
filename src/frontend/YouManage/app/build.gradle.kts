@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
+    alias(libs.plugins.google.gms.google.services)
 }
 
 android {
@@ -119,5 +120,8 @@ dependencies {
     implementation ("com.google.accompanist:accompanist-navigation-animation:0.33.1-alpha")
 
     implementation ("io.coil-kt:coil-compose:2.4.0")
+
+    implementation(platform("com.google.firebase:firebase-bom:32.0.0"))
+    implementation("com.google.firebase:firebase-messaging")
 
 }
