@@ -108,8 +108,8 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("localhost", 6379)],
-            # "hosts": [("redis", 6379)],
+            # "hosts": [("localhost", 6379)],
+            "hosts": [("redis", 6379)],
         },
     },
 }
@@ -174,10 +174,10 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'vvtung2004@gmail.com'
 EMAIL_HOST_PASSWORD = 'irqa vavd buzv brlc'
 
-CELERY_BROKER_URL = 'redis://localhost:6379/1'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/1'
-# CELERY_BROKER_URL = 'redis://redis:6379/1'
-# CELERY_RESULT_BACKEND = 'redis://redis:6379/1'
+# CELERY_BROKER_URL = 'redis://localhost:6379/1'
+# CELERY_RESULT_BACKEND = 'redis://localhost:6379/1'
+CELERY_BROKER_URL = 'redis://redis:6379/1'
+CELERY_RESULT_BACKEND = 'redis://redis:6379/1'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -187,8 +187,8 @@ CELERY_TIMEZONE = 'UTC'
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://127.0.0.1:6379/2',  # Redis server location (localhost and DB 2)
-        # 'LOCATION': 'redis://redis:6379/2',
+        # 'LOCATION': 'redis://127.0.0.1:6379/2',  # Redis server location (localhost and DB 2)
+        'LOCATION': 'redis://redis:6379/2',
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         },

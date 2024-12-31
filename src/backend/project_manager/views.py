@@ -266,6 +266,9 @@ class MemberRoleListView(generics.ListAPIView):
         project = get_object_or_404(Project, id=self.kwargs['project_id'])
         user = get_object_or_404(User, id=self.kwargs['pk'])
         
+        if self.request.user not in project.members.all():
+            raise PermissionDenied({"error": "You must be a project member to view role information."})
+        
         if user not in project.members.all():
             raise PermissionDenied({"error": "User must be a project member to view roles."})
         
