@@ -60,10 +60,12 @@ fun MyTaskScreen(
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let {
             supervisorScope {
-                launch {
+                val job = launch {
                     taskManagementViewModel.getMyTask(
                         authorization = "Bearer $it")
                 }
+
+                job.join()
             }
 
         }

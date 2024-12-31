@@ -114,23 +114,28 @@ fun RolesScreen(
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             supervisorScope {
-                launch {
+                // Launching tasks concurrently
+                val job1 = launch {
                     roleViewmodel.getRoles(
                         projectId,
                         "Bearer $token"
                     )
                 }
 
-                launch {
+                val job2 = launch {
                     projectManagementViewModel.isHost(
                         projectId,
                         "Bearer $token"
                     )
                 }
-            }
 
+                // Waiting for both jobs to complete
+                job1.join()
+                job2.join()
+            }
         }
     }
+
 
     LaunchedEffect(
         key1 = response,

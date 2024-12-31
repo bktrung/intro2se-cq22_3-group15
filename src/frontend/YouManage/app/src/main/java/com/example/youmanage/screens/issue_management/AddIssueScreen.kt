@@ -56,6 +56,7 @@ import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.IssuesViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 
@@ -105,27 +106,33 @@ fun AddIssueScreen(
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             val webSocketUrl = "${WEB_SOCKET}project/${projectId}/"
+
             supervisorScope {
-                launch {
-                    projectManagementViewModel.getMembers(projectId, "Bearer $token")
-                }
-                launch {
-                    taskManagementViewModel.getTasks(projectId, "Bearer $token")
-                }
-                launch {
-                    projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-                }
+                // Launch all tasks concurrently
+                val jobs = listOf(
+                    launch {
+                        projectManagementViewModel.getMembers(projectId, "Bearer $token")
+                    },
+                    launch {
+                        taskManagementViewModel.getTasks(projectId, "Bearer $token")
+                    },
+                    launch {
+                        projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
+                    },
+                    launch {
+                        projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+                    },
+                    launch {
+                        authenticationViewModel.getUser("Bearer $token")
+                    }
+                )
 
-                launch {
-                    projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
-                }
-
-                launch {
-                    authenticationViewModel.getUser("Bearer $token")
-                }
+                // Wait for all tasks to complete before proceeding
+                jobs.joinAll()
             }
         }
     }
+
 
     HandleOutProjectWebSocket(
         memberSocket = memberSocket,

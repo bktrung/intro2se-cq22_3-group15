@@ -78,11 +78,13 @@ fun NotificationScreen(
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let {
             supervisorScope {
-                launch {
+               val job = launch {
                     notificationViewModel.getNotifications(
                         authorization = "Bearer $it"
                     )
                 }
+
+                job.join()
             }
 
         }

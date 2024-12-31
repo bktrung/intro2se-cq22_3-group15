@@ -76,9 +76,11 @@ fun UserProfileScreen(
     LaunchedEffect(accessToken) {
         accessToken?.let { token ->
             supervisorScope {
-                launch {
+               val job = launch {
                     authenticationViewModel.getUser(authorization = "Bearer $token")
                 }
+
+                job.join()
             }
         }
     }

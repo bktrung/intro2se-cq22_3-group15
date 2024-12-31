@@ -62,6 +62,7 @@ import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
@@ -91,37 +92,40 @@ fun UpdateProjectScreen(
             val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
 
             supervisorScope {
-                launch {
-                    try {
-                        authenticationViewModel.getUser(bearerToken)
-                    } catch (e: Exception) {
-                        Log.e("Authentication", "Error fetching user: ${e.message}")
+                // Launch all tasks concurrently
+                val jobs = listOf(
+                    launch {
+                        try {
+                            authenticationViewModel.getUser(bearerToken)
+                        } catch (e: Exception) {
+                            Log.e("Authentication", "Error fetching user: ${e.message}")
+                        }
+                    },
+                    launch {
+                        try {
+                            projectManagementViewModel.getProject(projectId, bearerToken)
+                        } catch (e: Exception) {
+                            Log.e("ProjectManagement", "Error fetching project: ${e.message}")
+                        }
+                    },
+                    launch {
+                        try {
+                            projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
+                        } catch (e: Exception) {
+                            Log.e("WebSocket", "Error connecting to project WebSocket: ${e.message}")
+                        }
+                    },
+                    launch {
+                        try {
+                            projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+                        } catch (e: Exception) {
+                            Log.e("WebSocket", "Error connecting to member WebSocket: ${e.message}")
+                        }
                     }
-                }
+                )
 
-                launch {
-                    try {
-                        projectManagementViewModel.getProject(projectId, bearerToken)
-                    } catch (e: Exception) {
-                        Log.e("ProjectManagement", "Error fetching project: ${e.message}")
-                    }
-                }
-
-                launch {
-                    try {
-                        projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-                    } catch (e: Exception) {
-                        Log.e("WebSocket", "Error connecting to project WebSocket: ${e.message}")
-                    }
-                }
-
-                launch {
-                    try {
-                        projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
-                    } catch (e: Exception) {
-                        Log.e("WebSocket", "Error connecting to member WebSocket: ${e.message}")
-                    }
-                }
+                // Wait for all tasks to complete before continuing
+                jobs.joinAll()
             }
         }
     }

@@ -115,10 +115,12 @@ fun MainScreen(
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let {
             supervisorScope {
-                launch {
+                val job = launch {
                     notificationViewModel.getUnreadCountNotifications("Bearer $it")
                     Log.d("Count in Main", badgeCount.toString())
                 }
+
+                job.join()
             }
         }
     }

@@ -73,6 +73,7 @@ import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 
@@ -121,40 +122,34 @@ fun ProjectDetailScreen(
             // Lệnh gọi API và WebSocket được thực hiện tuần tự hoặc song song có kiểm soát
             try {
                 // Gọi API trước
-                 supervisorScope {
+                supervisorScope {
                     // Khởi chạy các coroutine song song cho các API gọi
-                    launch {
-                        projectManagementViewModel.getProject(id = id.toString(), authorization = authorization)
-                    }
-                    launch {
-                        projectManagementViewModel.getProgressTrack(id = id.toString(), authorization = authorization)
-                    }
-                    launch {
-                        projectManagementViewModel.isHost(id = id.toString(), authorization = authorization)
-                    }
+                    val apiJobs = listOf(
+                        launch { projectManagementViewModel.getProject(id = id.toString(), authorization = authorization) },
+                        launch { projectManagementViewModel.getProgressTrack(id = id.toString(), authorization = authorization) },
+                        launch { projectManagementViewModel.isHost(id = id.toString(), authorization = authorization) }
+                    )
 
-                    // Kết nối WebSocket sau khi các API đã được gọi thành công
+                    // Đợi tất cả API hoàn thành trước khi tiếp tục
+                    apiJobs.joinAll()
+
+                    // Sau khi các API hoàn thành, kết nối WebSocket
                     val webSocketUrl = "${WEB_SOCKET}project/$id/"
-                    launch {
-                        authenticationViewModel.getUser("Bearer $token")
-                    }
-                    launch {
-                        projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-                    }
-                    launch {
-                        projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
-                    }
-                    launch {
-                        taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
-                    }
+                    val webSocketJobs = listOf(
+                        launch { authenticationViewModel.getUser("Bearer $token") },
+                        launch { projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl) },
+                        launch { projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl) },
+                        launch { taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl) }
+                    )
+
+                    // Đợi tất cả các WebSocket kết nối
+                    webSocketJobs.joinAll()
                 }
             } catch (e: Exception) {
                 Log.e("ProjectDetailScreen", "Error occurred: ${e.message}")
             }
-
         }
     }
-
 
     LaunchedEffect(addMemberResponse) {
         if (addMemberResponse is Resource.Error && isAdd) {

@@ -94,48 +94,55 @@ fun TaskListScreen(
 
     val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
 
-    LaunchedEffect(Unit){
-        try{
+    LaunchedEffect(Unit) {
+        try {
             supervisorScope {
-                launch {
+                // Launching websocket connections concurrently
+                val job1 = launch {
                     projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
                 }
-                launch {
+                val job2 = launch {
                     taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
                 }
 
+                // Waiting for all coroutines to complete before finishing LaunchedEffect
+                job1.join()
+                job2.join()
             }
-
         } catch (e: CancellationException) {
-            Log.d("Coroutine", "Job was cancelled: ${e.localizedMessage}")
+            Log.d("Coroutine", "Job was cancelled during websocket connections: ${e.localizedMessage}")
         } catch (e: Exception) {
-            Log.d("Coroutine", "Exception: ${e.localizedMessage}")
+            Log.d("Coroutine", "Exception during websocket connection setup: ${e.localizedMessage}")
         }
-
     }
 
     LaunchedEffect(accessToken.value) {
         try {
             accessToken.value?.let { token ->
                 supervisorScope {
-                    launch {
+                    // Launching API calls concurrently
+                    val job1 = launch {
                         taskManagementViewModel.getTasks(
                             projectId = projectId,
                             authorization = "Bearer $token"
                         )
                     }
-                    launch {
+                    val job2 = launch {
                         authenticationViewModel.getUser("Bearer $token")
                     }
+
+                    // Optionally wait for all jobs to finish
+                    job1.join()
+                    job2.join()
                 }
             }
         } catch (e: CancellationException) {
-            Log.d("Coroutine", "Job was cancelled: ${e.localizedMessage}")
+            Log.d("Coroutine", "Job was cancelled during API calls: ${e.localizedMessage}")
         } catch (e: Exception) {
-            Log.d("Coroutine", "Exception: ${e.localizedMessage}")
+            Log.d("Coroutine", "Exception during API calls: ${e.localizedMessage}")
         }
-
     }
+
 
     HandleOutProjectWebSocket(
         memberSocket = memberSocket,

@@ -60,6 +60,7 @@ import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.IssuesViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 
@@ -109,29 +110,33 @@ fun IssueDetailScreen(
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             supervisorScope {
-                launch {
-                    try {
-                        issueManagementViewModel.getIssue(projectId, issueId, "Bearer $token")
-                    } catch (e: Exception) {
-                        Log.e("IssueManagement", "Error fetching issue: ${e.message}")
+                // Collecting all launched jobs
+                val jobs = listOf(
+                    launch {
+                        try {
+                            issueManagementViewModel.getIssue(projectId, issueId, "Bearer $token")
+                        } catch (e: Exception) {
+                            Log.e("IssueManagement", "Error fetching issue: ${e.message}")
+                        }
+                    },
+                    launch {
+                        try {
+                            taskManagementViewModel.getTasks(projectId, "Bearer $token")
+                        } catch (e: Exception) {
+                            Log.e("TaskManagement", "Error fetching tasks: ${e.message}")
+                        }
+                    },
+                    launch {
+                        try {
+                            projectManagementViewModel.getMembers(projectId, "Bearer $token")
+                        } catch (e: Exception) {
+                            Log.e("ProjectManagement", "Error fetching members: ${e.message}")
+                        }
                     }
-                }
+                )
 
-                launch {
-                    try {
-                        taskManagementViewModel.getTasks(projectId, "Bearer $token")
-                    } catch (e: Exception) {
-                        Log.e("TaskManagement", "Error fetching tasks: ${e.message}")
-                    }
-                }
-
-                launch {
-                    try {
-                        projectManagementViewModel.getMembers(projectId, "Bearer $token")
-                    } catch (e: Exception) {
-                        Log.e("ProjectManagement", "Error fetching members: ${e.message}")
-                    }
-                }
+                // Waiting for all tasks to complete
+                jobs.joinAll()
             }
         }
     }

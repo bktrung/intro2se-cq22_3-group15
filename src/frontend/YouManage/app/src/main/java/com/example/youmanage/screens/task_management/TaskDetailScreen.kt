@@ -172,24 +172,32 @@ fun TaskDetailScreen(
     val context = LocalContext.current
 
     LaunchedEffect(accessToken.value) {
-        try{
+        try {
             accessToken.value?.let { token ->
                 supervisorScope {
-                    launch {
+                    // Launching coroutines concurrently
+                    val job1 = launch {
                         taskManagementViewModel.getTask(projectId, taskId, "Bearer $token")
                     }
-                    launch {
+                    val job2 = launch {
                         taskManagementViewModel.getComments(projectId, taskId, "Bearer $token")
                     }
-                    launch {
+                    val job3 = launch {
                         taskManagementViewModel.getMembers(projectId, "Bearer $token")
                     }
-                    launch {
+                    val job4 = launch {
                         taskManagementViewModel.isHost(projectId, "Bearer $token")
                     }
-                    launch {
+                    val job5 = launch {
                         authenticationViewModel.getUser("Bearer $token")
                     }
+
+                    // Optionally, you can wait for all jobs to complete if necessary:
+                    job1.join()
+                    job2.join()
+                    job3.join()
+                    job4.join()
+                    job5.join()
                 }
             }
         } catch (e: CancellationException) {
@@ -197,8 +205,8 @@ fun TaskDetailScreen(
         } catch (e: Exception) {
             Log.d("Coroutine", "Exception: ${e.localizedMessage}")
         }
-
     }
+
 
     val webSocketUrl = "${WEB_SOCKET}project/${projectId}/"
 //

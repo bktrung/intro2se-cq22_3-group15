@@ -1,5 +1,6 @@
 package com.example.youmanage.screens.project_management
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -75,42 +76,81 @@ fun GanttChartScreen(
         accessToken.value?.let { token ->
 
             supervisorScope {
-                launch {
-                    projectManagementViewModel.getGanttChartData(
-                        id = projectId,
-                        authorization = "Bearer $token"
-                    )
+                // Launching API calls concurrently
+                val job1 = launch {
+                    try {
+                        projectManagementViewModel.getGanttChartData(
+                            id = projectId,
+                            authorization = "Bearer $token"
+                        )
+                    } catch (e: Exception) {
+                        Log.e("ProjectManagement", "Error fetching Gantt chart data: ${e.message}")
+                    }
                 }
 
-                launch {
-                    projectManagementViewModel.getProject(
-                        id = projectId,
-                        authorization = "Bearer $token"
-                    )
+                val job2 = launch {
+                    try {
+                        projectManagementViewModel.getProject(
+                            id = projectId,
+                            authorization = "Bearer $token"
+                        )
+                    } catch (e: Exception) {
+                        Log.e("ProjectManagement", "Error fetching project: ${e.message}")
+                    }
                 }
-                launch {
-                    authenticationViewModel.getUser("Bearer $token")
+
+                val job3 = launch {
+                    try {
+                        authenticationViewModel.getUser("Bearer $token")
+                    } catch (e: Exception) {
+                        Log.e("Authentication", "Error fetching user: ${e.message}")
+                    }
                 }
+
+                // Wait for all jobs to finish
+                job1.join()
+                job2.join()
+                job3.join()
             }
         }
     }
 
-    LaunchedEffect(Unit){
+    LaunchedEffect(Unit) {
         supervisorScope {
+            // WebSocket connections concurrently
             val url = "${WEB_SOCKET}project/$projectId/"
 
-            launch {
-                taskManagementViewModel.connectToTaskWebSocket(url)
+            val job1 = launch {
+                try {
+                    taskManagementViewModel.connectToTaskWebSocket(url)
+                } catch (e: Exception) {
+                    Log.e("TaskManagement", "Error connecting to task WebSocket: ${e.message}")
+                }
             }
 
-            launch {
-                projectManagementViewModel.connectToProjectWebsocket(url)
+            val job2 = launch {
+                try {
+                    projectManagementViewModel.connectToProjectWebsocket(url)
+                } catch (e: Exception) {
+                    Log.e("ProjectManagement", "Error connecting to project WebSocket: ${e.message}")
+                }
             }
-            launch {
-                projectManagementViewModel.connectToMemberWebsocket(url)
+
+            val job3 = launch {
+                try {
+                    projectManagementViewModel.connectToMemberWebsocket(url)
+                } catch (e: Exception) {
+                    Log.e("ProjectManagement", "Error connecting to member WebSocket: ${e.message}")
+                }
             }
+
+            // Wait for all jobs to finish
+            job1.join()
+            job2.join()
+            job3.join()
         }
     }
+
 
     HandleOutProjectWebSocket(
         memberSocket = memberSocket,

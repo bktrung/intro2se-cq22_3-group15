@@ -1,5 +1,6 @@
 package com.example.youmanage.screens.home
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -75,17 +76,32 @@ fun HomeScreen(
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             supervisorScope {
+                // Launch tasks concurrently
                 val job1 = launch {
-                    projectManagementViewModel.getProjectList(
-                        authorization = "Bearer $token"
-                    )
+                    try {
+                        projectManagementViewModel.getProjectList(
+                            authorization = "Bearer $token"
+                        )
+                    } catch (e: Exception) {
+                        Log.e("ProjectManagement", "Error fetching project list: ${e.message}")
+                    }
                 }
+
                 val job2 = launch {
-                    authenticationViewModel.getUser("Bearer $token")
+                    try {
+                        authenticationViewModel.getUser("Bearer $token")
+                    } catch (e: Exception) {
+                        Log.e("Authentication", "Error fetching user: ${e.message}")
+                    }
                 }
+
+                // Wait for both jobs to finish
+                job1.join()
+                job2.join()
             }
         }
     }
+
 
     var projectList by remember { mutableStateOf<List<Project>>(emptyList()) }
 

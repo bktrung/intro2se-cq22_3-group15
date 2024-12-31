@@ -64,6 +64,8 @@ import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.RoleViewmodel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 @Preview
 @Composable
@@ -92,12 +94,37 @@ fun MemberProfileScreen(
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
-            projectManagementViewModel.getProject(projectId, "Bearer $token")
-            projectManagementViewModel.connectToProjectWebsocket(webSocketUrl)
-            projectManagementViewModel.connectToMemberWebsocket(webSocketUrl)
-            roleViewmodel.getRolesOfMember(projectId, memberId, "Bearer $token")
+            // Constructing the WebSocket URL
+            val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
+
+            // Using supervisorScope to launch tasks concurrently
+            supervisorScope {
+                // Launching multiple tasks concurrently
+                val job1 = launch {
+                    projectManagementViewModel.getProject(projectId, "Bearer $token")
+                }
+
+                val job2 = launch {
+                    projectManagementViewModel.connectToProjectWebsocket(webSocketUrl)
+                }
+
+                val job3 = launch {
+                    projectManagementViewModel.connectToMemberWebsocket(webSocketUrl)
+                }
+
+                val job4 = launch {
+                    roleViewmodel.getRolesOfMember(projectId, memberId, "Bearer $token")
+                }
+
+                // Waiting for all the jobs to complete
+                job1.join()
+                job2.join()
+                job3.join()
+                job4.join()
+            }
         }
     }
+
 
     HandleOutProjectWebSocket(
         memberSocket = memberSocket,
