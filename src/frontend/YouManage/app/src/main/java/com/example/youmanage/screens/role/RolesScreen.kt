@@ -68,6 +68,8 @@ import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ChangeRequestViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.RoleViewmodel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 
 @Composable
@@ -111,14 +113,22 @@ fun RolesScreen(
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
-            roleViewmodel.getRoles(
-                projectId,
-                "Bearer $token"
-            )
-            projectManagementViewModel.isHost(
-                projectId,
-                "Bearer $token"
-            )
+            supervisorScope {
+                launch {
+                    roleViewmodel.getRoles(
+                        projectId,
+                        "Bearer $token"
+                    )
+                }
+
+                launch {
+                    projectManagementViewModel.isHost(
+                        projectId,
+                        "Bearer $token"
+                    )
+                }
+            }
+
         }
     }
 
@@ -126,19 +136,27 @@ fun RolesScreen(
         key1 = response,
         key2 = deleteResponse
     ) {
-        if (response is Resource.Success) {
-            roleViewmodel.getRoles(
-                projectId,
-                "Bearer ${accessToken.value}"
-            )
+        supervisorScope {
+            launch {
+                if (response is Resource.Success) {
+                    roleViewmodel.getRoles(
+                        projectId,
+                        "Bearer ${accessToken.value}"
+                    )
+                }
+            }
+
+            launch {
+                if (deleteResponse is Resource.Success) {
+                    roleViewmodel.getRoles(
+                        projectId,
+                        "Bearer ${accessToken.value}"
+                    )
+                }
+            }
         }
 
-        if (deleteResponse is Resource.Success) {
-            roleViewmodel.getRoles(
-                projectId,
-                "Bearer ${accessToken.value}"
-            )
-        }
+
     }
 
     HandleOutProjectWebSocket(

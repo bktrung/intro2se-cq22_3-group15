@@ -60,6 +60,8 @@ import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.IssuesViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -106,11 +108,34 @@ fun IssueDetailScreen(
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
-            issueManagementViewModel.getIssue(projectId, issueId, "Bearer $token")
-            taskManagementViewModel.getTasks(projectId, "Bearer $token")
-            projectManagementViewModel.getMembers(projectId, "Bearer $token")
+            supervisorScope {
+                launch {
+                    try {
+                        issueManagementViewModel.getIssue(projectId, issueId, "Bearer $token")
+                    } catch (e: Exception) {
+                        Log.e("IssueManagement", "Error fetching issue: ${e.message}")
+                    }
+                }
+
+                launch {
+                    try {
+                        taskManagementViewModel.getTasks(projectId, "Bearer $token")
+                    } catch (e: Exception) {
+                        Log.e("TaskManagement", "Error fetching tasks: ${e.message}")
+                    }
+                }
+
+                launch {
+                    try {
+                        projectManagementViewModel.getMembers(projectId, "Bearer $token")
+                    } catch (e: Exception) {
+                        Log.e("ProjectManagement", "Error fetching members: ${e.message}")
+                    }
+                }
+            }
         }
     }
+
 
     HandleOutProjectWebSocket(
         memberSocket = memberSocket,

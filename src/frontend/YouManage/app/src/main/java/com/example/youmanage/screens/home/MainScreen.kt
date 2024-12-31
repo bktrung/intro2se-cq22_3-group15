@@ -49,6 +49,8 @@ import com.example.youmanage.navigation.ProjectManagementNavGraph
 import com.example.youmanage.navigation.ProjectManagementRouteScreen
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.NotificationViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 data class BottomNavigationItem(
     val title: String,
@@ -112,8 +114,12 @@ fun MainScreen(
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let {
-            notificationViewModel.getUnreadCountNotifications("Bearer $it")
-            Log.d("Count in Main", badgeCount.toString())
+            supervisorScope {
+                launch {
+                    notificationViewModel.getUnreadCountNotifications("Bearer $it")
+                    Log.d("Count in Main", badgeCount.toString())
+                }
+            }
         }
     }
 
@@ -208,8 +214,6 @@ fun BottomNavigationBar(
                     )
                 }
             }
-
-
         }
     }
 }

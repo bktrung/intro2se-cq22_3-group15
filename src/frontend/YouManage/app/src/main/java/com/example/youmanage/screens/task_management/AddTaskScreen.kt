@@ -74,6 +74,9 @@ import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.viewmodel.ChangeRequestViewModel
 import com.example.youmanage.viewmodel.SnackBarViewModel
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 
 @Preview
@@ -106,8 +109,10 @@ fun CreateTaskScreen(
     var errorMessage by remember { mutableStateOf("") }
     var openErrorDialog by remember { mutableStateOf(false) }
 
+    var isLoading by remember {  mutableStateOf(true) }
+
     LaunchedEffect(task) {
-        if (task is Resource.Success) {
+        if (task is Resource.Success && !isLoading) {
             onCreateTask()
         } else if (task is Resource.Error) {
             errorMessage = (task as Resource.Error).message ?: "Something went wrong"
@@ -118,12 +123,19 @@ fun CreateTaskScreen(
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             val webSocketUrl = "${WEB_SOCKET}project/${projectId}/"
-            taskManagementViewModel.getMembers(projectId, "Bearer $token")
-            taskManagementViewModel.isHost(projectId, "Bearer $token")
-            authenticationViewModel.getUser("Bearer $token")
-            taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
-            projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-            projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+            supervisorScope {
+                // Track all async tasks with Deferred
+                val job1 = launch { taskManagementViewModel.getMembers(projectId, "Bearer $token") }
+                val job2 = launch { taskManagementViewModel.isHost(projectId, "Bearer $token") }
+                val job3 = launch { authenticationViewModel.getUser("Bearer $token") }
+                val job4 = launch { taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl) }
+                val job5 = launch { projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl) }
+                val job6 = launch { projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl) }
+
+                // Wait for all jobs to complete
+                joinAll(job1, job2, job3, job4, job5, job6)
+                isLoading = false // Set loading to false after all jobs are done
+            }
         }
     }
 
@@ -166,24 +178,28 @@ fun CreateTaskScreen(
 
     LaunchedEffect(send) {
         if (send) {
-            changeRequestViewModel.createChangeRequest(
-                projectId = projectId.toInt(),
-                SendChangeRequest(
-                    requestType = "CREATE",
-                    targetTable = "TASK",
-                    targetTableId = null,
-                    description = requestDescription,
-                    newData = TaskCreate(
-                        title = title,
-                        description = description,
-                        startDate = startDate,
-                        endDate = endDate,
-                        assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
-                        priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
+            supervisorScope {
+                launch {
+                    changeRequestViewModel.createChangeRequest(
+                        projectId = projectId.toInt(),
+                        SendChangeRequest(
+                            requestType = "CREATE",
+                            targetTable = "TASK",
+                            targetTableId = null,
+                            description = requestDescription,
+                            newData = TaskCreate(
+                                title = title,
+                                description = description,
+                                startDate = startDate,
+                                endDate = endDate,
+                                assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
+                                priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
+                            )
+                        ),
+                        "Bearer ${accessToken.value}"
                     )
-                ),
-                "Bearer ${accessToken.value}"
-            )
+                }
+            }
         }
     }
 

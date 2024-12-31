@@ -133,9 +133,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(60.dp))
 
-
             val textFieldBackgroundColor = MaterialTheme.colorScheme.surface
-
 
             TextFieldComponent(
                 content = username,

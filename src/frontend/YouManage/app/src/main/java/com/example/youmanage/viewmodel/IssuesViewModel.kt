@@ -13,6 +13,9 @@ import com.example.youmanage.repository.WebSocketRepository
 import com.example.youmanage.utils.Resource
 import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -22,6 +25,9 @@ class IssuesViewModel @Inject constructor(
     private val repository: IssuesRepository,
     private val webSocketRepository: WebSocketRepository
 ) : ViewModel() {
+
+    private val supervisorJob = SupervisorJob() // Tạo SupervisorJob
+    private val scope = CoroutineScope(Dispatchers.Main + supervisorJob) // Tạo CoroutineScope với SupervisorJob
 
     private val _issues = MutableLiveData<Resource<List<Issue>>>()
     val issues: LiveData<Resource<List<Issue>>> = _issues
@@ -39,55 +45,61 @@ class IssuesViewModel @Inject constructor(
     val issueSocket: LiveData<Resource<WebSocketResponse<Issue>>>
         get() = _issueSocket
 
+
     fun getIssues(projectId: String, authorization: String) {
         viewModelScope.launch {
             _issues.value = repository.getIssues(projectId, authorization)
         }
     }
 
+    // Cập nhật hàm createIssue sử dụng scope mới
     fun createIssue(
         projectId: String,
         issue: IssueCreate,
         authorization: String
     ) {
-        viewModelScope.launch {
+        scope.launch {
             _issue.value = repository.createIssue(projectId, issue, authorization)
         }
     }
 
+    // Cập nhật hàm getIssue sử dụng scope mới
     fun getIssue(
         projectId: String,
         issueId: String,
         authorization: String
     ) {
-        viewModelScope.launch {
+        scope.launch {
             _issue.value = repository.getIssue(projectId, issueId, authorization)
         }
     }
 
+    // Cập nhật hàm updateIssue sử dụng scope mới
     fun updateIssue(
         projectId: String,
         issueId: String,
         issueUpdate: IssueUpdate,
         authorization: String
     ) {
-        viewModelScope.launch {
+        scope.launch {
             _issueUpdate.value = repository.updateIssue(projectId, issueId, issueUpdate, authorization)
         }
     }
 
+    // Cập nhật hàm deleteIssue sử dụng scope mới
     fun deleteIssue(
         projectId: String,
         issueId: String,
         authorization: String
     ) {
-        viewModelScope.launch {
+        scope.launch {
             _response.value = repository.deleteIssue(projectId, issueId, authorization)
         }
     }
 
+    // Cập nhật hàm connectToIssueWebSocket sử dụng scope mới
     fun connectToIssueWebSocket(url: String) {
-        viewModelScope.launch {
+        scope.launch {
             webSocketRepository.connectToSocket(
                 url,
                 object : TypeToken<WebSocketResponse<Issue>>() {},
@@ -95,4 +107,6 @@ class IssuesViewModel @Inject constructor(
             )
         }
     }
+
+
 }

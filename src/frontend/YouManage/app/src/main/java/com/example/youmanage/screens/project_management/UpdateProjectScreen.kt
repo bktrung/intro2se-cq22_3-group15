@@ -59,6 +59,12 @@ import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -79,15 +85,47 @@ fun UpdateProjectScreen(
     val updateResponse by projectManagementViewModel.updateProjectResponse.observeAsState()
     val user by authenticationViewModel.user.observeAsState()
 
-    LaunchedEffect(accessToken.value){
-        accessToken.value?.let {
+    LaunchedEffect(accessToken.value) {
+        accessToken.value?.let { token ->
+            val bearerToken = "Bearer $token"
             val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
-            authenticationViewModel.getUser("Bearer $it")
-            projectManagementViewModel.getProject(projectId, "Bearer $it")
-            projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-            projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+
+            supervisorScope {
+                launch {
+                    try {
+                        authenticationViewModel.getUser(bearerToken)
+                    } catch (e: Exception) {
+                        Log.e("Authentication", "Error fetching user: ${e.message}")
+                    }
+                }
+
+                launch {
+                    try {
+                        projectManagementViewModel.getProject(projectId, bearerToken)
+                    } catch (e: Exception) {
+                        Log.e("ProjectManagement", "Error fetching project: ${e.message}")
+                    }
+                }
+
+                launch {
+                    try {
+                        projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
+                    } catch (e: Exception) {
+                        Log.e("WebSocket", "Error connecting to project WebSocket: ${e.message}")
+                    }
+                }
+
+                launch {
+                    try {
+                        projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+                    } catch (e: Exception) {
+                        Log.e("WebSocket", "Error connecting to member WebSocket: ${e.message}")
+                    }
+                }
+            }
         }
     }
+
 
     HandleOutProjectWebSocket(
         memberSocket = memberSocket,
@@ -121,10 +159,14 @@ fun UpdateProjectScreen(
 
     LaunchedEffect(updateResponse) {
         if (updateResponse is Resource.Success) {
-            projectManagementViewModel.getProject(
-                id = projectId,
-                authorization = "Bearer ${accessToken.value}"
-            )
+            supervisorScope {
+                launch {
+                    projectManagementViewModel.getProject(
+                        id = projectId,
+                        authorization = "Bearer ${accessToken.value}"
+                    )
+                }
+            }
             Toast.makeText(context, "Updated Successfully!", Toast.LENGTH_SHORT).show()
         } else if(updateResponse is Resource.Error) {
             Toast.makeText(context, "Updated Failed!", Toast.LENGTH_SHORT).show()
@@ -347,22 +389,35 @@ fun UpdateProjectScreen(
             })
     }
 
+    val independentScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     AlertDialog(
         title = "Update Project",
         content = "Are you sure you want to update this project?",
         showDialog = showUpdateDialog,
         onDismiss = { showUpdateDialog = false },
         onConfirm = {
-            projectManagementViewModel.updateProject(
-                id = projectId,
-                project = ProjectCreate(
-                    name = title,
-                    description = description,
-                    dueDate = dueDate
-                ),
-                authorization = "Bearer ${accessToken.value}"
-            )
-            showUpdateDialog = false
+            independentScope.launch {
+                try {
+                    projectManagementViewModel.updateProject(
+                        id = projectId,
+                        project = ProjectCreate(
+                            name = title,
+                            description = description,
+                            dueDate = dueDate
+                        ),
+                        authorization = "Bearer ${accessToken.value}"
+                    )
+                } catch (e: Exception) {
+                    Log.e("UpdateProject", "Failed to update project: ${e.message}")
+                } finally {
+                    // Đảm bảo dialog được tắt bất kể thành công hay lỗi
+                    withContext(Dispatchers.Main) {
+                        showUpdateDialog = false
+                    }
+                }
+            }
         }
+
     )
 }

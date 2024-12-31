@@ -10,6 +10,9 @@ import com.example.youmanage.data.remote.chat.MessageResponse
 import com.example.youmanage.repository.ChatRepository
 import com.example.youmanage.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -17,7 +20,10 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val repository: ChatRepository
-): ViewModel() {
+) : ViewModel() {
+
+    private val supervisorJob = SupervisorJob() // Tạo SupervisorJob
+    private val scope = CoroutineScope(Dispatchers.Main + supervisorJob) // Tạo CoroutineScope với SupervisorJob
 
     private val _messages = MutableLiveData<List<Message>>()
     val messages: MutableLiveData<List<Message>> get() = _messages
@@ -37,13 +43,13 @@ class ChatViewModel @Inject constructor(
     fun sendMessage(
         message: MessageRequest,
     ) {
-        viewModelScope.launch {
+        scope.launch {
             response.value = repository.sendMessage(messageRequest = message)
         }
     }
 
     fun connectToSocket(url: String) {
-        viewModelScope.launch {
+        scope.launch {
             repository.connectToSocket(url, _messageSocket)
         }
     }
@@ -52,7 +58,7 @@ class ChatViewModel @Inject constructor(
         projectId: String,
         authorization: String
     ) {
-        viewModelScope.launch {
+        scope.launch {
             // Lấy các tin nhắn mới từ API
             val newListMessage = repository.getMessages(
                 projectId = projectId,
@@ -72,9 +78,8 @@ class ChatViewModel @Inject constructor(
         projectId: String,
         cursor: String? = null,
         authorization: String
-    ){
-
-        viewModelScope.launch {
+    ) {
+        scope.launch {
             _isLoading.value = true
 
             val response = repository.getMessages(
@@ -84,16 +89,16 @@ class ChatViewModel @Inject constructor(
             )
 
             try {
-                if(response is Resource.Success){
-                   response.data?.let {
-                       nextCursor = it.next?.substringAfter("cursor=")
-                       Log.d("ChatViewModel", "getMessages: $nextCursor")
-                       preCursor = it.previous
-                       _messages.value = (_messages.value ?: emptyList()) + it.results
-                       Log.d("ChatViewModel", "getMessages: ${_messages.value}")
-                   }
+                if (response is Resource.Success) {
+                    response.data?.let {
+                        nextCursor = it.next?.substringAfter("cursor=")
+                        Log.d("ChatViewModel", "getMessages: $nextCursor")
+                        preCursor = it.previous
+                        _messages.value = (_messages.value ?: emptyList()) + it.results
+                        Log.d("ChatViewModel", "getMessages: ${_messages.value}")
+                    }
                 }
-            } catch(e: Exception) {
+            } catch (e: Exception) {
                 Log.e("ChatViewModel", "Exception: ${e.message}")
             } finally {
                 delay(500)
@@ -102,14 +107,13 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-
-    fun getPreviousMessages(projectId: String, authorization: String){
+    fun getPreviousMessages(projectId: String, authorization: String) {
         preCursor?.let {
             getMessages(projectId, it, authorization)
         }
     }
 
-    fun getNextMessages(projectId: String, authorization: String){
+    fun getNextMessages(projectId: String, authorization: String) {
         nextCursor?.let {
             getMessages(projectId, it, authorization)
         }

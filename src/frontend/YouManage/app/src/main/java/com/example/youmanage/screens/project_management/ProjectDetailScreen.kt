@@ -73,6 +73,8 @@ import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 @Composable
 fun ProjectDetailScreen(
@@ -112,25 +114,47 @@ fun ProjectDetailScreen(
 
     val context = LocalContext.current
 
-    LaunchedEffect(accessToken.value)
-    {
+    LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             val authorization = "Bearer $token"
 
-            projectManagementViewModel.getProject(
-                id = id.toString(),
-                authorization = authorization
-            )
-            projectManagementViewModel.getProgressTrack(
-                id = id.toString(),
-                authorization = authorization
-            )
-            projectManagementViewModel.isHost(
-                id = id.toString(),
-                authorization = authorization
-            )
+            // Lệnh gọi API và WebSocket được thực hiện tuần tự hoặc song song có kiểm soát
+            try {
+                // Gọi API trước
+                 supervisorScope {
+                    // Khởi chạy các coroutine song song cho các API gọi
+                    launch {
+                        projectManagementViewModel.getProject(id = id.toString(), authorization = authorization)
+                    }
+                    launch {
+                        projectManagementViewModel.getProgressTrack(id = id.toString(), authorization = authorization)
+                    }
+                    launch {
+                        projectManagementViewModel.isHost(id = id.toString(), authorization = authorization)
+                    }
+
+                    // Kết nối WebSocket sau khi các API đã được gọi thành công
+                    val webSocketUrl = "${WEB_SOCKET}project/$id/"
+                    launch {
+                        authenticationViewModel.getUser("Bearer $token")
+                    }
+                    launch {
+                        projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
+                    }
+                    launch {
+                        projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+                    }
+                    launch {
+                        taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("ProjectDetailScreen", "Error occurred: ${e.message}")
+            }
+
         }
     }
+
 
     LaunchedEffect(addMemberResponse) {
         if (addMemberResponse is Resource.Error && isAdd) {
@@ -158,16 +182,7 @@ fun ProjectDetailScreen(
         }
     }
 
-    LaunchedEffect(accessToken.value)
-    {
-        accessToken.value?.let {
-            val webSocketUrl = "${WEB_SOCKET}project/$id/"
-            authenticationViewModel.getUser("Bearer $it")
-            projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-            projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
-            taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
-        }
-    }
+
 
     HandleOutProjectWebSocket(
         memberSocket = memberSocket,

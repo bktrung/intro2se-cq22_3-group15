@@ -3,18 +3,14 @@
   <component name="deploymentTargetSelector">
     <selectionStates>
       <SelectionState runConfigName="app">
-
-        <option name="selectionMode" value="DIALOG" />
-
-        <DropdownSelection timestamp="2024-12-28T09:07:37.982588200Z">
+        <option name="selectionMode" value="DROPDOWN" />
+        <DropdownSelection timestamp="2024-12-30T15:31:40.344545800Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\ACER\.android\avd\Pixel_7_Pro_API_35.avd" />
-
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=5ab40520" />
             </handle>
           </Target>
         </DropdownSelection>
-
         <DialogSelection>
           <targets>
             <Target type="DEFAULT_BOOT">

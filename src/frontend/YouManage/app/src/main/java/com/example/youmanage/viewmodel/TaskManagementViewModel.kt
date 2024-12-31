@@ -19,6 +19,9 @@ import com.example.youmanage.repository.WebSocketRepository
 import com.example.youmanage.utils.Resource
 import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import retrofit2.Response
@@ -30,6 +33,12 @@ class TaskManagementViewModel @Inject constructor(
     private val projectManagementRepository: ProjectManagementRepository,
     private val webSocketRepository: WebSocketRepository
 ) : ViewModel() {
+
+    // Tạo SupervisorJob cho toàn bộ ViewModel
+    private val supervisorJob = SupervisorJob()
+
+    // Tạo scope với SupervisorJob
+    private val scope = CoroutineScope(Dispatchers.Main + supervisorJob)
 
     private val _tasks = MutableLiveData<Resource<List<Task>>>()
     val tasks: LiveData<Resource<List<Task>>> = _tasks
@@ -73,11 +82,13 @@ class TaskManagementViewModel @Inject constructor(
     val isHost: LiveData<Boolean>
         get() = _isHost
 
+    // Các phương thức như trước, sử dụng scope.launch thay vì viewModelScope.launch
+
     fun isHost(projectId: String, authorization: String) {
-        viewModelScope.launch {
+        scope.launch {
             val response = projectManagementRepository.isHost(projectId, authorization)
             if (response is Resource.Success) {
-                _isHost.value = response.data?.isHost ?:false
+                _isHost.value = response.data?.isHost ?: false
             } else {
                 _isHost.value = false
             }
@@ -85,7 +96,7 @@ class TaskManagementViewModel @Inject constructor(
     }
 
     fun getMembers(projectId: String, authorization: String) {
-        viewModelScope.launch {
+        scope.launch {
             val response = projectManagementRepository.getMembers(projectId, authorization)
             if (response is Resource.Success) {
                 _members.value = response.data ?: emptyList()
@@ -99,15 +110,14 @@ class TaskManagementViewModel @Inject constructor(
     fun getTasks(
         projectId: String,
         authorization: String
-    ){
-        viewModelScope.launch {
+    ) {
+        scope.launch {
             _tasks.value = repository.getTasks(projectId, authorization)
         }
     }
 
-
-    fun getMyTask(authorization: String){
-        viewModelScope.launch {
+    fun getMyTask(authorization: String) {
+        scope.launch {
             val response = repository.getMyTask(authorization)
             if (response is Resource.Success) {
                 _myTask.value = response.data ?: emptyList()
@@ -117,13 +127,12 @@ class TaskManagementViewModel @Inject constructor(
         }
     }
 
-
     fun createTask(
         projectId: String,
         task: TaskCreate,
         authorization: String
     ) {
-        viewModelScope.launch {
+        scope.launch {
             _task.value = repository.createTask(projectId, task, authorization)
         }
     }
@@ -132,8 +141,8 @@ class TaskManagementViewModel @Inject constructor(
         projectId: String,
         taskId: String,
         authorization: String
-    ){
-        viewModelScope.launch {
+    ) {
+        scope.launch {
             _task.value = repository.getTask(projectId, taskId, authorization)
         }
     }
@@ -143,8 +152,8 @@ class TaskManagementViewModel @Inject constructor(
         taskId: String,
         task: TaskUpdate,
         authorization: String
-    ){
-        viewModelScope.launch {
+    ) {
+        scope.launch {
             _taskUpdate.value = repository.updateTask(projectId, taskId, task, authorization)
         }
     }
@@ -154,8 +163,8 @@ class TaskManagementViewModel @Inject constructor(
         taskId: String,
         task: TaskUpdateStatus,
         authorization: String
-    ){
-        viewModelScope.launch {
+    ) {
+        scope.launch {
             _taskUpdate.value = repository.updateTaskStatusAndAssignee(projectId, taskId, task, authorization)
         }
     }
@@ -164,8 +173,8 @@ class TaskManagementViewModel @Inject constructor(
         projectId: String,
         taskId: String,
         authorization: String
-    ){
-        viewModelScope.launch {
+    ) {
+        scope.launch {
             _response.value = repository.deleteTask(projectId, taskId, authorization)
         }
     }
@@ -174,11 +183,10 @@ class TaskManagementViewModel @Inject constructor(
         projectId: String,
         taskId: String,
         authorization: String
-    ){
-        viewModelScope.launch {
+    ) {
+        scope.launch {
             _comments.value = repository.getComments(projectId, taskId, authorization)
         }
-
     }
 
     fun postComment(
@@ -186,12 +194,11 @@ class TaskManagementViewModel @Inject constructor(
         taskId: String,
         comment: Content,
         authorization: String
-    ){
-        viewModelScope.launch {
+    ) {
+        scope.launch {
             _comment.value = repository.postComment(projectId, taskId, comment, authorization)
         }
     }
-
 
     fun updateComment(
         projectId: String,
@@ -199,8 +206,8 @@ class TaskManagementViewModel @Inject constructor(
         commentId: String,
         comment: Content,
         authorization: String
-    ){
-        viewModelScope.launch {
+    ) {
+        scope.launch {
             _comment.value = repository.updateComment(projectId, taskId, commentId, comment, authorization)
         }
     }
@@ -210,8 +217,8 @@ class TaskManagementViewModel @Inject constructor(
         taskId: String,
         commentId: String,
         authorization: String
-    ){
-        viewModelScope.launch {
+    ) {
+        scope.launch {
             _deleteCommentResponse.value = repository.deleteComment(
                 projectId,
                 taskId,
@@ -222,7 +229,7 @@ class TaskManagementViewModel @Inject constructor(
     }
 
     fun connectToTaskWebSocket(url: String) {
-        viewModelScope.launch {
+        scope.launch {
             webSocketRepository.connectToSocket(
                 url,
                 object : TypeToken<WebSocketResponse<Task>>() {},
@@ -230,4 +237,5 @@ class TaskManagementViewModel @Inject constructor(
             )
         }
     }
+
 }

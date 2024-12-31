@@ -64,6 +64,9 @@ import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
+import kotlin.coroutines.cancellation.CancellationException
 
 
 @Composable
@@ -87,19 +90,51 @@ fun TaskListScreen(
     val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
     val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
     val user by authenticationViewModel.user.observeAsState()
+    var isSelectedButton by rememberSaveable { mutableIntStateOf(0) }
 
     val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
 
-    LaunchedEffect(accessToken.value) {
-        accessToken.value?.let { token ->
-            taskManagementViewModel.getTasks(
-                projectId = projectId,
-                authorization = "Bearer $token"
-            )
-            authenticationViewModel.getUser("Bearer $token")
+    LaunchedEffect(Unit){
+        try{
+            supervisorScope {
+                launch {
+                    projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
+                }
+                launch {
+                    taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
+                }
+
+            }
+
+        } catch (e: CancellationException) {
+            Log.d("Coroutine", "Job was cancelled: ${e.localizedMessage}")
+        } catch (e: Exception) {
+            Log.d("Coroutine", "Exception: ${e.localizedMessage}")
         }
-        projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-        projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+
+    }
+
+    LaunchedEffect(accessToken.value) {
+        try {
+            accessToken.value?.let { token ->
+                supervisorScope {
+                    launch {
+                        taskManagementViewModel.getTasks(
+                            projectId = projectId,
+                            authorization = "Bearer $token"
+                        )
+                    }
+                    launch {
+                        authenticationViewModel.getUser("Bearer $token")
+                    }
+                }
+            }
+        } catch (e: CancellationException) {
+            Log.d("Coroutine", "Job was cancelled: ${e.localizedMessage}")
+        } catch (e: Exception) {
+            Log.d("Coroutine", "Exception: ${e.localizedMessage}")
+        }
+
     }
 
     HandleOutProjectWebSocket(
@@ -110,31 +145,43 @@ fun TaskListScreen(
         onDisableAction = onDisableAction
     )
 
-    var isSelectedButton by rememberSaveable { mutableIntStateOf(0) }
-
-    LaunchedEffect(Unit) {
-        taskManagementViewModel.connectToTaskWebSocket(webSocketUrl)
-    }
-
     LaunchedEffect(taskSocket) {
-        taskManagementViewModel.getTasks(
-            projectId = projectId,
-            authorization = "Bearer ${accessToken.value}"
-        )
+        try {
+            supervisorScope {
+                launch {
+                    taskManagementViewModel.getTasks(
+                        projectId = projectId,
+                        authorization = "Bearer ${accessToken.value}"
+                    )
+                }
+            }
+        } catch (e: CancellationException) {
+            Log.d("Coroutine", "Job was cancelled: ${e.localizedMessage}")
+        } catch (e: Exception) {
+            Log.d("Coroutine", "Exception: ${e.localizedMessage}")
+        }
+
     }
 
     LaunchedEffect(
         key1 = isSelectedButton,
         key2 = tasks
     ) {
-        if (tasks is Resource.Success) {
-            Log.d("TAG", "TaskListScreen: ${statusMapping[isSelectedButton]}")
-            filterTasks = tasks?.data?.filter {
-                it.status == statusMapping[isSelectedButton].second
-            } ?: emptyList()
+        try {
+            if (tasks is Resource.Success) {
+                Log.d("TAG", "TaskListScreen: ${statusMapping[isSelectedButton]}")
+                filterTasks = tasks?.data?.filter {
+                    it.status == statusMapping[isSelectedButton].second
+                } ?: emptyList()
+            }
+
+            Log.d("TAG", "TaskListScreen: $filterTasks")
+        } catch (e: CancellationException) {
+            Log.d("Coroutine", "Job was cancelled: ${e.localizedMessage}")
+        } catch (e: Exception) {
+            Log.d("Coroutine", "Exception: ${e.localizedMessage}")
         }
 
-        Log.d("TAG", "TaskListScreen: $filterTasks")
     }
 
     Scaffold(

@@ -1,6 +1,7 @@
 package com.example.youmanage.screens.task_management
 
 import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.annotation.RequiresApi
@@ -94,6 +95,9 @@ import com.example.youmanage.viewmodel.ChangeRequestViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
+import kotlin.coroutines.cancellation.CancellationException
 
 
 val primaryColor: Color
@@ -147,32 +151,6 @@ fun TaskDetailScreen(
 
     var requestDescription by remember { mutableStateOf("") }
 
-    LaunchedEffect(accessToken.value) {
-        accessToken.value?.let { token ->
-            taskManagementViewModel.getTask(projectId, taskId, "Bearer $token")
-            taskManagementViewModel.getComments(projectId, taskId, "Bearer $token")
-            taskManagementViewModel.getMembers(projectId, "Bearer $token")
-            taskManagementViewModel.isHost(projectId, "Bearer $token")
-            authenticationViewModel.getUser("Bearer $token")
-        }
-    }
-
-    val webSocketUrl = "${WEB_SOCKET}project/${projectId}/"
-
-    LaunchedEffect(Unit) {
-        projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-        projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
-        taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
-    }
-
-    HandleOutProjectWebSocket(
-        memberSocket = memberSocket,
-        projectSocket = projectSocket,
-        user = user,
-        projectId = projectId,
-        onDisableAction = onDisableAction
-    )
-
     val scrollable = rememberScrollState()
     var showStatusDialog by remember { mutableStateOf(false) }
     var showMemberDialog by rememberSaveable { mutableStateOf(false) }
@@ -193,78 +171,184 @@ fun TaskDetailScreen(
 
     val context = LocalContext.current
 
-    LaunchedEffect(response) {
-        if (response is Resource.Success) {
-            showDeleteDialog = false
-            onNavigateBack()
-        } else if (response is Resource.Error){
-            Toast.makeText(context, "Something went wrong. Try again!", Toast.LENGTH_SHORT).show()
+    LaunchedEffect(accessToken.value) {
+        try{
+            accessToken.value?.let { token ->
+                supervisorScope {
+                    launch {
+                        taskManagementViewModel.getTask(projectId, taskId, "Bearer $token")
+                    }
+                    launch {
+                        taskManagementViewModel.getComments(projectId, taskId, "Bearer $token")
+                    }
+                    launch {
+                        taskManagementViewModel.getMembers(projectId, "Bearer $token")
+                    }
+                    launch {
+                        taskManagementViewModel.isHost(projectId, "Bearer $token")
+                    }
+                    launch {
+                        authenticationViewModel.getUser("Bearer $token")
+                    }
+                }
+            }
+        } catch (e: CancellationException) {
+            Log.d("Coroutine", "Job was cancelled: ${e.localizedMessage}")
+        } catch (e: Exception) {
+            Log.d("Coroutine", "Exception: ${e.localizedMessage}")
         }
+
+    }
+
+    val webSocketUrl = "${WEB_SOCKET}project/${projectId}/"
+//
+//    LaunchedEffect(Unit) {
+//        projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
+//        projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+//        taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
+//    }
+
+//    HandleOutProjectWebSocket(
+//        memberSocket = memberSocket,
+//        projectSocket = projectSocket,
+//        user = user,
+//        projectId = projectId,
+//        onDisableAction = onDisableAction
+//    )
+
+
+    LaunchedEffect(response) {
+        try {
+            if (response is Resource.Success) {
+                showDeleteDialog = false
+                onNavigateBack()
+            } else if (response is Resource.Error){
+                Toast.makeText(context, "Something went wrong. Try again!", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: CancellationException) {
+            Log.d("Coroutine", "Job was cancelled: ${e.localizedMessage}")
+        } catch (e: Exception) {
+            Log.d("Coroutine", "Exception: ${e.localizedMessage}")
+        }
+
     }
 
     LaunchedEffect(update) {
-        if (update) {
-            taskManagementViewModel.updateTask(
-                projectId,
-                taskId,
-                newTask,
-                "Bearer ${accessToken.value}"
-            )
-            update = false
+        try {
+            if (update) {
+                supervisorScope {
+                    launch {
+                        taskManagementViewModel.updateTask(
+                            projectId,
+                            taskId,
+                            newTask,
+                            "Bearer ${accessToken.value}"
+                        )
+                    }
+
+                }
+
+                update = false
+            }
+        } catch (e: CancellationException) {
+            Log.d("Coroutine", "Job was cancelled: ${e.localizedMessage}")
+        } catch (e: Exception) {
+            Log.d("Coroutine", "Exception: ${e.localizedMessage}")
         }
+
     }
 
     LaunchedEffect(
         key1 = comment,
         key2 = commentDelete
     ) {
-        if (comment is Resource.Success || commentDelete is Resource.Success) {
-            taskManagementViewModel.getComments(
-                projectId,
-                taskId,
-                "Bearer ${accessToken.value}"
-            )
+        try{
+            if (comment is Resource.Success || commentDelete is Resource.Success) {
+                supervisorScope {
+                    launch {
+                        taskManagementViewModel.getComments(
+                            projectId,
+                            taskId,
+                            "Bearer ${accessToken.value}"
+                        )
+                    }
+                }
+
+            }
+        } catch (e: CancellationException) {
+            Log.d("Coroutine", "Job was cancelled: ${e.localizedMessage}")
+        } catch (e: Exception) {
+            Log.d("Coroutine", "Exception: ${e.localizedMessage}")
         }
+
     }
 
     LaunchedEffect(taskUpdate) {
-        if (taskUpdate is Resource.Success) {
-            taskManagementViewModel.getTask(
-                projectId,
-                taskId,
-                "Bearer ${accessToken.value}"
-            )
+        try {
+            if (taskUpdate is Resource.Success) {
+                supervisorScope {
+                    launch {
+                        taskManagementViewModel.getTask(
+                            projectId,
+                            taskId,
+                            "Bearer ${accessToken.value}"
+                        )
+                    }
+                }
+            }
+        } catch (e: CancellationException) {
+            Log.d("Coroutine", "Job was cancelled: ${e.localizedMessage}")
+        } catch (e: Exception) {
+            Log.d("Coroutine", "Exception: ${e.localizedMessage}")
         }
+
     }
 
     LaunchedEffect(task) {
-        if (task is Resource.Success) {
-            task?.data?.let {
-                taskState = taskState.copy(
-                    title = it.title,
-                    editTitle = it.title,
-                    description = it.description ?: "Your Description",
-                    status = statusMapping.firstOrNull { item ->
-                        item.second == it.status
-                    }?.first.toString(),
-                    username = it.assignee?.username ?: "Unassigned",
-                    startDate = it.startDate,
-                    endDate = it.endDate,
-                    memberId = it.assignee?.id ?: -1,
-                    priority = priorityChoice.indexOf(
-                        it.priority?.lowercase()?.replaceFirstChar { char -> char.uppercase() }
+        try{
+            if (task is Resource.Success) {
+                task?.data?.let {
+                    taskState = taskState.copy(
+                        title = it.title,
+                        editTitle = it.title,
+                        description = it.description ?: "Your Description",
+                        status = statusMapping.firstOrNull { item ->
+                            item.second == it.status
+                        }?.first.toString(),
+                        username = it.assignee?.username ?: "Unassigned",
+                        startDate = it.startDate,
+                        endDate = it.endDate,
+                        memberId = it.assignee?.id ?: -1,
+                        priority = priorityChoice.indexOf(
+                            it.priority?.lowercase()?.replaceFirstChar { char -> char.uppercase() }
+                        )
                     )
-                )
+                }
             }
+        } catch (e: CancellationException) {
+            Log.d("Coroutine", "Job was cancelled: ${e.localizedMessage}")
+        } catch (e: Exception) {
+            Log.d("Coroutine", "Exception: ${e.localizedMessage}")
         }
+
+
     }
 
+
     LaunchedEffect(changeRequestResponse){
-        if(changeRequestResponse is Resource.Success){
-            Toast.makeText(context, "Request sent successfully!", Toast.LENGTH_SHORT).show()
-        } else if (changeRequestResponse is Resource.Error){
-            Toast.makeText(context, "Something went wrong. Try again!", Toast.LENGTH_SHORT).show()
+        try{
+            if(changeRequestResponse is Resource.Success){
+                Toast.makeText(context, "Request sent successfully!", Toast.LENGTH_SHORT).show()
+            } else if (changeRequestResponse is Resource.Error){
+                Toast.makeText(context, "Something went wrong. Try again!", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: CancellationException) {
+            Log.d("Coroutine", "Job was cancelled: ${e.localizedMessage}")
+        } catch (e: Exception) {
+            Log.d("Coroutine", "Exception: ${e.localizedMessage}")
         }
+
+
     }
 
     Scaffold(
@@ -358,7 +442,11 @@ fun TaskDetailScreen(
             AnimatedVisibility(visible = showTitleEditor) {
                 TextField(
                     value = taskState.editTitle,
-                    textStyle = TextStyle(fontSize = 20.sp, fontFamily = fontFamily),
+                    textStyle = TextStyle(
+                        fontSize = 20.sp,
+                        fontFamily = fontFamily,
+                        color = MaterialTheme.colorScheme.primary
+                    ),
                     leadingIcon = {
                         Icon(
                             painter = painterResource(id = R.drawable.project_title_icon),
@@ -374,11 +462,12 @@ fun TaskDetailScreen(
                         )
                     },
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = primaryColor,
-                        unfocusedContainerColor = primaryColor,
+                        focusedContainerColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.onSurface,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent
                     ),
+
                     modifier = Modifier
                         .fillMaxWidth()
                 )

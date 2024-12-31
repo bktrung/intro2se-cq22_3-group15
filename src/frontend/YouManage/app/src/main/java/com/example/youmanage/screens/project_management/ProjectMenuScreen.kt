@@ -56,7 +56,11 @@ import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import okhttp3.internal.filterList
+import kotlin.coroutines.cancellation.CancellationException
 
 
 data class ProjectMenuItem(
@@ -93,14 +97,12 @@ fun ProjectMenuScreen(
     val project by projectManagementViewModel.project.observeAsState()
     val empowerResponse by projectManagementViewModel.empowerResponse.observeAsState()
     val quitResponse by projectManagementViewModel.quitResponse.observeAsState()
+    val isHost by projectManagementViewModel.isHost.observeAsState()
 
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showQuitDialog by remember { mutableStateOf(false) }
     var showDeleteErrorDialog by remember { mutableStateOf(false) }
     var showChooseMemberDialog by remember { mutableStateOf(false) }
-
-    var hostId by remember { mutableIntStateOf(-1) }
-    var userId by remember { mutableIntStateOf(-2) }
 
     var onlyEmpower by remember { mutableStateOf(false) }
 
@@ -117,12 +119,29 @@ fun ProjectMenuScreen(
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             val webSocketUrl = "${WEB_SOCKET}project/${id}/"
-            authenticationViewModel.getUser("Bearer $token")
-            projectManagementViewModel.getProject(id = id, authorization = "Bearer $token")
-            projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-            projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+
+            // Khởi tạo supervisorScope để quản lý các coroutine
+            supervisorScope {
+                // Lưu các job vào danh sách
+                val jobs = listOf(
+                    launch { authenticationViewModel.getUser("Bearer $token") },
+                    launch { projectManagementViewModel.getProject(id = id, authorization = "Bearer $token") },
+                    launch { projectManagementViewModel.isHost(id = id, authorization = "Bearer $token") },
+                    launch { projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl) },
+                    launch { projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl) }
+                )
+
+                // Đợi tất cả các coroutine hoàn thành
+                try {
+                    jobs.joinAll() // Đợi tất cả các job hoàn thành
+                } catch (e: CancellationException) {
+                    // Xử lý khi có một job bị hủy
+                    Log.e("Project Menu Coroutines", "Job was cancelled", e)
+                }
+            }
         }
     }
+
 
     HandleOutProjectWebSocket(
         memberSocket = memberSocket,
@@ -188,7 +207,7 @@ fun ProjectMenuScreen(
                 val size = project?.data?.members?.size ?: 1
                 onlyEmpower = true
                 if(size > 1){
-                    if(userId == hostId){
+                    if(isHost == true) {
                         showChooseMemberDialog = true
                     } else {
                         Toast.makeText(context, "You are not the project owner", Toast.LENGTH_SHORT).show()
@@ -203,7 +222,7 @@ fun ProjectMenuScreen(
             icon = R.drawable.trash_icon,
             color = MaterialTheme.colorScheme.primary,
             onClick = {
-                if(userId == hostId){
+                if(isHost == true){
                     showDeleteDialog = true
                 } else{
                     Toast.makeText(context, "You are not the host of this project", Toast.LENGTH_SHORT).show()
@@ -218,7 +237,7 @@ fun ProjectMenuScreen(
             onClick = {
                 val size = project?.data?.members?.size ?: 1
                 if(size > 1){
-                    if(userId == hostId){
+                    if(isHost == true){
                         showChooseMemberDialog = true
                     } else {
                         showQuitDialog = true
@@ -234,10 +253,15 @@ fun ProjectMenuScreen(
         if(empowerResponse is Resource.Success && accessToken.value != null && !onlyEmpower){
             if(user?.data?.id != null){
                 Log.d("Quit", accessToken.value.toString())
-                projectManagementViewModel.quitProject(
-                    id = id,
-                    authorization = "Bearer ${accessToken.value}"
-                )
+                supervisorScope {
+                    launch {
+                        projectManagementViewModel.quitProject(
+                            id = id,
+                            authorization = "Bearer ${accessToken.value}"
+                        )
+                    }
+                }
+
             }
         }
 
@@ -250,16 +274,6 @@ fun ProjectMenuScreen(
     LaunchedEffect(quitResponse){
         if(quitResponse is Resource.Success && accessToken.value != null){
             onQuitProjectSuccess()
-        }
-    }
-
-    LaunchedEffect(
-        key1 = project,
-        key2 = user
-    ){
-        if(project is Resource.Success && user is Resource.Success){
-            hostId = project?.data?.host?.id ?: -1
-            userId = user?.data?.id ?: -2
         }
     }
 
@@ -295,7 +309,7 @@ fun ProjectMenuScreen(
                 items(projectMenuItems.size) { index ->
                     val item = projectMenuItems[index]
                     val shouldShowItem =
-                        item.title != "Delete Project" || (item.title === "Delete Project" && userId == hostId)
+                        item.title != "Delete Project" || (item.title === "Delete Project" && isHost == true)
                     if (shouldShowItem) {
                         MenuItem(
                             trailingIcon = {

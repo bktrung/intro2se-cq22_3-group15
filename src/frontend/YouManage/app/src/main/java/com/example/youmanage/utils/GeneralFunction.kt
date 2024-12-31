@@ -34,10 +34,10 @@ fun extractMessages(jsonResponse: String): String {
 
 fun randomColor(index: Int): Int {
     val colors = listOf(
-        Color(0xffb6f36a),
         Color(0xFFDAB00A),
-        Color(0xfffe9b64),
+        Color(0xffb6f36a),
         Color(0xff94dafb),
+        Color(0xfffe9b64),
         Color(0xffc9a0ff),
         Color.Cyan.copy(alpha = 0.6f),
         Color(0xFFF44336).copy(alpha = 0.6f)

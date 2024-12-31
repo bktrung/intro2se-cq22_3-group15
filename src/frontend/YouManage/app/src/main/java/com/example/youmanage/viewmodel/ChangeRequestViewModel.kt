@@ -12,6 +12,9 @@ import com.example.youmanage.repository.ChangeRequestRepository
 import com.example.youmanage.repository.WebSocketRepository
 import com.example.youmanage.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -29,6 +32,9 @@ class ChangeRequestViewModel @Inject constructor(
     private val webSocketRepository: WebSocketRepository
 ) : ViewModel() {
 
+    private val supervisorJob = SupervisorJob() // Tạo SupervisorJob
+    private val scope = CoroutineScope(Dispatchers.Main + supervisorJob) // Tạo CoroutineScope với SupervisorJob
+
     private val _requests = MutableLiveData<List<ChangeRequest>>(emptyList())
     val requests: MutableLiveData<List<ChangeRequest>> get() = _requests
 
@@ -44,14 +50,14 @@ class ChangeRequestViewModel @Inject constructor(
     private var preCursor: String? = null
     var isLoading = MutableStateFlow(false)
 
+    // Cập nhật hàm lấy ChangeRequests với scope mới
     fun getChangeRequests(
         projectId: Int,
         cursor: String? = null,
         status: String? = null,
         authorization: String
     ) {
-        viewModelScope.launch {
-
+        scope.launch { // Sử dụng scope mới thay vì viewModelScope
             isLoading.value = true
             currentStatus.value = status ?: "PENDING"
 
@@ -63,10 +69,9 @@ class ChangeRequestViewModel @Inject constructor(
             )
 
             try {
-                if(response is Resource.Success){
+                if(response is Resource.Success) {
                     response.data?.let {
-
-                        if(nextCursor == null){
+                        if(nextCursor == null) {
                             _requests.value = emptyList()
                         }
 
@@ -80,7 +85,7 @@ class ChangeRequestViewModel @Inject constructor(
                     }
                 }
             } catch(e: Exception) {
-                Log.e("ChatViewModel", "Exception: ${e.message}")
+                Log.e("ChangeRequestViewModel", "Exception: ${e.message}")
             } finally {
                 delay(500)
                 isLoading.value = false
@@ -88,49 +93,45 @@ class ChangeRequestViewModel @Inject constructor(
         }
     }
 
+    // Cập nhật hàm loadMore
     fun loadMore(
         projectId: Int,
         status: String? = null,
         authorization: String
-    ){
+    ) {
         nextCursor?.let {
             getChangeRequests(projectId, it, status, authorization)
         }
     }
 
+    // Hàm tạo yêu cầu thay đổi
     fun createChangeRequest(
         projectId: Int,
         changeRequest: SendChangeRequest,
         authorization: String
     ) {
-        viewModelScope.launch {
+        scope.launch {
             repository.createChangeRequest(
                 projectId,
                 changeRequest,
-                authorization)
+                authorization
+            )
         }
     }
 
+    // Hàm trả lời yêu cầu thay đổi
     fun replyRequest(
         projectId: Int,
         requestId: Int,
         reply: Reply,
         authorization: String
     ) {
-        viewModelScope.launch {
+        scope.launch {
             _reply.value = repository.replyChangeRequest(projectId, reply, requestId, authorization)
-            if(_reply.value is Resource.Success){
+            if(_reply.value is Resource.Success) {
                 _requests.value = _requests.value?.filter { it.id != requestId }
             }
         }
-    }
-
-    fun connectWebSocket(
-        projectId: Int,
-        authorization: String,
-        view: View
-    ){
-
     }
 
 }

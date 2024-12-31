@@ -47,6 +47,8 @@ import com.example.youmanage.utils.Constants.ACCESS_TOKEN_KEY
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.viewmodel.AuthenticationViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 @Composable
 fun UserProfileScreen(
@@ -73,7 +75,11 @@ fun UserProfileScreen(
 
     LaunchedEffect(accessToken) {
         accessToken?.let { token ->
-            authenticationViewModel.getUser(authorization = "Bearer $token")
+            supervisorScope {
+                launch {
+                    authenticationViewModel.getUser(authorization = "Bearer $token")
+                }
+            }
         }
     }
 

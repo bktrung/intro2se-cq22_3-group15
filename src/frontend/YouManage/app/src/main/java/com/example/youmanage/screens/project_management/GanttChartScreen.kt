@@ -45,6 +45,8 @@ import com.example.youmanage.utils.generateChartData
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 @Composable
 fun GanttChartScreen(
@@ -70,21 +72,43 @@ fun GanttChartScreen(
     var isLoading by remember { mutableStateOf(false) }
 
     LaunchedEffect(accessToken.value) {
-        val url = "${WEB_SOCKET}project/$projectId/"
         accessToken.value?.let { token ->
-            projectManagementViewModel.getGanttChartData(
-                id = projectId,
-                authorization = "Bearer $token"
-            )
 
-            projectManagementViewModel.getProject(
-                id = projectId,
-                authorization = "Bearer $token"
-            )
-            projectManagementViewModel.connectToProjectWebsocket(url)
-            projectManagementViewModel.connectToMemberWebsocket(url)
-            taskManagementViewModel.connectToTaskWebSocket(url)
-            authenticationViewModel.getUser("Bearer $token")
+            supervisorScope {
+                launch {
+                    projectManagementViewModel.getGanttChartData(
+                        id = projectId,
+                        authorization = "Bearer $token"
+                    )
+                }
+
+                launch {
+                    projectManagementViewModel.getProject(
+                        id = projectId,
+                        authorization = "Bearer $token"
+                    )
+                }
+                launch {
+                    authenticationViewModel.getUser("Bearer $token")
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(Unit){
+        supervisorScope {
+            val url = "${WEB_SOCKET}project/$projectId/"
+
+            launch {
+                taskManagementViewModel.connectToTaskWebSocket(url)
+            }
+
+            launch {
+                projectManagementViewModel.connectToProjectWebsocket(url)
+            }
+            launch {
+                projectManagementViewModel.connectToMemberWebsocket(url)
+            }
         }
     }
 
@@ -98,10 +122,15 @@ fun GanttChartScreen(
 
     LaunchedEffect(taskSocket){
         if(taskSocket is Resource.Success) {
-            projectManagementViewModel.getGanttChartData(
-                id = projectId,
-                authorization = "Bearer ${accessToken.value}"
-            )
+            supervisorScope {
+                launch {
+                    projectManagementViewModel.getGanttChartData(
+                        id = projectId,
+                        authorization = "Bearer ${accessToken.value}"
+                    )
+                }
+            }
+
         }
     }
 
@@ -166,11 +195,8 @@ fun GanttChartScreen(
                         )
                     )
                 }
-
             }
-
         }
-
     }
 }
 

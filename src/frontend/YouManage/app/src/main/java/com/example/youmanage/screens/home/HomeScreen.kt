@@ -54,6 +54,8 @@ import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.randomColor
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 @Composable
 fun HomeScreen(
@@ -72,10 +74,16 @@ fun HomeScreen(
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
-            projectManagementViewModel.getProjectList(
-                authorization = "Bearer $token"
-            )
-            authenticationViewModel.getUser("Bearer $token")
+            supervisorScope {
+                val job1 = launch {
+                    projectManagementViewModel.getProjectList(
+                        authorization = "Bearer $token"
+                    )
+                }
+                val job2 = launch {
+                    authenticationViewModel.getUser("Bearer $token")
+                }
+            }
         }
     }
 
