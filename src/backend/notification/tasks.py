@@ -6,10 +6,11 @@ from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 from django.core.cache import cache
 import logging
+from decouple import config
 
 logger = logging.getLogger(__name__)
 
-SERVICE_ACCOUNT_FILE = os.path.join(settings.BASE_DIR, "testpushnotification-286ec-firebase-adminsdk-1eda2-acb7f28157.json")
+SERVICE_ACCOUNT_FILE = os.path.join(settings.BASE_DIR, config('FIREBASE_ADMIN_SDK'))
 
 @shared_task
 def get_firebase_access_token():
@@ -36,7 +37,7 @@ def send_fcm_notification(access_token, device_token, title, body):
     """
     Celery task to send FCM notification asynchronously
     """
-    fcm_url = "https://fcm.googleapis.com/v1/projects/testpushnotification-286ec/messages:send"
+    fcm_url = config('FCM_URL')
     
     headers = {
         'Authorization': f'Bearer {access_token}',

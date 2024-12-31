@@ -15,6 +15,7 @@ from .utils import logout_user_from_other_devices
 from .models import OTPModel
 from .utils import send_otp_to_email
 import uuid
+from decouple import config
 
 User = get_user_model()
 
@@ -79,7 +80,7 @@ class GoogleLoginView(APIView):
         
         try:
             # will set to os.environ.get('GOOGLE_CLIENT_ID') in future
-            CLIENT_ID = '76922283431-11olbqs5uu5fmq37m33svsrlam19pnt5.apps.googleusercontent.com'
+            CLIENT_ID = config('GOOGLE_CLIENT_ID')
             id_info = id_token.verify_oauth2_token(id_token_str, google_requests.Request(), CLIENT_ID)
             
             user, created = User.objects.get_or_create(email=id_info['email'], defaults={'username': id_info.get('name'), 'is_verified': True})
