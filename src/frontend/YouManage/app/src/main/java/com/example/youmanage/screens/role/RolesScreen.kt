@@ -142,7 +142,7 @@ fun RolesScreen(
         key2 = deleteResponse
     ) {
         supervisorScope {
-            launch {
+            val job1 =launch {
                 if (response is Resource.Success) {
                     roleViewmodel.getRoles(
                         projectId,
@@ -151,7 +151,7 @@ fun RolesScreen(
                 }
             }
 
-            launch {
+            val job2 = launch {
                 if (deleteResponse is Resource.Success) {
                     roleViewmodel.getRoles(
                         projectId,
@@ -159,6 +159,9 @@ fun RolesScreen(
                     )
                 }
             }
+
+            job1.join()
+            job2.join()
         }
 
 

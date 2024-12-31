@@ -27,6 +27,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -88,7 +89,9 @@ class ProjectManagementViewModel @Inject constructor(
         authorization: String
     ){
         viewModelScopeWithSupervisor.launch {
-            val response = repository.isHost(id, authorization)
+            val response = withContext(Dispatchers.IO){
+                repository.isHost(id, authorization)
+            }
             if(response is Resource.Success){
                 _isHost.value = response.data?.isHost ?: false
             } else{
@@ -99,7 +102,10 @@ class ProjectManagementViewModel @Inject constructor(
 
     fun getProjectList(authorization: String) {
         viewModelScopeWithSupervisor.launch {
-            _projects.value = repository.getProjectList(authorization = authorization)
+            val response = withContext(Dispatchers.IO){
+                repository.getProjectList(authorization = authorization)
+            }
+            _projects.value = response
         }
     }
 
