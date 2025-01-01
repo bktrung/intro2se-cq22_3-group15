@@ -45,7 +45,7 @@ import com.example.youmanage.screens.components.ChooseItemDialog
 import com.example.youmanage.screens.components.ErrorDialog
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Resource
-import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
 import com.example.youmanage.viewmodel.projectmanagement.ProjectMenuViewModel
 import com.example.youmanage.viewmodel.TraceInProjectViewModel
 import kotlinx.coroutines.joinAll

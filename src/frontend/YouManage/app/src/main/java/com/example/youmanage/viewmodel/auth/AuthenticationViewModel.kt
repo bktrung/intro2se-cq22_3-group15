@@ -1,11 +1,10 @@
-package com.example.youmanage.viewmodel
+package com.example.youmanage.viewmodel.auth
 
 import android.util.Log
 import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.youmanage.data.remote.authentication.AccessToken
 import com.example.youmanage.data.remote.authentication.ChangePassword
 import com.example.youmanage.data.remote.authentication.ResetPassword

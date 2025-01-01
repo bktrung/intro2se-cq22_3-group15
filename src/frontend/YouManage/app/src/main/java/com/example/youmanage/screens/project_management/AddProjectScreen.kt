@@ -1,7 +1,6 @@
 package com.example.youmanage.screens.project_management
 
 import android.os.Build
-import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -27,9 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -63,8 +60,8 @@ import com.example.youmanage.screens.components.DatePickerModal
 import com.example.youmanage.screens.components.ErrorDialog
 import com.example.youmanage.screens.components.LeadingTextFieldComponent
 import com.example.youmanage.utils.Resource
-import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
+import com.example.youmanage.viewmodel.common.ProjectManagementViewModel
 
 data class MemberItem(
     val username: String,

@@ -43,7 +43,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.youmanage.R
 import com.example.youmanage.navigation.ProjectManagementNavGraph
 import com.example.youmanage.navigation.ProjectManagementRouteScreen
-import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
 import com.example.youmanage.viewmodel.home.NotificationViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope

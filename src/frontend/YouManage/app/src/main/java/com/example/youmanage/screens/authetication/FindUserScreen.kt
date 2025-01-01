@@ -37,7 +37,7 @@ import com.example.youmanage.data.remote.authentication.Email
 import com.example.youmanage.screens.components.ErrorDialog
 import com.example.youmanage.screens.components.TextFieldComponent
 import com.example.youmanage.utils.Resource
-import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
 
 @Composable
 fun FindUserScreen(

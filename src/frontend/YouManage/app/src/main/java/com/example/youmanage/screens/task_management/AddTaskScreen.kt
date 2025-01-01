@@ -49,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
-import com.example.youmanage.data.remote.changerequest.SendChangeRequest
 import com.example.youmanage.data.remote.taskmanagement.TaskCreate
 import com.example.youmanage.screens.components.AssigneeSelector
 import com.example.youmanage.screens.components.ChangeRequestDialog
@@ -61,13 +60,10 @@ import com.example.youmanage.screens.components.LeadingTextFieldComponent
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Constants.priorityChoice
 import com.example.youmanage.utils.Resource
-import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
-import com.example.youmanage.viewmodel.TaskManagementViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
 import com.example.youmanage.screens.project_management.TopBar
-import com.example.youmanage.utils.HandleOutProjectWebSocket
-import com.example.youmanage.viewmodel.projectmanagement.ChangeRequestViewModel
-import com.example.youmanage.viewmodel.SnackBarViewModel
+import com.example.youmanage.viewmodel.TraceInProjectViewModel
+import com.example.youmanage.viewmodel.taskmanagement.AddTaskViewModel
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
@@ -81,35 +77,30 @@ fun CreateTaskScreen(
     onCreateTask: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
     onDisableAction: () -> Unit = {},
-    taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
-    changeRequestViewModel: ChangeRequestViewModel = hiltViewModel(),
-    showSnackBarViewModel: SnackBarViewModel = hiltViewModel()
+    traceInProjectViewModel: TraceInProjectViewModel = hiltViewModel(),
+    addTaskViewModel: AddTaskViewModel = hiltViewModel()
 ) {
     // Data from API
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
-    val user by authenticationViewModel.user.observeAsState()
-    val members by taskManagementViewModel.members.observeAsState()
-    val task by taskManagementViewModel.task.observeAsState()
-    val isHost by taskManagementViewModel.isHost.observeAsState()
-    val changeRequestResponse by changeRequestViewModel.response.observeAsState()
 
-    // WebSocket
-    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
-    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
+    val shouldDisableAction by traceInProjectViewModel.observeCombinedLiveData(projectId)
+        .observeAsState(false)
+
+    val members by addTaskViewModel.members.observeAsState()
+    val isHost by addTaskViewModel.isHost.observeAsState()
+    val createResponse by addTaskViewModel.createResponse.observeAsState()
+    val requestResponse by addTaskViewModel.requestResponse.observeAsState()
 
     var send by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var openErrorDialog by remember { mutableStateOf(false) }
 
-    var isLoading by remember { mutableStateOf(false) }
-
-    LaunchedEffect(task) {
-        if (task is Resource.Success && !isLoading) {
+    LaunchedEffect(createResponse) {
+        if (createResponse is Resource.Success) {
             onCreateTask()
-        } else if (task is Resource.Error) {
-            errorMessage = (task as Resource.Error).message ?: "Something went wrong"
+        } else if (createResponse is Resource.Error) {
+            errorMessage = (createResponse as Resource.Error).message ?: "Something went wrong"
             openErrorDialog = true
         }
     }
@@ -119,29 +110,25 @@ fun CreateTaskScreen(
             val webSocketUrl = "${WEB_SOCKET}project/${projectId}/"
             supervisorScope {
                 // Track all async tasks with Deferred
-                val job1 = launch { taskManagementViewModel.getMembers(projectId, "Bearer $token") }
-                val job2 = launch { taskManagementViewModel.isHost(projectId, "Bearer $token") }
-                val job3 = launch { authenticationViewModel.getUser("Bearer $token") }
-                val job4 =
-                    launch { taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl) }
-                val job5 =
-                    launch { projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl) }
-                val job6 =
-                    launch { projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl) }
-
+                val job1 = launch { addTaskViewModel.getMembers(projectId, "Bearer $token") }
+                val job2 = launch { addTaskViewModel.isHost(projectId, "Bearer $token") }
+                val job3 = launch {
+                    traceInProjectViewModel.connectToWebSocketAndUser(
+                        token,
+                        webSocketUrl
+                    )
+                }
                 // Wait for all jobs to complete
-                joinAll(job1, job2, job3, job4, job5, job6)
+                joinAll(job1, job2, job3)
             }
         }
     }
 
-    HandleOutProjectWebSocket(
-        memberSocket = memberSocket,
-        projectSocket = projectSocket,
-        user = user,
-        projectId = projectId,
-        onDisableAction = onDisableAction
-    )
+    LaunchedEffect(shouldDisableAction) {
+        if (shouldDisableAction) {
+            onDisableAction()
+        }
+    }
 
     var showDatePicker by remember { mutableStateOf(false) }
     val textFieldColor = MaterialTheme.colorScheme.surface
@@ -164,10 +151,11 @@ fun CreateTaskScreen(
 
     val context = LocalContext.current
 
-    LaunchedEffect(changeRequestResponse) {
-        if (changeRequestResponse is Resource.Success) {
+    LaunchedEffect(requestResponse) {
+        if (requestResponse is Resource.Success) {
             Toast.makeText(context, "Request sent successfully!", Toast.LENGTH_SHORT).show()
-        } else if (changeRequestResponse is Resource.Error) {
+            onCreateTask()
+        } else if (requestResponse is Resource.Error) {
             Toast.makeText(context, "Something went wrong. Try again!", Toast.LENGTH_SHORT).show()
         }
     }
@@ -176,219 +164,213 @@ fun CreateTaskScreen(
         if (send) {
             supervisorScope {
                 launch {
-                    changeRequestViewModel.createChangeRequest(
+                    addTaskViewModel.sendCreateRequest(
                         projectId = projectId.toInt(),
-                        SendChangeRequest(
-                            requestType = "CREATE",
-                            targetTable = "TASK",
-                            targetTableId = null,
-                            description = requestDescription,
-                            newData = TaskCreate(
-                                title = title,
-                                description = description,
-                                startDate = startDate,
-                                endDate = endDate,
-                                assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
-                                priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
-                            )
+                        task = TaskCreate(
+                            title = title,
+                            description = description,
+                            startDate = startDate,
+                            endDate = endDate,
+                            assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
+                            priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
                         ),
-                        "Bearer ${accessToken.value}"
+                        description = requestDescription,
+                        authorization = "Bearer ${accessToken.value}"
                     )
                 }
             }
         }
     }
 
-
-        Scaffold(
-            topBar = {
-                TopBar(
-                    title = "Create Task",
-                    color = Color.Transparent,
-                    trailing = {
-                        Box(
-                            modifier = Modifier.size(24.dp)
-                        )
+    Scaffold(
+        topBar = {
+            TopBar(
+                title = "Create Task",
+                color = Color.Transparent,
+                trailing = {
+                    Box(
+                        modifier = Modifier.size(24.dp)
+                    )
+                },
+                onNavigateBack = { onNavigateBack() }
+            )
+        },
+        bottomBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Button(
+                    onClick = {
+                        if (isHost == false) {
+                            showChangeRequestDialog = true
+                        } else {
+                            addTaskViewModel.createTask(
+                                projectId = projectId,
+                                TaskCreate(
+                                    title = title,
+                                    description = description,
+                                    startDate = startDate,
+                                    endDate = endDate,
+                                    assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
+                                    priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
+                                ),
+                                authorization = "Bearer ${accessToken.value}"
+                            )
+                        }
                     },
-                    onNavigateBack = { onNavigateBack() }
-                )
-            },
-            bottomBar = {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 10.dp),
-                    contentAlignment = Alignment.Center
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ),
                 ) {
-                    Button(
-                        onClick = {
-                            if (isHost == false) {
-                                showChangeRequestDialog = true
-                            } else {
-                                taskManagementViewModel.createTask(
-                                    projectId = projectId,
-                                    TaskCreate(
-                                        title = title,
-                                        description = description,
-                                        startDate = startDate,
-                                        endDate = endDate,
-                                        assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
-                                        priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
-                                    ),
-                                    authorization = "Bearer ${accessToken.value}"
-                                )
-                            }
-                        },
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        ),
-                    ) {
-                        Text(
-                            "Create",
-                            fontSize = 20.sp,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-                    }
+                    Text(
+                        "Create",
+                        fontSize = 20.sp,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
                 }
-            },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    top = WindowInsets.statusBars
-                        .asPaddingValues()
-                        .calculateTopPadding(),
-                    bottom = WindowInsets.systemBars
-                        .asPaddingValues()
-                        .calculateBottomPadding()
-                )
-        ) { paddingValues ->
+            }
+        },
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(
+                top = WindowInsets.statusBars
+                    .asPaddingValues()
+                    .calculateTopPadding(),
+                bottom = WindowInsets.systemBars
+                    .asPaddingValues()
+                    .calculateBottomPadding()
+            )
+    ) { paddingValues ->
 
-            val scrollState = rememberScrollState()
+        val scrollState = rememberScrollState()
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(paddingValues)
+                .padding(horizontal = 36.dp)
+                .padding(bottom = 10.dp)
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
 
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(paddingValues)
-                    .padding(horizontal = 36.dp)
-                    .padding(bottom = 10.dp)
-                    .verticalScroll(scrollState),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-
-                    Text(
-                        "Task Title",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-
-                    LeadingTextFieldComponent(
-                        content = title,
-                        onChangeValue = { title = it },
-                        placeholderContent = "Enter project title",
-                        placeholderColor = MaterialTheme.colorScheme.primary,
-                        containerColor = textFieldColor,
-                        icon = R.drawable.project_title_icon
-                    )
-                }
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-
-                    Text(
-                        "Description",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-
-                    TextField(
-                        value = description,
-                        onValueChange = { description = it },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = textFieldColor,
-                            unfocusedContainerColor = textFieldColor,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.description_icon),
-                                contentDescription = "",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        placeholder = {
-                            Text(
-                                "Enter project description",
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        maxLines = Int.MAX_VALUE,
-                        shape = RoundedCornerShape(10.dp),
-                        textStyle = TextStyle(MaterialTheme.colorScheme.primary)
-                    )
-                }
-
-                DatePickerField(
-                    label = "Start date",
-                    date = startDate,
-                    onDateClick = {
-                        isTime = 1
-                        showDatePicker = true
-                    },
-                    iconResource = R.drawable.calendar_icon,
-                    placeholder = "Enter start date",
-                    containerColor = textFieldColor
+                Text(
+                    "Task Title",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
                 )
 
-                DatePickerField(
-                    label = "End date",
-                    date = endDate,
-                    onDateClick = {
-                        isTime = 2
-                        showDatePicker = true
-                    },
-                    iconResource = R.drawable.calendar_icon,
-                    placeholder = "Enter end date",
-                    containerColor = textFieldColor
-                )
-
-                PrioritySelector(
-                    priorityChoice = priorityChoice,
-                    priority = priority,
-                    onPrioritySelected = {
-                        priority = it
-                    }
-                )
-
-                AssigneeSelector(
-                    label = "Assign to",
-                    avatarRes = R.drawable.no_avatar,
-                    userId = assignedMemberId,
-                    username = assignedMember,
-                    onClick = {
-                        showChooseMember = true
-                    }
+                LeadingTextFieldComponent(
+                    content = title,
+                    onChangeValue = { title = it },
+                    placeholderContent = "Enter project title",
+                    placeholderColor = MaterialTheme.colorScheme.primary,
+                    containerColor = textFieldColor,
+                    icon = R.drawable.project_title_icon
                 )
             }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+
+                Text(
+                    "Description",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                )
+
+                TextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = textFieldColor,
+                        unfocusedContainerColor = textFieldColor,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.description_icon),
+                            contentDescription = "",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    placeholder = {
+                        Text(
+                            "Enter project description",
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    maxLines = Int.MAX_VALUE,
+                    shape = RoundedCornerShape(10.dp),
+                    textStyle = TextStyle(MaterialTheme.colorScheme.primary)
+                )
+            }
+
+            DatePickerField(
+                label = "Start date",
+                date = startDate,
+                onDateClick = {
+                    isTime = 1
+                    showDatePicker = true
+                },
+                iconResource = R.drawable.calendar_icon,
+                placeholder = "Enter start date",
+                containerColor = textFieldColor
+            )
+
+            DatePickerField(
+                label = "End date",
+                date = endDate,
+                onDateClick = {
+                    isTime = 2
+                    showDatePicker = true
+                },
+                iconResource = R.drawable.calendar_icon,
+                placeholder = "Enter end date",
+                containerColor = textFieldColor
+            )
+
+            PrioritySelector(
+                priorityChoice = priorityChoice,
+                priority = priority,
+                onPrioritySelected = {
+                    priority = it
+                }
+            )
+
+            AssigneeSelector(
+                label = "Assign to",
+                avatarRes = R.drawable.no_avatar,
+                userId = assignedMemberId,
+                username = assignedMember,
+                onClick = {
+                    showChooseMember = true
+                }
+            )
+        }
     }
 
     if (showDatePicker) {

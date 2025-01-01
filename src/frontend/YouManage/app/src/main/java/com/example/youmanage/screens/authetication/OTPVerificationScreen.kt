@@ -70,7 +70,7 @@ import com.example.youmanage.screens.components.ErrorDialog
 import com.example.youmanage.screens.components.KeyboardStatus
 import com.example.youmanage.screens.components.keyboardAsState
 import com.example.youmanage.utils.Resource
-import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
 import kotlinx.coroutines.delay
 
 

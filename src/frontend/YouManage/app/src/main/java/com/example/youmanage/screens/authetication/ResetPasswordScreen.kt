@@ -38,7 +38,7 @@ import com.example.youmanage.data.remote.authentication.ResetPassword
 import com.example.youmanage.screens.components.ErrorDialog
 import com.example.youmanage.screens.components.PasswordTextField
 import com.example.youmanage.utils.Resource
-import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
 
 @Composable
 fun ResetPasswordScreen(

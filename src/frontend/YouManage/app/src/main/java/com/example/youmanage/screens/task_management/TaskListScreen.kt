@@ -58,12 +58,11 @@ import com.example.youmanage.R
 import com.example.youmanage.data.remote.taskmanagement.Task
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Constants.statusMapping
-import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.randomAvatar
-import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
-import com.example.youmanage.viewmodel.TaskManagementViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
+import com.example.youmanage.viewmodel.TraceInProjectViewModel
+import com.example.youmanage.viewmodel.taskmanagement.TaskListViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlin.coroutines.cancellation.CancellationException
@@ -76,38 +75,32 @@ fun TaskListScreen(
     onCreateTask: () -> Unit = {},
     onTaskDetail: (Int) -> Unit,
     onDisableAction: () -> Unit = {},
-    taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
-    authenticationViewModel: AuthenticationViewModel = hiltViewModel()
+    authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
+    taskListViewModel: TaskListViewModel = hiltViewModel(),
+    traceInProjectViewModel: TraceInProjectViewModel = hiltViewModel()
 ) {
 
     val backgroundColor = MaterialTheme.colorScheme.background
 
-    val tasks by taskManagementViewModel.tasks.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
-    var filterTasks by remember { mutableStateOf(emptyList<Task>()) }
-    val taskSocket by taskManagementViewModel.taskSocket.observeAsState()
-    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
-    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
-    val user by authenticationViewModel.user.observeAsState()
+
+    val tasks by taskListViewModel.tasks.observeAsState()
+    val taskSocket by taskListViewModel.taskSocket.observeAsState()
     var isSelectedButton by rememberSaveable { mutableIntStateOf(0) }
+
+    var filterTasks by remember { mutableStateOf(emptyList<Task>()) }
+
+    val shouldDisableAction by traceInProjectViewModel.observeCombinedLiveData(projectId)
+        .observeAsState(false)
 
     val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
 
     LaunchedEffect(Unit) {
         try {
             supervisorScope {
-                // Launching websocket connections concurrently
-                val job1 = launch {
-                    projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-                }
-                val job2 = launch {
-                    taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
-                }
-
-                // Waiting for all coroutines to complete before finishing LaunchedEffect
-                job1.join()
-                job2.join()
+                launch {
+                    taskListViewModel.connectToTaskWebSocket(url = webSocketUrl)
+                }.join()
             }
         } catch (e: CancellationException) {
             Log.d("Coroutine", "Job was cancelled during websocket connections: ${e.localizedMessage}")
@@ -122,18 +115,18 @@ fun TaskListScreen(
                 supervisorScope {
                     // Launching API calls concurrently
                     val job1 = launch {
-                        taskManagementViewModel.getTasks(
+                        taskListViewModel.getTasks(
                             projectId = projectId,
                             authorization = "Bearer $token"
                         )
                     }
                     val job2 = launch {
-                        authenticationViewModel.getUser("Bearer $token")
+                        traceInProjectViewModel.connectToWebSocketAndUser(token, webSocketUrl)
                     }
-
                     // Optionally wait for all jobs to finish
                     job1.join()
                     job2.join()
+
                 }
             }
         } catch (e: CancellationException) {
@@ -143,20 +136,17 @@ fun TaskListScreen(
         }
     }
 
-
-    HandleOutProjectWebSocket(
-        memberSocket = memberSocket,
-        projectSocket = projectSocket,
-        user = user,
-        projectId = projectId,
-        onDisableAction = onDisableAction
-    )
+    LaunchedEffect (shouldDisableAction){
+        if(shouldDisableAction){
+            onDisableAction()
+        }
+    }
 
     LaunchedEffect(taskSocket) {
         try {
             supervisorScope {
                 launch {
-                    taskManagementViewModel.getTasks(
+                    taskListViewModel.getTasks(
                         projectId = projectId,
                         authorization = "Bearer ${accessToken.value}"
                     )
@@ -167,7 +157,6 @@ fun TaskListScreen(
         } catch (e: Exception) {
             Log.d("Coroutine", "Exception: ${e.localizedMessage}")
         }
-
     }
 
     LaunchedEffect(
@@ -181,14 +170,12 @@ fun TaskListScreen(
                     it.status == statusMapping[isSelectedButton].second
                 } ?: emptyList()
             }
-
             Log.d("TAG", "TaskListScreen: $filterTasks")
         } catch (e: CancellationException) {
             Log.d("Coroutine", "Job was cancelled: ${e.localizedMessage}")
         } catch (e: Exception) {
             Log.d("Coroutine", "Exception: ${e.localizedMessage}")
         }
-
     }
 
     Scaffold(

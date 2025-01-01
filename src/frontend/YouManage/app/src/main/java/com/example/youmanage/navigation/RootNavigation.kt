@@ -30,9 +30,11 @@ import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.ThemePreferences
 import com.example.youmanage.utils.isTokenExpired
-import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
 import com.example.youmanage.viewmodel.home.NotificationViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 object Graph {
     const val ROOT = "root_graph"
@@ -124,13 +126,21 @@ fun RootNavGraph(
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let {
-            authenticationViewModel.getUser("Bearer $it")
+            supervisorScope {
+                launch {
+                    authenticationViewModel.getUser("Bearer $it")
+                }.join()
+            }
         }
     }
 
     LaunchedEffect(user) {
         if (user is Resource.Success && user?.data?.id != null) {
-            notificationViewModel.connectToWebSocket("${WEB_SOCKET}user/${user?.data?.id}/")
+            supervisorScope {
+                launch {
+                    notificationViewModel.connectToWebSocket("${WEB_SOCKET}user/${user?.data?.id}/")
+                }.join()
+            }
         }
     }
     var routeMessage by rememberSaveable { mutableStateOf("") }
@@ -146,8 +156,8 @@ fun RootNavGraph(
 
                 val objectContent = it.objectContent
 
-                if (objectContent?.projectId != null) {
-                    routeMessage = if (objectContent.taskId != null) {
+                routeMessage = if (objectContent?.projectId != null) {
+                    if (objectContent.taskId != null) {
                         "task_detail/${objectContent.projectId}/${objectContent.taskId}"
                     } else if (objectContent.issueId != null) {
                         "issue_detail/${objectContent.projectId}/${objectContent.issueId}"
@@ -157,10 +167,9 @@ fun RootNavGraph(
                         "project_detail/${objectContent.projectId}"
                     }
                 } else {
-                    routeMessage = "notification"
+                    "notification"
                 }
 
-                Log.d("RootNavGraph", routeMessage)
             }
         }
     }

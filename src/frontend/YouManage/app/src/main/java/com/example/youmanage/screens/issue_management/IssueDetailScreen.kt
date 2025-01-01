@@ -53,13 +53,12 @@ import com.example.youmanage.screens.components.DropdownStatusSelector
 import com.example.youmanage.screens.components.LeadingTextFieldComponent
 import com.example.youmanage.screens.components.TaskSelector
 import com.example.youmanage.screens.task_management.primaryColor
+import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Constants.statusMapping
-import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
-import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.IssuesViewModel
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
-import com.example.youmanage.viewmodel.TaskManagementViewModel
+import com.example.youmanage.viewmodel.TraceInProjectViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
+import com.example.youmanage.viewmodel.issuemanagement.IssueDetailViewModel
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
@@ -68,22 +67,23 @@ import kotlinx.coroutines.supervisorScope
 @Composable
 fun IssueDetailScreen(
     projectId: String = "",
+    issueId: String = "",
     onNavigateBack: () -> Unit = {},
     onDisableAction: () -> Unit = {},
-    issueManagementViewModel: IssuesViewModel = hiltViewModel(),
-    taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
+    issueDetailViewModel: IssueDetailViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
-    issueId: String
-) {
+    traceInProjectViewModel: TraceInProjectViewModel = hiltViewModel(),
+
+    ) {
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
-    val members by projectManagementViewModel.members.observeAsState()
-    val tasks by taskManagementViewModel.tasks.observeAsState()
-    val issue by issueManagementViewModel.issue.observeAsState()
-    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
-    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
-    val issueUpdate by issueManagementViewModel.issueUpdate.observeAsState()
-    val user by authenticationViewModel.user.observeAsState()
+
+    val members by issueDetailViewModel.members.observeAsState()
+    val tasks by issueDetailViewModel.tasks.observeAsState()
+    val issue by issueDetailViewModel.issue.observeAsState()
+    val issueUpdate by issueDetailViewModel.issueUpdate.observeAsState()
+
+    val shouldDisableAction by traceInProjectViewModel.observeCombinedLiveData(projectId)
+        .observeAsState(false)
 
     var openErrorDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -104,8 +104,9 @@ fun IssueDetailScreen(
     val showChooseTask = remember { mutableStateOf(false) }
     val showChooseMember = remember { mutableStateOf(false) }
 
-    val backgroundColor = MaterialTheme.colorScheme.background
     val textFieldColor = MaterialTheme.colorScheme.surface
+
+    val webSocketUrl = "${WEB_SOCKET}project/${projectId}/${projectId}"
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
@@ -114,24 +115,16 @@ fun IssueDetailScreen(
                 val jobs = listOf(
                     launch {
                         try {
-                            issueManagementViewModel.getIssue(projectId, issueId, "Bearer $token")
+                            issueDetailViewModel.loadIssueData(projectId, issueId, "Bearer $token")
                         } catch (e: Exception) {
                             Log.e("IssueManagement", "Error fetching issue: ${e.message}")
                         }
                     },
                     launch {
-                        try {
-                            taskManagementViewModel.getTasks(projectId, "Bearer $token")
-                        } catch (e: Exception) {
-                            Log.e("TaskManagement", "Error fetching tasks: ${e.message}")
-                        }
-                    },
-                    launch {
-                        try {
-                            projectManagementViewModel.getMembers(projectId, "Bearer $token")
-                        } catch (e: Exception) {
-                            Log.e("ProjectManagement", "Error fetching members: ${e.message}")
-                        }
+                        traceInProjectViewModel.connectToWebSocketAndUser(
+                            token,
+                            webSocketUrl
+                        )
                     }
                 )
 
@@ -141,13 +134,11 @@ fun IssueDetailScreen(
         }
     }
 
-    HandleOutProjectWebSocket(
-        memberSocket = memberSocket,
-        projectSocket = projectSocket,
-        user = user,
-        projectId = projectId,
-        onDisableAction = onDisableAction
-    )
+    LaunchedEffect(shouldDisableAction){
+        if(shouldDisableAction){
+            onDisableAction()
+        }
+    }
 
     LaunchedEffect(issue) {
         if (issue is Resource.Success) {
@@ -168,7 +159,7 @@ fun IssueDetailScreen(
 
     LaunchedEffect(issueUpdate){
         if (issueUpdate is Resource.Success){
-            issueManagementViewModel.getIssue(
+            issueDetailViewModel.getIssue(
                 projectId,
                 issueId,
                 "Bearer ${accessToken.value}"
@@ -180,7 +171,7 @@ fun IssueDetailScreen(
         if (update){
             accessToken.value?.let { token ->
                 Log.d("Issuse Status", selectedStatus)
-                issueManagementViewModel.updateIssue(
+                issueDetailViewModel.updateIssue(
                     projectId = projectId,
                     issueId = issue?.data?.id.toString(),
                     IssueUpdate(
@@ -329,7 +320,7 @@ fun IssueDetailScreen(
         ChooseItemDialog(
             title = "Choose Task",
             showDialog = showChooseTask.value,
-            items = tasks?.data ?: emptyList(),
+            items = tasks ?: emptyList(),
             displayText = { it.title },
             onDismiss = { showChooseTask.value = false },
             onConfirm = { task ->
@@ -343,7 +334,7 @@ fun IssueDetailScreen(
         ChooseItemDialog(
             title = "Choose Member",
             showDialog = showChooseMember.value,
-            items = members?.data ?: emptyList(),
+            items = members ?: emptyList(),
             displayText = { it.username ?: "Unknown" },
             onDismiss = { showChooseMember.value = false },
             onConfirm = {
@@ -386,7 +377,7 @@ fun IssueDetailScreen(
             showDeleteDialog = false
         },
         onConfirm = {
-            issueManagementViewModel.deleteIssue(
+            issueDetailViewModel.deleteIssue(
                 projectId,
                 issueId,
                 "Bearer ${accessToken.value}"

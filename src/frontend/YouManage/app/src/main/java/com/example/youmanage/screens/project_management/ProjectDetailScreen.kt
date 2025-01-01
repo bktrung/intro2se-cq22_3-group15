@@ -60,7 +60,7 @@ import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.randomAvatar
-import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
 import com.example.youmanage.viewmodel.projectmanagement.ProjectDetailViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.joinAll

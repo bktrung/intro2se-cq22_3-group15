@@ -56,7 +56,7 @@ import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.screens.task_management.ButtonSection
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.formatToRelativeTime
-import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
 import com.example.youmanage.viewmodel.projectmanagement.ChangeRequestViewModel
 import com.example.youmanage.viewmodel.TraceInProjectViewModel
 import com.example.youmanage.viewmodel.projectmanagement.requestStatus

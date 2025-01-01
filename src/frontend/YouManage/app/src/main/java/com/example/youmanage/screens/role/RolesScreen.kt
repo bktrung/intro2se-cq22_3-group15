@@ -61,9 +61,9 @@ import com.example.youmanage.screens.components.CreateRoleDialog
 import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Resource
-import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
 import com.example.youmanage.viewmodel.projectmanagement.ChangeRequestViewModel
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import com.example.youmanage.viewmodel.common.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.projectmanagement.RoleViewmodel
 import com.example.youmanage.viewmodel.TraceInProjectViewModel
 import kotlinx.coroutines.joinAll

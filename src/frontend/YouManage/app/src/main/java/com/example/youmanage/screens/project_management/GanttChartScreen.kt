@@ -41,7 +41,7 @@ import com.example.youmanage.screens.components.GanttChart
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.generateChartData
-import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
 import com.example.youmanage.viewmodel.projectmanagement.GanttChartViewModel
 import com.example.youmanage.viewmodel.TraceInProjectViewModel
 import kotlinx.coroutines.joinAll
