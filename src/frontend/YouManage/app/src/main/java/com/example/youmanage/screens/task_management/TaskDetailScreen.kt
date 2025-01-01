@@ -634,7 +634,7 @@ fun TaskDetailScreen(
 
         ChangeRequestDialog(
             title = "Send request?",
-            content = "Are you sure you want to quit this project?",
+            content = requestMessage,
             showDialog = showRequestDialog,
             onDismiss = { showRequestDialog = false },
             onConfirm = {
