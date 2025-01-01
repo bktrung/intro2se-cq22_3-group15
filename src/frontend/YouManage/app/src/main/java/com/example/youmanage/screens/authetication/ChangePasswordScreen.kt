@@ -4,6 +4,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -27,8 +28,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,6 +50,9 @@ fun ChangePasswordScreen(
     onChangePasswordSuccess: () -> Unit,
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
 ) {
+
+    val focusManager = LocalFocusManager.current
+
     var openErrorDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var oldPassword by remember { mutableStateOf("") }
@@ -73,6 +79,9 @@ fun ChangePasswordScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .clickable {
+                focusManager.clearFocus()
+            }
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
@@ -105,7 +114,10 @@ fun ChangePasswordScreen(
                 onChangeValue = { oldPassword = it },
                 placeholderContent = "Old Password",
                 placeholderColor = Color.Gray,
-                containerColor = MaterialTheme.colorScheme.surface
+                containerColor = MaterialTheme.colorScheme.surface,
+                imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                onDone = { focusManager.moveFocus(FocusDirection.Down) },
+                onNext = { focusManager.moveFocus(FocusDirection.Down)}
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -115,7 +127,10 @@ fun ChangePasswordScreen(
                 onChangeValue = { newPassword = it },
                 placeholderContent = "New Password",
                 placeholderColor = Color.Gray,
-                containerColor = MaterialTheme.colorScheme.surface
+                containerColor = MaterialTheme.colorScheme.surface,
+                imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                onDone = { focusManager.moveFocus(FocusDirection.Down) },
+                onNext = { focusManager.moveFocus(FocusDirection.Down)}
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -125,7 +140,10 @@ fun ChangePasswordScreen(
                 onChangeValue = { confirmPassword = it },
                 placeholderContent = "Confirm New Password",
                 placeholderColor = Color.Gray,
-                containerColor = MaterialTheme.colorScheme.surface
+                containerColor = MaterialTheme.colorScheme.surface,
+                imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                onDone = { focusManager.clearFocus() },
+                onNext = { focusManager.clearFocus() }
             )
 
             Spacer(modifier = Modifier.height(40.dp))

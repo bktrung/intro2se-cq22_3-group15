@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -30,11 +31,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -52,7 +56,10 @@ fun PasswordTextField(
     onChangeValue: (String) -> Unit,
     placeholderContent: String,
     placeholderColor: Color,
-    containerColor: Color
+    containerColor: Color,
+    imeAction: ImeAction,
+    onDone: () -> Unit,
+    onNext:() -> Unit,
 ) {
 
     var passwordVisibility by remember {
@@ -64,39 +71,51 @@ fun PasswordTextField(
     else
         painterResource(id = R.drawable.hide_password_icon)
 
-    TextField(
-        value = content,
-        textStyle = TextStyle(
-            fontSize = 20.sp,
-            fontFamily = fontFamily,
-            color = MaterialTheme.colorScheme.primary),
-        onValueChange = { onChangeValue(it) },
-        placeholder = {
-            Text(
-                text = placeholderContent,
-                color = Color.Gray
-            )
-        },
-        trailingIcon = {
-            IconButton(onClick = { passwordVisibility = !passwordVisibility }) {
-                Icon(
-                    painter = icon,
-                    tint = Color.Gray,
-                    contentDescription = null
+    val focusManager = LocalFocusManager.current
+
+
+        TextField(
+            value = content,
+            textStyle = TextStyle(
+                fontSize = 20.sp,
+                fontFamily = fontFamily,
+                color = MaterialTheme.colorScheme.primary
+            ),
+            onValueChange = { onChangeValue(it) },
+            placeholder = {
+                Text(
+                    text = placeholderContent,
+                    color = Color.Gray
                 )
-            }
-        },
-        visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = containerColor,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 30.dp)
-    )
+            },
+            trailingIcon = {
+                IconButton(onClick = { passwordVisibility = !passwordVisibility }) {
+                    Icon(
+                        painter = icon,
+                        tint = Color.Gray,
+                        contentDescription = null
+                    )
+                }
+            },
+            visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = imeAction
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { onNext() },
+                onDone = { onDone() }
+            ),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = containerColor,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 30.dp)
+        )
+
 }
 
 @Composable
@@ -105,8 +124,12 @@ fun TextFieldComponent(
     onChangeValue: (String) -> Unit,
     placeholderContent: String,
     placeholderColor: Color,
-    containerColor: Color
+    containerColor: Color,
+    imeAction: ImeAction,
+    onDone: () -> Unit,
+    onNext:() -> Unit,
 ) {
+
     TextField(
         value = content,
         textStyle = TextStyle(
@@ -126,6 +149,11 @@ fun TextFieldComponent(
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
         ),
+        keyboardOptions = KeyboardOptions.Default.copy(imeAction = imeAction),
+        keyboardActions = KeyboardActions(
+            onNext = { onNext() },
+            onDone = { onDone() }
+        ),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 30.dp),
@@ -141,30 +169,49 @@ fun LeadingTextFieldComponent(
     placeholderContent: String,
     placeholderColor: Color,
     containerColor: Color,
-    icon: Int
+    icon: Int,
+    imeAction: ImeAction,
+    onDone: () -> Unit,
+    onNext:() -> Unit,
 ) {
-    TextField(
-        value = content,
-        textStyle = TextStyle(fontSize = 20.sp, fontFamily = fontFamily, color = MaterialTheme.colorScheme.primary),
-        leadingIcon = {
-            Icon(painter = painterResource(id = icon), contentDescription = "", tint= MaterialTheme.colorScheme.primary)
-        },
-        onValueChange = { onChangeValue(it) },
-        placeholder = {
-            Text(
-                text = placeholderContent,
-                color = placeholderColor
-            )
-        },
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = containerColor,
-            unfocusedContainerColor = containerColor,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-    )
+    val focusManager = LocalFocusManager.current
+
+        TextField(
+            value = content,
+            textStyle = TextStyle(
+                fontSize = 20.sp,
+                fontFamily = fontFamily,
+                color = MaterialTheme.colorScheme.primary
+            ),
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(id = icon),
+                    contentDescription = "",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
+            onValueChange = { onChangeValue(it) },
+            placeholder = {
+                Text(
+                    text = placeholderContent,
+                    color = placeholderColor
+                )
+            },
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = containerColor,
+                unfocusedContainerColor = containerColor,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent
+            ),
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = imeAction),
+            keyboardActions = KeyboardActions(
+                onNext = { onNext() },
+                onDone = { onDone() }
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+        )
+
 }
 
 
@@ -176,7 +223,10 @@ fun DatePickerField(
     onDateClick: () -> Unit,
     iconResource: Int,
     placeholder: String,
-    containerColor: Color
+    containerColor: Color,
+    imeAction: ImeAction,
+    onDone: () -> Unit,
+    onNext:() -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -190,8 +240,12 @@ fun DatePickerField(
             fontSize = 20.sp
         )
 
+        val focusManager = LocalFocusManager.current
         Box(
-            modifier = Modifier.clickable { onDateClick() }
+            modifier = Modifier.clickable {
+                onDateClick()
+                focusManager.clearFocus()
+            }
         ) {
             TextField(
                 value = date,
@@ -218,7 +272,12 @@ fun DatePickerField(
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
-                textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
+                textStyle = TextStyle(color = MaterialTheme.colorScheme.primary),
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = imeAction),
+                keyboardActions = KeyboardActions(
+                    onNext = { onNext() },
+                    onDone = { onDone() }
+                ),
             )
         }
     }

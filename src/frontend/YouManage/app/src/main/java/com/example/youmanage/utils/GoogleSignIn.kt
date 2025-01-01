@@ -87,6 +87,8 @@ object GoogleSignIn {
                             .createFrom(credential.data)
                         val googleIdToken = googleIdTokenCredential.idToken
 
+                        Log.d("Google Token", googleIdToken)
+
                          viewModel.logInWithGoogle(UserGoogleLogIn(idToken = googleIdToken))
 
                     } catch (e: GoogleIdTokenParsingException) {

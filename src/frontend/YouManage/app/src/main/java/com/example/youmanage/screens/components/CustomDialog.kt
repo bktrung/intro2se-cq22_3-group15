@@ -2,6 +2,7 @@ package com.example.youmanage.screens.components
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
@@ -21,6 +22,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -46,10 +49,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -485,6 +491,9 @@ fun CreateRoleDialog(
                 verticalArrangement = Arrangement.Center
             ) {
 
+                val focusManager = LocalFocusManager.current
+
+
                 Text(
                     title,
                     fontWeight = FontWeight.Bold,
@@ -508,7 +517,12 @@ fun CreateRoleDialog(
                             onNameChange(it)
                         },
                         label = { Text("Role name") },
-                        textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
+                        textStyle = TextStyle(color = MaterialTheme.colorScheme.primary),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                            onDone = { focusManager.clearFocus() }
+                        )
 
 
                     )
@@ -531,7 +545,11 @@ fun CreateRoleDialog(
                         },
                         label = { Text("Role description") },
                         maxLines = 5,
-                        textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
+                        textStyle = TextStyle(color = MaterialTheme.colorScheme.primary),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(
+                            onDone = { focusManager.clearFocus() }
+                        )
                     )
                 }
 
@@ -588,6 +606,7 @@ fun ChangeRequestDialog(
 
         var description by remember { mutableStateOf("") }
 
+        val focusManager = LocalFocusManager.current
         Dialog(
             onDismissRequest = onDismiss,
             properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true)
@@ -639,7 +658,9 @@ fun ChangeRequestDialog(
                             unfocusedTextColor = MaterialTheme.colorScheme.primary,
                             focusedContainerColor = MaterialTheme.colorScheme.onSurface,
                             unfocusedContainerColor = MaterialTheme.colorScheme.onSurface
-                        )
+                        ),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                     )
 
                     Row(
@@ -693,6 +714,7 @@ fun AddMemberDialog(
                 dismissOnClickOutside = true
             )
         ) {
+            val focusManager = LocalFocusManager.current
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -745,7 +767,10 @@ fun AddMemberDialog(
                             placeholderContent = "Username",
                             placeholderColor = Color.Gray,
                             containerColor = MaterialTheme.colorScheme.onPrimary,
-                            icon = R.drawable.member_icon
+                            icon = R.drawable.member_icon,
+                            imeAction = ImeAction.Done,
+                            onNext = { focusManager.clearFocus() },
+                            onDone = { focusManager.clearFocus() }
                         )
                     }
 
@@ -791,6 +816,9 @@ fun ReplyChangeRequest(
     onApprove: (String) -> Unit = {},
     onDecline: (String) -> Unit = {}
 ) {
+
+    val focusManager = LocalFocusManager.current
+
     if (showDialog) {
         var reason by remember { mutableStateOf("") }
         var openReasonTextField by remember { mutableStateOf(false) }
@@ -872,6 +900,12 @@ fun ReplyChangeRequest(
                             maxLines = 5,
                             textStyle = TextStyle(
                                 color = MaterialTheme.colorScheme.primary
+                            ),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                   focusManager.clearFocus()
+                                }
                             )
                         )
 

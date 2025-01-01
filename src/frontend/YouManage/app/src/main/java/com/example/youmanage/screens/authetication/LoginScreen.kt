@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -90,10 +91,14 @@ fun LoginScreen(
             openNoExistDialog = true
         }
     }
+    val focusManager = LocalFocusManager.current
 
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .clickable {
+                focusManager.clearFocus()
+            }
             .background(MaterialTheme.colorScheme.background)
             .padding(24.dp)
     ) {
@@ -141,6 +146,9 @@ fun LoginScreen(
                 placeholderContent = "Email/Username",
                 placeholderColor = Color.Gray,
                 containerColor = textFieldBackgroundColor,
+                imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                onDone = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) },
+                onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
             )
 
 
@@ -153,6 +161,9 @@ fun LoginScreen(
                 placeholderContent = "Password",
                 placeholderColor = Color.Gray,
                 containerColor = textFieldBackgroundColor,
+                imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                onDone = { focusManager.clearFocus() },
+                onNext = { focusManager.clearFocus() }
             )
 
             Spacer(modifier = Modifier.height(16.dp))

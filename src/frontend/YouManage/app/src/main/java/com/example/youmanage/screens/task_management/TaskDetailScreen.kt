@@ -29,6 +29,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -56,12 +58,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -411,9 +416,13 @@ fun TaskDetailScreen(
         }
     ) { paddingValues ->
 
+        val focusManager = LocalFocusManager.current
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .clickable {
+                    focusManager.clearFocus()
+                }
                 .padding(paddingValues)
                 .padding(horizontal = 32.dp)
                 .verticalScroll(scrollable),
@@ -451,6 +460,11 @@ fun TaskDetailScreen(
                             color = Color.Gray
                         )
                     },
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.clearFocus() },
+                        onDone = { focusManager.clearFocus() }
+                    ),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedContainerColor = MaterialTheme.colorScheme.onSurface,
@@ -476,7 +490,10 @@ fun TaskDetailScreen(
                 onValueChange = { taskState = taskState.copy(description = it) },
                 placeholder = "Enter project description",
                 leadingIconRes = R.drawable.description_icon,
-                backgroundColor = primaryColor
+                backgroundColor = primaryColor,
+                imeAction = ImeAction.Done,
+                onDone = { focusManager.clearFocus() },
+                onNext = { focusManager.clearFocus() }
             )
 
             PrioritySelector(
@@ -506,7 +523,10 @@ fun TaskDetailScreen(
                 },
                 iconResource = R.drawable.calendar_icon,
                 placeholder = "Enter start date",
-                containerColor = primaryColor
+                containerColor = primaryColor,
+                imeAction = ImeAction.Done,
+                onDone = { focusManager.clearFocus() },
+                onNext = { focusManager.clearFocus() }
             )
 
             DatePickerField(
@@ -518,7 +538,10 @@ fun TaskDetailScreen(
                 },
                 iconResource = R.drawable.calendar_icon,
                 placeholder = "Enter end date",
-                containerColor = primaryColor
+                containerColor = primaryColor,
+                imeAction = ImeAction.Done,
+                onDone = { focusManager.clearFocus() },
+                onNext = { focusManager.clearFocus() }
             )
 
             CommentSection(
@@ -690,7 +713,10 @@ fun LabeledTextField(
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colorScheme.background,
     textColor: Color = MaterialTheme.colorScheme.primary,
-    placeholderColor: Color = MaterialTheme.colorScheme.primary
+    placeholderColor: Color = MaterialTheme.colorScheme.primary,
+    imeAction: ImeAction,
+    onDone: () -> Unit,
+    onNext: () -> Unit
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -729,7 +755,12 @@ fun LabeledTextField(
             },
             maxLines = Int.MAX_VALUE,
             shape = RoundedCornerShape(10.dp),
-            textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
+            textStyle = TextStyle(color = MaterialTheme.colorScheme.primary),
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = imeAction),
+            keyboardActions = KeyboardActions(
+                onDone = { onDone() },
+                onNext = { onNext() }
+            )
         )
     }
 }

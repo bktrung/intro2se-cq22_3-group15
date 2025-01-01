@@ -4,6 +4,7 @@ import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,8 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -39,11 +42,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -249,10 +255,14 @@ fun CreateTaskScreen(
     ) { paddingValues ->
 
         val scrollState = rememberScrollState()
+        val focusManager = LocalFocusManager.current
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .clickable {
+                    focusManager.clearFocus()
+                }
                 .padding(paddingValues)
                 .padding(horizontal = 36.dp)
                 .padding(bottom = 10.dp)
@@ -281,7 +291,10 @@ fun CreateTaskScreen(
                     placeholderContent = "Enter project title",
                     placeholderColor = MaterialTheme.colorScheme.primary,
                     containerColor = textFieldColor,
-                    icon = R.drawable.project_title_icon
+                    icon = R.drawable.project_title_icon,
+                    imeAction = ImeAction.Next,
+                    onDone = { focusManager.moveFocus(FocusDirection.Down)},
+                    onNext = {  focusManager.moveFocus(FocusDirection.Down)}
                 )
             }
 
@@ -299,6 +312,7 @@ fun CreateTaskScreen(
                     fontSize = 20.sp
                 )
 
+                val focusManager = LocalFocusManager.current
                 TextField(
                     value = description,
                     onValueChange = { description = it },
@@ -325,7 +339,12 @@ fun CreateTaskScreen(
                     },
                     maxLines = Int.MAX_VALUE,
                     shape = RoundedCornerShape(10.dp),
-                    textStyle = TextStyle(MaterialTheme.colorScheme.primary)
+                    textStyle = TextStyle(MaterialTheme.colorScheme.primary),
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.clearFocus() },
+                        onDone = { focusManager.clearFocus() }
+                    ),
                 )
             }
 
@@ -338,7 +357,10 @@ fun CreateTaskScreen(
                 },
                 iconResource = R.drawable.calendar_icon,
                 placeholder = "Enter start date",
-                containerColor = textFieldColor
+                containerColor = textFieldColor,
+                imeAction = ImeAction.Done,
+                onDone = { focusManager.clearFocus() },
+                onNext = { focusManager.clearFocus() }
             )
 
             DatePickerField(
@@ -350,7 +372,10 @@ fun CreateTaskScreen(
                 },
                 iconResource = R.drawable.calendar_icon,
                 placeholder = "Enter end date",
-                containerColor = textFieldColor
+                containerColor = textFieldColor,
+                imeAction = ImeAction.Done,
+                onDone = { focusManager.clearFocus() },
+                onNext = { focusManager.clearFocus() }
             )
 
             PrioritySelector(

@@ -1,6 +1,7 @@
 package com.example.youmanage.repository
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -45,6 +46,7 @@ class AuthenticationRepository @Inject constructor(
         return try {
             Resource.Success(apiCall())
         } catch (e: HttpException) {
+            Log.d("Error", e.message().toString())
             handleHttpException(e)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -83,6 +85,12 @@ class AuthenticationRepository @Inject constructor(
     }
 
     suspend fun logInWithGoogle(user: UserGoogleLogIn): Resource<UserLogInResponse> {
+        val loginResponse = safeApiCall { api.logInWithGoogle(user) }
+        if(loginResponse is Resource.Success){
+            Log.d("Google Login", "Success")
+        } else if(loginResponse is Resource.Error){
+            loginResponse.message?.let { Log.d("Google Login", it) }
+        }
         return safeApiCall { api.logInWithGoogle(user) }
     }
 

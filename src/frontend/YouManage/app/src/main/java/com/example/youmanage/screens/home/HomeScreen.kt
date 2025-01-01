@@ -134,12 +134,12 @@ fun HomeScreen(
                     )
                 },
                 keyboardActions = KeyboardActions(
-                    onDone = {
+                    onSearch = {
                         onSearch(searchQuery) // Gọi hàm tìm kiếm khi nhấn "Enter"
                     }
                 ),
                 keyboardOptions = KeyboardOptions.Default.copy(
-                    imeAction = ImeAction.Done // Thay đổi hành động IME thành "Done" (Enter)
+                    imeAction = ImeAction.Search // Thay đổi hành động IME thành "Done" (Enter)
                 ),
                 modifier = Modifier
                     .fillMaxWidth(),

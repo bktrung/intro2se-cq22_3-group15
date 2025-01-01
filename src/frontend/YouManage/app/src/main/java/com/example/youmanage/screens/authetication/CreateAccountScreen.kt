@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -97,9 +98,13 @@ fun CreateAccountScreen(
         }
     }
     else {
+        val focusManager = LocalFocusManager.current
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .clickable {
+                    focusManager.clearFocus()
+                }
                 .background(MaterialTheme.colorScheme.background)
                 .padding(16.dp)
         ) {
@@ -150,7 +155,10 @@ fun CreateAccountScreen(
                     onChangeValue = { username = it },
                     placeholderContent = "Username",
                     placeholderColor = MaterialTheme.colorScheme.primary,
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                    onDone = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) },
+                    onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -160,7 +168,10 @@ fun CreateAccountScreen(
                     onChangeValue = { email = it },
                     placeholderContent = "Email",
                     placeholderColor = MaterialTheme.colorScheme.primary,
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                    onDone = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) },
+                    onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -170,7 +181,10 @@ fun CreateAccountScreen(
                     onChangeValue = { password = it },
                     placeholderContent = "Password",
                     placeholderColor = MaterialTheme.colorScheme.primary,
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                    onDone = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) },
+                    onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -180,7 +194,10 @@ fun CreateAccountScreen(
                     onChangeValue = { confirmPassword = it },
                     placeholderContent = "Confirm Password",
                     placeholderColor = MaterialTheme.colorScheme.primary,
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                    onDone = { focusManager.clearFocus() },
+                    onNext = { focusManager.clearFocus() }
                 )
 
                 Spacer(modifier = Modifier.height(36.dp))

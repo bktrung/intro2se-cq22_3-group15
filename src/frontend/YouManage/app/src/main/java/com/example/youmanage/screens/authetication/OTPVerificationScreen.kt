@@ -17,22 +17,27 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -69,6 +74,7 @@ import com.example.youmanage.data.remote.authentication.VerifyRequest
 import com.example.youmanage.screens.components.ErrorDialog
 import com.example.youmanage.screens.components.KeyboardStatus
 import com.example.youmanage.screens.components.keyboardAsState
+import com.example.youmanage.screens.issue_management.TopBar
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
 import kotlinx.coroutines.delay
@@ -203,6 +209,8 @@ fun OTPVerificationScreen(
         else -> null
     }
 
+    val scrollState = rememberScrollState()
+
     var timeInSeconds by remember { mutableIntStateOf(expiredTime) }
     var isRunning by remember { mutableStateOf(true) }
 
@@ -260,7 +268,7 @@ fun OTPVerificationScreen(
         }
     }
 
-    Box(
+    Scaffold(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
@@ -270,31 +278,75 @@ fun OTPVerificationScreen(
                     .asPaddingValues()
                     .calculateBottomPadding()
             ),
-
-        ) {
-
-        IconButton(
-            onClick = {
-                onNavigateBack()
-            },
-            modifier = Modifier
-                .padding(start = 20.dp, top = 30.dp)
-                .align(Alignment.TopStart)
-
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.back_arrow_icon),
-                contentDescription = "Back",
-                tint = MaterialTheme.colorScheme.primary
+        topBar = {
+            com.example.youmanage.screens.project_management.TopBar(
+                title = "",
+                color = Color.Transparent,
+                trailing = {
+                    Box(
+                        modifier = Modifier.size(24.dp)
+                    )
+                },
+                onNavigateBack = onNavigateBack
             )
+        },
+        bottomBar = {
+
+            Row(
+                modifier = Modifier.fillMaxWidth()
+                    .padding(bottom = 10.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Button(
+                    onClick = {
+                        if (email.isNotEmpty()) {
+                            when (from) {
+                                "1" -> {
+                                    authenticationViewModel.verifyOTP(
+                                        VerifyRequest(
+                                            otp = otp,
+                                            email = email
+                                        )
+                                    )
+                                }
+
+                                "2" -> {
+                                    authenticationViewModel.verifyResetPasswordOTP(
+                                        VerifyRequest(
+                                            otp = otp,
+                                            email = email
+                                        )
+                                    )
+                                }
+                            }
+
+                        } else {
+                            openErrorDialog = true
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+
+                    ) {
+                    Text(
+                        "VERIFY",
+                        modifier = Modifier.padding(horizontal = 40.dp, vertical = 5.dp),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
 
+    ) { paddingValues ->
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = 70.dp)
+            modifier = Modifier.padding(paddingValues)
+                .verticalScroll(scrollState)
         ) {
-
-
+            
             Image(
                 painter = painterResource(id = R.drawable.otp_background),
                 contentDescription = "OTP Background"
@@ -361,47 +413,6 @@ fun OTPVerificationScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(5.dp))
-
-            Button(
-                onClick = {
-                    if (email.isNotEmpty()) {
-                        when (from) {
-                            "1" -> {
-                                authenticationViewModel.verifyOTP(
-                                    VerifyRequest(
-                                        otp = otp,
-                                        email = email
-                                    )
-                                )
-                            }
-
-                            "2" -> {
-                                authenticationViewModel.verifyResetPasswordOTP(
-                                    VerifyRequest(
-                                        otp = otp,
-                                        email = email
-                                    )
-                                )
-                            }
-                        }
-
-                    } else {
-                        openErrorDialog = true
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    containerColor = MaterialTheme.colorScheme.primary
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(
-                    "VERIFY",
-                    modifier = Modifier.padding(horizontal = 40.dp, vertical = 5.dp),
-                    fontWeight = FontWeight.Bold
-                )
-            }
         }
     }
 

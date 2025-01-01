@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -44,12 +46,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -125,9 +130,12 @@ fun AddProjectScreen(
             .padding(WindowInsets.statusBars.asPaddingValues())
 
     ) { paddingValues ->
+
+        val focusManager = LocalFocusManager.current
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .clickable { focusManager.clearFocus() }
                 .padding(paddingValues),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -167,9 +175,13 @@ fun AddProjectScreen(
                         placeholderContent = "Enter project title",
                         placeholderColor = MaterialTheme.colorScheme.primary,
                         containerColor = textFieldColor,
-                        icon = R.drawable.project_title_icon
+                        icon = R.drawable.project_title_icon,
+                        imeAction = ImeAction.Done,
+                        onDone = { focusManager.clearFocus() },
+                        onNext = { focusManager.clearFocus() }
                     )
                 }
+                val focusManager = LocalFocusManager.current
 
                 Spacer(modifier = Modifier.height(32.dp))
 
@@ -214,7 +226,12 @@ fun AddProjectScreen(
                         },
                         maxLines = Int.MAX_VALUE,
                         shape = RoundedCornerShape(5.dp),
-                        textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
+                        textStyle = TextStyle(color = MaterialTheme.colorScheme.primary),
+                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.clearFocus() },
+                            onDone = { focusManager.clearFocus() }
+                        ),
                     )
                 }
 
@@ -275,7 +292,6 @@ fun AddProjectScreen(
                             textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
                         )
                     }
-
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
