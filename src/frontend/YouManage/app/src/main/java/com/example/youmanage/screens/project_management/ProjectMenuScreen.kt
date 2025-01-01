@@ -123,6 +123,7 @@ fun ProjectMenuScreen(
                             token
                         )
                     },
+                    launch { authenticationViewModel.getUser("Bearer $token") },
                     launch {
                         projectMenuViewModel.getMemberList(
                             id,
@@ -130,7 +131,6 @@ fun ProjectMenuScreen(
                             user?.data?.id ?: 0
                         )
                     },
-                    launch { authenticationViewModel.getUser("Bearer $token") },
                     launch {
                         projectMenuViewModel.isHost(
                             id = id,
@@ -138,7 +138,6 @@ fun ProjectMenuScreen(
                         )
                     },
                 )
-
                 // Đợi tất cả các coroutine hoàn thành
                 try {
                     jobs.joinAll() // Đợi tất cả các job hoàn thành

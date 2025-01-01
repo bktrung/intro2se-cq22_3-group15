@@ -67,7 +67,6 @@ fun HomeScreen(
     onViewProject: (Int) -> Unit
 ) {
 
-    val textFieldColor = Color(0xFFF5F5F5)
     var searchQuery by remember { mutableStateOf("") }
 
     val projects by projectManagementViewModel.projects.observeAsState()

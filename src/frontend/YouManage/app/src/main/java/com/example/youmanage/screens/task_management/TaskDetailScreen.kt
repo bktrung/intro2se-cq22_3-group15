@@ -207,7 +207,7 @@ fun TaskDetailScreen(
 
             if(changeRequestResponse is Resource.Success){
                 Toast.makeText(context, "Request sent successfully!", Toast.LENGTH_SHORT).show()
-            } else {
+            } else if(changeRequestResponse is Resource.Error) {
                 Toast.makeText(context, "Something went wrong. Try again!", Toast.LENGTH_SHORT).show()
             }
 
