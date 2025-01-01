@@ -50,15 +50,14 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.youmanage.R
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
-import com.example.youmanage.screens.components.AddMemberDialog
 import com.example.youmanage.screens.components.AlertDialog
 import com.example.youmanage.screens.components.DatePickerModal
 import com.example.youmanage.screens.components.LeadingTextFieldComponent
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
-import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
+import com.example.youmanage.viewmodel.common.ProjectManagementViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

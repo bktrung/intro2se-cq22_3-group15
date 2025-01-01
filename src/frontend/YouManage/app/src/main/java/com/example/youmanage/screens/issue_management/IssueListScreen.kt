@@ -56,12 +56,11 @@ import com.example.youmanage.data.remote.issusemanagement.Issue
 import com.example.youmanage.screens.task_management.ButtonSection
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Constants.statusMapping
-import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.randomAvatar
-import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.IssuesViewModel
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
+import com.example.youmanage.viewmodel.TraceInProjectViewModel
+import com.example.youmanage.viewmodel.issuemanagement.IssuesListViewModel
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
@@ -73,85 +72,58 @@ fun IssueListScreen(
     onCreateIssue: () -> Unit = {},
     onIssueDetail: (Int) -> Unit,
     onDisableAction: () -> Unit = {},
-    issueManagementViewModel: IssuesViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
-    authenticationViewModel: AuthenticationViewModel = hiltViewModel()
+    issuesListViewModel: IssuesListViewModel = hiltViewModel(),
+    authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
+    traceInProjectViewModel: TraceInProjectViewModel = hiltViewModel()
 ) {
     val backgroundColor = MaterialTheme.colorScheme.background
-    val issues by issueManagementViewModel.issues.observeAsState()
+
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
-    var filterIssues by remember { mutableStateOf(emptyList<Issue>()) }
-    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
-    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
-    val issueSocket by issueManagementViewModel.issueSocket.observeAsState()
-    val user by authenticationViewModel.user.observeAsState()
+    val issueSocket by issuesListViewModel.issueSocket.observeAsState()
+    val issues by issuesListViewModel.issues.observeAsState()
+
+    val shouldDisableAction by traceInProjectViewModel.observeCombinedLiveData(projectId)
+        .observeAsState(false)
 
     val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
+    var filterIssues by remember { mutableStateOf(emptyList<Issue>()) }
 
     // Fetch issues when the token is available
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             val bearerToken = "Bearer $token"
-            val projectWebSocketUrl = "${WEB_SOCKET}project/$projectId/"
-            val memberWebSocketUrl = "${WEB_SOCKET}member/$projectId/"
 
             supervisorScope {
                 // Collecting the launched jobs
                 val jobs = listOf(
                     launch {
                         try {
-                            issueManagementViewModel.getIssues(
+                            issuesListViewModel.getIssues(
                                 projectId = projectId,
                                 authorization = bearerToken
                             )
                         } catch (e: Exception) {
                             Log.e("IssueManagement", "Error fetching issues: ${e.message}")
                         }
-                    },
-                    launch {
-                        try {
-                            authenticationViewModel.getUser(bearerToken)
-                        } catch (e: Exception) {
-                            Log.e("Authentication", "Error fetching user: ${e.message}")
-                        }
-                    },
-                    launch {
-                        try {
-                            projectManagementViewModel.connectToProjectWebsocket(url = projectWebSocketUrl)
-                        } catch (e: Exception) {
-                            Log.e("ProjectWebSocket", "Error connecting to project WebSocket: ${e.message}")
-                        }
-                    },
-                    launch {
-                        try {
-                            projectManagementViewModel.connectToMemberWebsocket(url = memberWebSocketUrl)
-                        } catch (e: Exception) {
-                            Log.e("MemberWebSocket", "Error connecting to member WebSocket: ${e.message}")
-                        }
                     }
                 )
-
                 // Waiting for all jobs to finish
                 jobs.joinAll()
             }
         }
     }
 
-
-
-    HandleOutProjectWebSocket(
-        memberSocket = memberSocket,
-        projectSocket = projectSocket,
-        user = user,
-        projectId = projectId,
-        onDisableAction = onDisableAction
-    )
+    LaunchedEffect(shouldDisableAction){
+        if(shouldDisableAction){
+            onDisableAction()
+        }
+    }
 
     LaunchedEffect(Unit) {
         supervisorScope {
             launch {
-                issueManagementViewModel.connectToIssueWebSocket(webSocketUrl)
-            }
+                issuesListViewModel.connectToIssueWebSocket(webSocketUrl)
+            }.join()
         }
 
     }
@@ -159,13 +131,12 @@ fun IssueListScreen(
     LaunchedEffect(issueSocket) {
         supervisorScope {
             launch {
-                issueManagementViewModel.getIssues(
+                issuesListViewModel.getIssues(
                     projectId = projectId,
                     authorization = "Bearer ${accessToken.value}"
                 )
             }
         }
-
     }
 
     var isSelectedButton by rememberSaveable { mutableIntStateOf(0) }
@@ -178,8 +149,6 @@ fun IssueListScreen(
             } ?: emptyList()
         }
     }
-
-
 
     Scaffold(
         modifier = Modifier

@@ -37,8 +37,8 @@ import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.screens.task_management.ButtonSection
 import com.example.youmanage.screens.task_management.TaskItem
 import com.example.youmanage.utils.Constants.statusMapping
-import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.TaskManagementViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
+import com.example.youmanage.viewmodel.home.MyTaskViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 
@@ -48,26 +48,24 @@ import kotlinx.coroutines.supervisorScope
 fun MyTaskScreen(
     paddingValues: PaddingValues = PaddingValues(),
     onClick: (String, String) -> Unit,
-    taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
+    myTaskViewModel: MyTaskViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
 ) {
 
     val accessToken = authenticationViewModel.accessToken.collectAsState(null)
-    val myTask by taskManagementViewModel.myTask.observeAsState()
+    val myTask by myTaskViewModel.myTasks.observeAsState()
+
     var isSelectedButton by remember { mutableIntStateOf(0) }
     var filterTask by remember { mutableStateOf<List<Task>>(emptyList()) }
 
     LaunchedEffect(accessToken.value) {
-        accessToken.value?.let {
+        accessToken.value?.let { token ->
             supervisorScope {
                 val job = launch {
-                    taskManagementViewModel.getMyTask(
-                        authorization = "Bearer $it")
+                    myTaskViewModel.getMyTasks(token)
                 }
-
                 job.join()
             }
-
         }
     }
 

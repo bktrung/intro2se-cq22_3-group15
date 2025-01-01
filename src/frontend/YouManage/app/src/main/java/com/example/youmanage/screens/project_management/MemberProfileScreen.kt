@@ -23,13 +23,10 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -54,18 +51,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.youmanage.data.remote.projectmanagement.Assign
-import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.screens.components.AlertDialog
 import com.example.youmanage.utils.Constants.WEB_SOCKET
-import com.example.youmanage.utils.HandleOutProjectWebSocket
-import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.randomAvatar
-import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
-import com.example.youmanage.viewmodel.RoleViewmodel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
+import com.example.youmanage.viewmodel.projectmanagement.MemberProfileViewModel
+import com.example.youmanage.viewmodel.projectmanagement.RoleViewmodel
+import com.example.youmanage.viewmodel.TraceInProjectViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
 
 @Preview
 @Composable
@@ -74,18 +71,19 @@ fun MemberProfileScreen(
     memberId: String = "",
     onNavigateBack: () -> Unit = {},
     roleViewmodel: RoleViewmodel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
+    onDisableAction: () -> Unit = {},
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    onDisableAction: () -> Unit = {}
+    traceInProjectViewModel: TraceInProjectViewModel = hiltViewModel(),
+    memberProfileViewModel: MemberProfileViewModel = hiltViewModel()
 ) {
 
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
-    val user by authenticationViewModel.user.observeAsState()
-    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
-    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
-    val project by projectManagementViewModel.project.observeAsState()
-    val roles by roleViewmodel.roles.observeAsState()
-    val unAssignResponse by roleViewmodel.assignResponse.observeAsState()
+    val unAssignResponse by memberProfileViewModel.unAssignResponse.collectAsState()
+
+    val member by memberProfileViewModel.member.collectAsState()
+    val roles by memberProfileViewModel.roles.collectAsState()
+
+    val shouldDisableAction by traceInProjectViewModel.observeCombinedLiveData(projectId).observeAsState(false)
 
     var showUnAssignDialog by remember { mutableStateOf(false) }
     var isSelectedRole by remember { mutableIntStateOf(-1) }
@@ -94,57 +92,42 @@ fun MemberProfileScreen(
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
-            // Constructing the WebSocket URL
-            val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
 
             // Using supervisorScope to launch tasks concurrently
             supervisorScope {
                 // Launching multiple tasks concurrently
                 val job1 = launch {
-                    projectManagementViewModel.getProject(projectId, "Bearer $token")
+                    memberProfileViewModel.getMemberAndRoles(projectId, memberId, token)
                 }
 
                 val job2 = launch {
-                    projectManagementViewModel.connectToProjectWebsocket(webSocketUrl)
-                }
-
-                val job3 = launch {
-                    projectManagementViewModel.connectToMemberWebsocket(webSocketUrl)
-                }
-
-                val job4 = launch {
-                    roleViewmodel.getRolesOfMember(projectId, memberId, "Bearer $token")
+                   traceInProjectViewModel.connectToWebSocketAndUser(token, webSocketUrl)
                 }
 
                 // Waiting for all the jobs to complete
                 job1.join()
                 job2.join()
-                job3.join()
-                job4.join()
             }
         }
     }
 
-
-    HandleOutProjectWebSocket(
-        memberSocket = memberSocket,
-        projectSocket = projectSocket,
-        user = user,
-        projectId = projectId,
-        onDisableAction = onDisableAction
-    )
-
-    var member by remember { mutableStateOf(User()) }
-
-    LaunchedEffect(project) {
-        if (project is Resource.Success) {
-            member = project?.data?.members?.find { it.id == memberId.toInt() } ?: User()
+    LaunchedEffect(shouldDisableAction){
+        if(shouldDisableAction){
+            onDisableAction()
         }
     }
 
     LaunchedEffect(unAssignResponse) {
-        if (unAssignResponse is Resource.Success) {
-            roleViewmodel.getRolesOfMember(projectId, memberId, "Bearer ${accessToken.value}")
+        if (unAssignResponse) {
+            supervisorScope {
+                launch {
+                   memberProfileViewModel.getRoles(
+                       projectId,
+                       memberId,
+                       accessToken.value.toString()
+                   )
+                }.join()
+            }
         }
     }
 
@@ -156,9 +139,9 @@ fun MemberProfileScreen(
                 onNavigateBack = onNavigateBack,
                 color = Color.Transparent,
                 trailing = {
-                   Box(
-                       modifier = Modifier.size(24.dp)
-                   )
+                    Box(
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             )
         },
@@ -241,7 +224,7 @@ fun MemberProfileScreen(
                     .height(500.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                itemsIndexed(roles?.data ?: emptyList()) { index, item ->
+                itemsIndexed(roles) { _, item ->
                     MemberRoleItem(
                         name = item.name,
                         onUnAssign = {
@@ -260,18 +243,23 @@ fun MemberProfileScreen(
         showDialog = showUnAssignDialog,
         onDismiss = { showUnAssignDialog = false },
         onConfirm = {
-            accessToken.value?.let { token ->
-                if (isSelectedRole != -1) {
-                    roleViewmodel.assignRole(
-                        projectId = projectId,
-                        roleId = isSelectedRole.toString(),
-                        member = Assign(userId = member.id),
-                        action = "unassign",
-                        authorization = "Bearer $token"
-                    )
+
+            CoroutineScope(Dispatchers.IO).launch {
+                accessToken.value?.let { token ->
+                    if (isSelectedRole != -1) {
+                        withContext(Dispatchers.IO) {
+                            memberProfileViewModel.unAssignRole(
+                                projectId = projectId,
+                                roleId = isSelectedRole.toString(),
+                                memberId = member.id,
+                                token = token
+                            )
+                        }
+                    }
                 }
             }
             showUnAssignDialog = false
+
         }
     )
 }

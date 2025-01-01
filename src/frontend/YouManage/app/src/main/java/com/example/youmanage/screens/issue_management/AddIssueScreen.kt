@@ -50,15 +50,14 @@ import com.example.youmanage.screens.components.ErrorDialog
 import com.example.youmanage.screens.components.LeadingTextFieldComponent
 import com.example.youmanage.screens.components.TaskSelector
 import com.example.youmanage.utils.Constants.WEB_SOCKET
-import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
-import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.IssuesViewModel
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
-import com.example.youmanage.viewmodel.TaskManagementViewModel
+import com.example.youmanage.viewmodel.TraceInProjectViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
+import com.example.youmanage.viewmodel.issuemanagement.AddIssueViewModel
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import com.example.youmanage.screens.project_management.TopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
@@ -69,19 +68,17 @@ fun AddIssueScreen(
     onIssueCreated: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
     onDisableAction: () -> Unit = {},
-    issueManagementViewModel: IssuesViewModel = hiltViewModel(),
-    taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
+    addIssueViewModel: AddIssueViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel()
+    traceInProjectViewModel: TraceInProjectViewModel = hiltViewModel()
 ) {
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
-    val members by projectManagementViewModel.members.observeAsState()
-    val tasks by taskManagementViewModel.tasks.observeAsState()
-    val issue by issueManagementViewModel.issue.observeAsState()
-    var openErrorDialog by remember { mutableStateOf(false) }
-    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
-    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
-    val user by authenticationViewModel.user.observeAsState()
+    val members by addIssueViewModel.members.observeAsState()
+    val tasks by addIssueViewModel.tasks.observeAsState()
+    val issue by addIssueViewModel.issue.observeAsState()
+
+    val shouldDisableAction by traceInProjectViewModel.observeCombinedLiveData(projectId)
+        .observeAsState(false)
 
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
@@ -91,6 +88,7 @@ fun AddIssueScreen(
 
     val showChooseTask = remember { mutableStateOf(false) }
     val showChooseMember = remember { mutableStateOf(false) }
+    var openErrorDialog by remember { mutableStateOf(false) }
 
     val backgroundColor = MaterialTheme.colorScheme.background
     val textFieldColor = MaterialTheme.colorScheme.surface
@@ -103,6 +101,7 @@ fun AddIssueScreen(
             openErrorDialog = true
         }
     }
+
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             val webSocketUrl = "${WEB_SOCKET}project/${projectId}/"
@@ -111,19 +110,10 @@ fun AddIssueScreen(
                 // Launch all tasks concurrently
                 val jobs = listOf(
                     launch {
-                        projectManagementViewModel.getMembers(projectId, "Bearer $token")
+                        addIssueViewModel.loadIssueData(projectId, "Bearer $token")
                     },
                     launch {
-                        taskManagementViewModel.getTasks(projectId, "Bearer $token")
-                    },
-                    launch {
-                        projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-                    },
-                    launch {
-                        projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
-                    },
-                    launch {
-                        authenticationViewModel.getUser("Bearer $token")
+                        traceInProjectViewModel.connectToWebSocketAndUser(token, webSocketUrl)
                     }
                 )
 
@@ -134,13 +124,11 @@ fun AddIssueScreen(
     }
 
 
-    HandleOutProjectWebSocket(
-        memberSocket = memberSocket,
-        projectSocket = projectSocket,
-        user = user,
-        projectId = projectId,
-        onDisableAction = onDisableAction
-    )
+    LaunchedEffect(shouldDisableAction) {
+        if (shouldDisableAction) {
+            onDisableAction()
+        }
+    }
 
     Scaffold(
         modifier = Modifier
@@ -153,7 +141,7 @@ fun AddIssueScreen(
                     .calculateBottomPadding()
             ),
         topBar = {
-            com.example.youmanage.screens.project_management.TopBar(
+            TopBar(
                 title = "Create Issue",
                 onNavigateBack = { onNavigateBack() },
                 color = Color.Transparent,
@@ -172,7 +160,7 @@ fun AddIssueScreen(
                 Button(
                     onClick = {
                         accessToken.value?.let { token ->
-                            issueManagementViewModel.createIssue(
+                            addIssueViewModel.createIssue(
                                 projectId = projectId,
                                 IssueCreate(
                                     title = title,
@@ -295,7 +283,7 @@ fun AddIssueScreen(
         ChooseItemDialog(
             title = "Choose Task",
             showDialog = showChooseTask.value,
-            items = tasks?.data ?: emptyList(),
+            items = tasks ?: emptyList(),
             displayText = { it.title },
             onDismiss = { showChooseTask.value = false },
             onConfirm = { task ->
@@ -309,7 +297,7 @@ fun AddIssueScreen(
         ChooseItemDialog(
             title = "Choose Member",
             showDialog = showChooseMember.value,
-            items = members?.data ?: emptyList(),
+            items = members ?: emptyList(),
             displayText = { it.username ?: "Unknown" },
             onDismiss = { showChooseMember.value = false },
             onConfirm = { user ->
@@ -320,14 +308,12 @@ fun AddIssueScreen(
         )
     }
 
-    // Error Dialog
-    if (openErrorDialog) {
-        ErrorDialog(
-            title = "Error",
-            content = "Failed to create issue. Please try again.",
-            showDialog = openErrorDialog,
-            onDismiss = { openErrorDialog = false },
-            onConfirm = { openErrorDialog = false }
-        )
-    }
+    ErrorDialog(
+        title = "Error",
+        content = "Failed to create issue. Please try again.",
+        showDialog = openErrorDialog,
+        onDismiss = { openErrorDialog = false },
+        onConfirm = { openErrorDialog = false }
+    )
+
 }

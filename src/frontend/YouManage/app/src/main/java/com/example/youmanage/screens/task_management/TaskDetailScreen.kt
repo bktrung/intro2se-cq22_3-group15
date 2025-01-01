@@ -86,14 +86,12 @@ import com.example.youmanage.ui.theme.fontFamily
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Constants.priorityChoice
 import com.example.youmanage.utils.Constants.statusMapping
-import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.formatToRelativeTime
 import com.example.youmanage.utils.randomAvatar
-import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.ChangeRequestViewModel
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
-import com.example.youmanage.viewmodel.TaskManagementViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
+import com.example.youmanage.viewmodel.TraceInProjectViewModel
+import com.example.youmanage.viewmodel.taskmanagement.TaskDetailViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
@@ -116,7 +114,6 @@ data class TaskState(
     val priority: Int = -1
 )
 
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TaskDetailScreen(
@@ -124,30 +121,28 @@ fun TaskDetailScreen(
     taskId: String,
     onNavigateBack: () -> Unit = {},
     onDisableAction: () -> Unit = {},
-    taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    changeRequestViewModel: ChangeRequestViewModel = hiltViewModel()
+    traceInProjectViewModel: TraceInProjectViewModel= hiltViewModel(),
+    taskDetailViewModel: TaskDetailViewModel = hiltViewModel()
 ) {
 
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
-    val response by taskManagementViewModel.response.observeAsState()
-    val commentDelete by taskManagementViewModel.deleteCommentResponse.observeAsState()
-    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
-    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
+
     val user by authenticationViewModel.user.observeAsState()
     var update by remember { mutableStateOf(false) }
 
-    val isHost by taskManagementViewModel.isHost.observeAsState()
-    val task by taskManagementViewModel.task.observeAsState()
-    val taskUpdate by taskManagementViewModel.taskUpdate.observeAsState()
+    val shouldDisableAction by traceInProjectViewModel.observeCombinedLiveData(projectId)
+        .observeAsState(false)
 
-    val changeRequestResponse by changeRequestViewModel.response.observeAsState()
-
-    val members by taskManagementViewModel.members.observeAsState()
-
-    val comments by taskManagementViewModel.comments.observeAsState()
-    val comment by taskManagementViewModel.comment.observeAsState()
+    val response by taskDetailViewModel.response.observeAsState()
+    val commentDelete by taskDetailViewModel.deleteCommentResponse.observeAsState()
+    val isHost by taskDetailViewModel.isHost.observeAsState()
+    val task by taskDetailViewModel.task.observeAsState()
+    val taskUpdate by taskDetailViewModel.taskUpdate.observeAsState()
+    val members by taskDetailViewModel.members.observeAsState()
+    val comments by taskDetailViewModel.comments.observeAsState()
+    val comment by taskDetailViewModel.comment.observeAsState()
+    val changeRequestResponse by taskDetailViewModel.requestResponse.observeAsState()
 
     var requestDescription by remember { mutableStateOf("") }
 
@@ -171,24 +166,20 @@ fun TaskDetailScreen(
 
     val context = LocalContext.current
 
+    val webSocketUrl = "${WEB_SOCKET}project/${projectId}/"
+
     LaunchedEffect(accessToken.value) {
         try {
             accessToken.value?.let { token ->
                 supervisorScope {
                     // Launching coroutines concurrently
                     val job1 = launch {
-                        taskManagementViewModel.getTask(projectId, taskId, "Bearer $token")
+                        taskDetailViewModel.loadTaskDetails(projectId, taskId, "Bearer $token")
                     }
                     val job2 = launch {
-                        taskManagementViewModel.getComments(projectId, taskId, "Bearer $token")
+                         traceInProjectViewModel.connectToWebSocketAndUser(token, webSocketUrl)
                     }
                     val job3 = launch {
-                        taskManagementViewModel.getMembers(projectId, "Bearer $token")
-                    }
-                    val job4 = launch {
-                        taskManagementViewModel.isHost(projectId, "Bearer $token")
-                    }
-                    val job5 = launch {
                         authenticationViewModel.getUser("Bearer $token")
                     }
 
@@ -196,8 +187,6 @@ fun TaskDetailScreen(
                     job1.join()
                     job2.join()
                     job3.join()
-                    job4.join()
-                    job5.join()
                 }
             }
         } catch (e: CancellationException) {
@@ -207,26 +196,21 @@ fun TaskDetailScreen(
         }
     }
 
+    LaunchedEffect(shouldDisableAction) {
+        if (shouldDisableAction) {
+            onDisableAction()
+        }
+    }
 
-    val webSocketUrl = "${WEB_SOCKET}project/${projectId}/"
-//
-//    LaunchedEffect(Unit) {
-//        projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-//        projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
-//        taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
-//    }
-
-//    HandleOutProjectWebSocket(
-//        memberSocket = memberSocket,
-//        projectSocket = projectSocket,
-//        user = user,
-//        projectId = projectId,
-//        onDisableAction = onDisableAction
-//    )
-
-
-    LaunchedEffect(response) {
+    LaunchedEffect(response, changeRequestResponse) {
         try {
+
+            if(changeRequestResponse is Resource.Success){
+                Toast.makeText(context, "Request sent successfully!", Toast.LENGTH_SHORT).show()
+            } else if(changeRequestResponse is Resource.Error) {
+                Toast.makeText(context, "Something went wrong. Try again!", Toast.LENGTH_SHORT).show()
+            }
+
             if (response is Resource.Success) {
                 showDeleteDialog = false
                 onNavigateBack()
@@ -238,7 +222,6 @@ fun TaskDetailScreen(
         } catch (e: Exception) {
             Log.d("Coroutine", "Exception: ${e.localizedMessage}")
         }
-
     }
 
     LaunchedEffect(update) {
@@ -246,14 +229,13 @@ fun TaskDetailScreen(
             if (update) {
                 supervisorScope {
                     launch {
-                        taskManagementViewModel.updateTask(
+                        taskDetailViewModel.updateTask(
                             projectId,
                             taskId,
                             newTask,
                             "Bearer ${accessToken.value}"
                         )
                     }
-
                 }
 
                 update = false
@@ -274,7 +256,7 @@ fun TaskDetailScreen(
             if (comment is Resource.Success || commentDelete is Resource.Success) {
                 supervisorScope {
                     launch {
-                        taskManagementViewModel.getComments(
+                        taskDetailViewModel.getComments(
                             projectId,
                             taskId,
                             "Bearer ${accessToken.value}"
@@ -296,7 +278,7 @@ fun TaskDetailScreen(
             if (taskUpdate is Resource.Success) {
                 supervisorScope {
                     launch {
-                        taskManagementViewModel.getTask(
+                        taskDetailViewModel.getTask(
                             projectId,
                             taskId,
                             "Bearer ${accessToken.value}"
@@ -542,7 +524,7 @@ fun TaskDetailScreen(
             CommentSection(
                 comments = if (comments is Resource.Success) comments?.data!! else emptyList(),
                 postComment = { content ->
-                    taskManagementViewModel.postComment(
+                    taskDetailViewModel.postComment(
                         projectId,
                         taskId,
                         Content(content),
@@ -610,7 +592,7 @@ fun TaskDetailScreen(
             showDialog = showCommentEditor,
             onDismiss = { showCommentEditor = false },
             onSave = { content ->
-                taskManagementViewModel.updateComment(
+                taskDetailViewModel.updateComment(
                     projectId,
                     taskId,
                     currentComment.id.toString(),
@@ -620,7 +602,7 @@ fun TaskDetailScreen(
                 showCommentEditor = false
             },
             onDelete = {
-                taskManagementViewModel.deleteComment(
+                taskDetailViewModel.deleteComment(
                     projectId,
                     taskId,
                     currentComment.id.toString(),
@@ -640,7 +622,7 @@ fun TaskDetailScreen(
                 showDeleteDialog = false
             },
             onConfirm = {
-                taskManagementViewModel.deleteTask(
+                taskDetailViewModel.deleteTask(
                     projectId,
                     taskId,
                     "Bearer ${accessToken.value}"
@@ -656,7 +638,7 @@ fun TaskDetailScreen(
             showDialog = showRequestDialog,
             onDismiss = { showRequestDialog = false },
             onConfirm = {
-                changeRequestViewModel.createChangeRequest(
+                taskDetailViewModel.createChangeRequest(
                     projectId.toInt(),
                     requestBody,
                     "Bearer ${accessToken.value}"
@@ -680,7 +662,7 @@ fun TaskDetailScreen(
         },
         onConfirm = {
 
-            taskManagementViewModel.updateTaskStatusAndAssignee(
+            taskDetailViewModel.updateTaskStatusAndAssignee(
                 projectId,
                 taskId,
                 TaskUpdateStatus(

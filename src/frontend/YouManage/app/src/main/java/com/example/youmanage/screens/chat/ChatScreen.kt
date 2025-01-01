@@ -70,12 +70,12 @@ import com.example.youmanage.data.remote.chat.MessageRequest
 import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.utils.Constants.BASE_URL
 import com.example.youmanage.utils.Constants.WEB_SOCKET
-import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.randomAvatar
-import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.ChatViewModel
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
+import com.example.youmanage.viewmodel.projectmanagement.ChatViewModel
+import com.example.youmanage.viewmodel.TraceInProjectViewModel
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 
@@ -361,55 +361,6 @@ fun ChatInputBar(
         }
     }
 
-    // Thay đổi cách khởi tạo MediaRecorder để đảm bảo nó được tái khởi tạo khi cần
-    //var mediaRecorder: MediaRecorder? by remember { mutableStateOf(null) }
-    //val outputFile = remember { File(context.getExternalFilesDir(null), "audio_message.3gp") }
-
-//    val microphonePermission = rememberLauncherForActivityResult(
-//        contract = ActivityResultContracts.RequestPermission(),
-//        onResult = { isGranted ->
-//            if (!isGranted) {
-//                // Thông báo nếu không cấp quyền
-//            }
-//        }
-//    )
-
-//    LaunchedEffect(Unit) {
-//        microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
-//    }
-
-//    // Thêm vào chức năng bắt đầu và dừng ghi âm
-//    fun startRecording() {
-//        // Khởi tạo lại MediaRecorder mỗi lần ghi âm bắt đầu
-//        mediaRecorder = MediaRecorder().apply {
-//            try {
-//                reset()  // Đặt lại trạng thái nếu có bất kỳ ghi âm nào trước đó
-//                setAudioSource(MediaRecorder.AudioSource.MIC)
-//                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-//                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-//                setOutputFile(outputFile.absolutePath)
-//                prepare()
-//                start()
-//            } catch (e: Exception) {
-//                e.printStackTrace()
-//            }
-//        }
-//    }
-//
-//    fun stopRecordingAndSend() {
-//        try {
-//            mediaRecorder?.apply {
-//                stop()
-//                release() // Giải phóng tài nguyên của MediaRecorder
-//            }
-//            // Gửi tin nhắn âm thanh
-//            onMessageSent(outputFile.absolutePath, true)
-//        } catch (e: Exception) {
-//            e.printStackTrace()
-//        } finally {
-//            mediaRecorder = null // Đảm bảo giải phóng tài nguyên sau khi ghi âm
-//        }
-//    }
 
     Row(
         modifier = modifier,
@@ -481,7 +432,7 @@ fun ChatScreenWithViewModel(
     onDisableAction: () -> Unit,
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
     chatViewModel: ChatViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
+    traceInProjectViewModel: TraceInProjectViewModel = hiltViewModel()
 ) {
 
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
@@ -489,8 +440,7 @@ fun ChatScreenWithViewModel(
     val messages by chatViewModel.messages.observeAsState()
     val message by chatViewModel.messageSocket.observeAsState()
 
-    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
-    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
+    val shouldDisableAction by traceInProjectViewModel.observeCombinedLiveData(projectId).observeAsState(false)
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
@@ -498,23 +448,11 @@ fun ChatScreenWithViewModel(
             val webSocketUrl = "${WEB_SOCKET}chat/$projectId/?token=$token"
 
             supervisorScope {
-                launch {
-                    try {
-                        projectManagementViewModel.connectToProjectWebsocket(url)
-                    } catch (e: Exception) {
-                        Log.e("ProjectWebsocket", "Error: ${e.message}")
-                    }
+                val job1 = launch {
+                    traceInProjectViewModel.connectToWebSocketAndUser(token, url)
                 }
 
-                launch {
-                    try {
-                        projectManagementViewModel.connectToMemberWebsocket(url)
-                    } catch (e: Exception) {
-                        Log.e("MemberWebsocket", "Error: ${e.message}")
-                    }
-                }
-
-                launch {
+                val job2 = launch {
                     try {
                         authenticationViewModel.getUser("Bearer $token")
                     } catch (e: Exception) {
@@ -522,7 +460,7 @@ fun ChatScreenWithViewModel(
                     }
                 }
 
-                launch {
+                val job3 = launch {
                     try {
                         chatViewModel.getMessages(
                             projectId = projectId,
@@ -534,7 +472,7 @@ fun ChatScreenWithViewModel(
                     }
                 }
 
-                launch {
+                val job4 = launch {
                     try {
                         Log.d("WEB SOCKET", webSocketUrl)
                         chatViewModel.connectToSocket(webSocketUrl)
@@ -542,18 +480,17 @@ fun ChatScreenWithViewModel(
                         Log.e("ChatWebSocket", "Error: ${e.message}")
                     }
                 }
+
+                joinAll(job1, job2, job3, job4)
             }
         }
     }
 
-
-    HandleOutProjectWebSocket(
-        memberSocket = memberSocket,
-        projectSocket = projectSocket,
-        user = user,
-        projectId = projectId,
-        onDisableAction = onDisableAction
-    )
+    LaunchedEffect(shouldDisableAction) {
+        if(shouldDisableAction){
+            onDisableAction()
+        }
+    }
 
     LaunchedEffect(message) {
         supervisorScope {

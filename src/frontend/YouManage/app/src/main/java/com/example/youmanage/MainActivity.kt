@@ -11,7 +11,6 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
@@ -22,8 +21,6 @@ import androidx.compose.runtime.setValue
 import com.example.youmanage.navigation.RootNavGraph
 import com.example.youmanage.screens.components.ErrorDialog
 import com.example.youmanage.ui.theme.YouManageTheme
-import com.example.youmanage.viewmodel.ActivityLogsViewModel
-import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
 

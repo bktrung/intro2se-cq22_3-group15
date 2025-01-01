@@ -1,8 +1,7 @@
-package com.example.youmanage.viewmodel
+package com.example.youmanage.viewmodel.projectmanagement
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.youmanage.data.remote.projectmanagement.Assign
 import com.example.youmanage.data.remote.projectmanagement.Role
 import com.example.youmanage.data.remote.projectmanagement.RoleRequest

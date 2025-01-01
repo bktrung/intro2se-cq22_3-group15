@@ -1,4 +1,4 @@
-package com.example.youmanage.viewmodel
+package com.example.youmanage.viewmodel.common
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.youmanage.data.remote.issusemanagement.Issue
 import com.example.youmanage.data.remote.issusemanagement.IssueCreate
 import com.example.youmanage.data.remote.issusemanagement.IssueUpdate
-import com.example.youmanage.data.remote.taskmanagement.Task
 import com.example.youmanage.data.remote.websocket.WebSocketResponse
 import com.example.youmanage.repository.IssuesRepository
 import com.example.youmanage.repository.WebSocketRepository

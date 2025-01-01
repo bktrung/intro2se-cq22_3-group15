@@ -46,7 +46,7 @@ import com.example.youmanage.screens.components.AlertDialog
 import com.example.youmanage.utils.Constants.ACCESS_TOKEN_KEY
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.randomAvatar
-import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 

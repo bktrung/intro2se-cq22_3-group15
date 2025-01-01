@@ -1,15 +1,12 @@
-package com.example.youmanage.viewmodel
+package com.example.youmanage.viewmodel.home
 
-import android.database.Cursor
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.youmanage.data.remote.authentication.Message
 import com.example.youmanage.data.remote.notification.Notification
 import com.example.youmanage.data.remote.notification.NotificationSocket
-import com.example.youmanage.data.remote.notification.Notifications
 import com.example.youmanage.repository.NotificationRepository
 import com.example.youmanage.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel

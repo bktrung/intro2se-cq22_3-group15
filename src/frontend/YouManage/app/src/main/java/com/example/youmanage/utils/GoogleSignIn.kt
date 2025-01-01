@@ -12,12 +12,11 @@ import androidx.credentials.PasswordCredential
 import androidx.credentials.PublicKeyCredential
 import com.example.youmanage.data.remote.authentication.UserGoogleLogIn
 import com.example.youmanage.utils.Constants.WEB_CLIENT_ID
-import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 object GoogleSignIn {

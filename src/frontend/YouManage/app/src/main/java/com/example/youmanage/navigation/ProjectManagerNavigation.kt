@@ -330,7 +330,10 @@ fun NavGraphBuilder.projectManagementNavGraph(
             val projectId = it.arguments?.getString("projectId")
             RolesScreen(
                 projectId = projectId ?: "",
-                onNavigateBack = { rootNavController.navigateUp() }
+                onNavigateBack = { rootNavController.navigateUp() },
+                onDisableAction = {
+                    rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
+                }
             )
         }
 
@@ -348,12 +351,15 @@ fun NavGraphBuilder.projectManagementNavGraph(
                 )
             }
         }
+
         composable(route = ProjectManagementRouteScreen.ChangeRequest.route){
             val projectId = it.arguments?.getString("projectId")
             if (projectId != null) {
                 ChangeRequestScreen(
                     projectId.toInt(),
-                    onDisableAction = {},
+                    onDisableAction = {
+                        rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
+                    },
                     onNavigateBack = {
                         rootNavController.navigateUp()
                     }

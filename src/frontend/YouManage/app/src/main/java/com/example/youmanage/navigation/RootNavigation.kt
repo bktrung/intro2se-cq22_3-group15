@@ -3,29 +3,10 @@ package com.example.youmanage.navigation
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -35,14 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
@@ -56,9 +30,11 @@ import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.ThemePreferences
 import com.example.youmanage.utils.isTokenExpired
-import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.NotificationViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
+import com.example.youmanage.viewmodel.home.NotificationViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 object Graph {
     const val ROOT = "root_graph"
@@ -150,13 +126,21 @@ fun RootNavGraph(
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let {
-            authenticationViewModel.getUser("Bearer $it")
+            supervisorScope {
+                launch {
+                    authenticationViewModel.getUser("Bearer $it")
+                }.join()
+            }
         }
     }
 
     LaunchedEffect(user) {
         if (user is Resource.Success && user?.data?.id != null) {
-            notificationViewModel.connectToWebSocket("${WEB_SOCKET}user/${user?.data?.id}/")
+            supervisorScope {
+                launch {
+                    notificationViewModel.connectToWebSocket("${WEB_SOCKET}user/${user?.data?.id}/")
+                }.join()
+            }
         }
     }
     var routeMessage by rememberSaveable { mutableStateOf("") }
@@ -172,8 +156,8 @@ fun RootNavGraph(
 
                 val objectContent = it.objectContent
 
-                if (objectContent?.projectId != null) {
-                    routeMessage = if (objectContent.taskId != null) {
+                routeMessage = if (objectContent?.projectId != null) {
+                    if (objectContent.taskId != null) {
                         "task_detail/${objectContent.projectId}/${objectContent.taskId}"
                     } else if (objectContent.issueId != null) {
                         "issue_detail/${objectContent.projectId}/${objectContent.issueId}"
@@ -183,10 +167,9 @@ fun RootNavGraph(
                         "project_detail/${objectContent.projectId}"
                     }
                 } else {
-                    routeMessage = "notification"
+                    "notification"
                 }
 
-                Log.d("RootNavGraph", routeMessage)
             }
         }
     }

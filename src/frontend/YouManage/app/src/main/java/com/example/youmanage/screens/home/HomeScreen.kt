@@ -53,8 +53,8 @@ import com.example.youmanage.data.remote.projectmanagement.Project
 import com.example.youmanage.data.remote.projectmanagement.Projects
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.randomColor
-import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
+import com.example.youmanage.viewmodel.common.ProjectManagementViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 
@@ -67,7 +67,6 @@ fun HomeScreen(
     onViewProject: (Int) -> Unit
 ) {
 
-    val textFieldColor = Color(0xFFF5F5F5)
     var searchQuery by remember { mutableStateOf("") }
 
     val projects by projectManagementViewModel.projects.observeAsState()

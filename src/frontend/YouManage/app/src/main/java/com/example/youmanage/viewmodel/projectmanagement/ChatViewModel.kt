@@ -1,9 +1,8 @@
-package com.example.youmanage.viewmodel
+package com.example.youmanage.viewmodel.projectmanagement
 
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.youmanage.data.remote.chat.Message
 import com.example.youmanage.data.remote.chat.MessageRequest
 import com.example.youmanage.data.remote.chat.MessageResponse
