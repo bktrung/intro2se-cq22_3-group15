@@ -62,12 +62,15 @@ import com.example.youmanage.screens.components.ChangeRequestDialog
 import com.example.youmanage.screens.components.ChooseItemDialog
 import com.example.youmanage.screens.components.CreateRoleDialog
 import com.example.youmanage.screens.project_management.TopBar
+import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ChangeRequestViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.RoleViewmodel
+import com.example.youmanage.viewmodel.TraceInProjectViewModel
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 
@@ -80,21 +83,20 @@ fun RolesScreen(
     onDisableAction: () -> Unit = {},
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
     projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
+    traceInProjectViewModel: TraceInProjectViewModel = hiltViewModel(),
     changeRequestViewModel: ChangeRequestViewModel = hiltViewModel()
 ) {
 
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
     val roles by roleViewmodel.roles.observeAsState()
     val response by roleViewmodel.response.observeAsState()
+
+    val shouldDisableAction by traceInProjectViewModel.observeCombinedLiveData(projectId).observeAsState(false)
+
     val deleteResponse by roleViewmodel.deleteResponse.observeAsState()
     val members by roleViewmodel.members.observeAsState()
     val isHost by projectManagementViewModel.isHost.observeAsState()
     val responseRequest by changeRequestViewModel.response.observeAsState()
-
-    // WebSocket
-    val user by authenticationViewModel.user.observeAsState()
-    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
-    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
 
     val context = LocalContext.current
 
@@ -109,20 +111,28 @@ fun RolesScreen(
     var selectedRole by rememberSaveable { mutableIntStateOf(-1) }
     var requestMessage by rememberSaveable { mutableStateOf("") }
 
-    var requestSelection by remember { mutableStateOf(-1) }
+    var requestSelection by remember { mutableIntStateOf(-1) }
+
+    val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             supervisorScope {
                 // Launching tasks concurrently
                 val job1 = launch {
+                    traceInProjectViewModel.connectToWebSocketAndUser(
+                        token,
+                        webSocketUrl
+                    )
+                }
+                val job2 = launch {
                     roleViewmodel.getRoles(
                         projectId,
                         "Bearer $token"
                     )
                 }
 
-                val job2 = launch {
+                val job3 = launch {
                     projectManagementViewModel.isHost(
                         projectId,
                         "Bearer $token"
@@ -130,12 +140,16 @@ fun RolesScreen(
                 }
 
                 // Waiting for both jobs to complete
-                job1.join()
-                job2.join()
+                joinAll(job1, job2, job3)
             }
         }
     }
 
+    LaunchedEffect(shouldDisableAction){
+        if(shouldDisableAction){
+            onDisableAction()
+        }
+    }
 
     LaunchedEffect(
         key1 = response,
@@ -164,16 +178,8 @@ fun RolesScreen(
             job2.join()
         }
 
-
     }
 
-    HandleOutProjectWebSocket(
-        memberSocket = memberSocket,
-        projectSocket = projectSocket,
-        user = user,
-        projectId = projectId,
-        onDisableAction = onDisableAction
-    )
 
     Scaffold(
         modifier = Modifier

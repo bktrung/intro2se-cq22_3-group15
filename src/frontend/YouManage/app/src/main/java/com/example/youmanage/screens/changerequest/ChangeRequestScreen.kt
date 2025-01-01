@@ -55,12 +55,12 @@ import com.example.youmanage.screens.components.ReplyChangeRequest
 import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.screens.task_management.ButtonSection
 import com.example.youmanage.utils.Constants.WEB_SOCKET
-import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.formatToRelativeTime
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ChangeRequestViewModel
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import com.example.youmanage.viewmodel.TraceInProjectViewModel
 import com.example.youmanage.viewmodel.requestStatus
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 
@@ -72,18 +72,15 @@ fun ChangeRequestScreen(
     onNavigateBack: () -> Unit,
     changeRequestViewModel: ChangeRequestViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel()
+    traceInProjectViewModel: TraceInProjectViewModel = hiltViewModel()
 ) {
 
     val accessToken = authenticationViewModel.accessToken.collectAsState(null)
-    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
-    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
-    val user by authenticationViewModel.user.observeAsState()
-    val isHost by projectManagementViewModel.isHost.observeAsState()
-    val replyResponse by changeRequestViewModel.reply.observeAsState()
+    val isHost by changeRequestViewModel.isHost.observeAsState()
+    val shouldDisableAction by traceInProjectViewModel.observeCombinedLiveData(projectId.toString())
+        .observeAsState(false)
 
     val isLoading by changeRequestViewModel.isLoading.collectAsState()
-    val currentStatus by changeRequestViewModel.currentStatus.collectAsState()
 
     val changeRequests by changeRequestViewModel.requests.observeAsState()
 
@@ -96,37 +93,34 @@ fun ChangeRequestScreen(
         accessToken.value?.let { token ->
             val authorization = "Bearer $token"
 
+            // Sử dụng supervisorScope và join các coroutine
             supervisorScope {
-                launch {
+                // Gửi các coroutine và đợi tất cả hoàn thành
+                val changeRequestsJob = launch {
                     changeRequestViewModel.getChangeRequests(
                         projectId = projectId,
                         status = "PENDING",
                         authorization = authorization
                     )
                 }
-                launch {
-                    projectManagementViewModel.isHost(projectId.toString(), authorization)
+                val isHostJob = launch {
+                    changeRequestViewModel.isHost(projectId.toString(), authorization)
                 }
-                launch {
-                    projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
+                val connectSocketJob = launch {
+                    traceInProjectViewModel.connectToWebSocketAndUser(token, webSocketUrl)
                 }
-                launch {
-                    projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
-                }
-                launch {
-                    authenticationViewModel.getUser(authorization)
-                }
+
+                // Đợi tất cả các coroutine hoàn thành
+                joinAll(changeRequestsJob, isHostJob, connectSocketJob)
             }
         }
     }
 
-    HandleOutProjectWebSocket(
-        projectSocket = projectSocket,
-        memberSocket = memberSocket,
-        user = user,
-        projectId = projectId.toString(),
-        onDisableAction = onDisableAction
-    )
+    LaunchedEffect(shouldDisableAction) {
+        if (shouldDisableAction) {
+            onDisableAction()
+        }
+    }
 
     var isSelectedButton by remember { mutableIntStateOf(0) }
 
@@ -325,7 +319,7 @@ fun ChangeRequestItem(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            if(request.status == "REJECTED"){
+            if (request.status == "REJECTED") {
                 Text(
                     "Declined Reason: ${request.declinedReason ?: "No reason"}"
                 )

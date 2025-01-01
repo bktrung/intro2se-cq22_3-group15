@@ -44,8 +44,11 @@ import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.generateChartData
 import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.GanttChartViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
+import com.example.youmanage.viewmodel.TraceInProjectViewModel
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 
@@ -54,48 +57,41 @@ fun GanttChartScreen(
     onNavigateBack: () -> Unit = {},
     onDisableAction: () -> Unit = {},
     projectId: String,
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
-    taskManagementViewModel: TaskManagementViewModel = hiltViewModel(),
-    authenticationViewModel: AuthenticationViewModel = hiltViewModel()
+    traceInProjectViewModel: TraceInProjectViewModel = hiltViewModel(),
+    authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
+    ganttChartViewModel: GanttChartViewModel = hiltViewModel()
 ) {
-    val backgroundColor = Color(0xffBAE5F5)
 
-    val ganttChartData by projectManagementViewModel.ganttChartData.observeAsState()
-    val project by projectManagementViewModel.project.observeAsState()
+    val ganttChartData by ganttChartViewModel.ganttChartData.observeAsState()
+    val dueDate by ganttChartViewModel.dueDate.observeAsState()
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
-    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
-    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
-    val user by authenticationViewModel.user.observeAsState()
-    val taskSocket by taskManagementViewModel.taskSocket.observeAsState()
+
+    val shouldDisableAction by traceInProjectViewModel.observeCombinedLiveData(projectId).observeAsState(false)
 
     var tasks by remember { mutableStateOf<List<GanttChartData>>(emptyList()) }
-    var projectDueDate by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
+    val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
 
             supervisorScope {
                 // Launching API calls concurrently
                 val job1 = launch {
+                    traceInProjectViewModel.connectToWebSocketAndUser(
+                        token,
+                        webSocketUrl
+                    )
+                }
+
+                val job2 = launch {
                     try {
-                        projectManagementViewModel.getGanttChartData(
+                        ganttChartViewModel.getGanttChartDataAndProjectDueDate(
                             id = projectId,
                             authorization = "Bearer $token"
                         )
                     } catch (e: Exception) {
                         Log.e("ProjectManagement", "Error fetching Gantt chart data: ${e.message}")
-                    }
-                }
-
-                val job2 = launch {
-                    try {
-                        projectManagementViewModel.getProject(
-                            id = projectId,
-                            authorization = "Bearer $token"
-                        )
-                    } catch (e: Exception) {
-                        Log.e("ProjectManagement", "Error fetching project: ${e.message}")
                     }
                 }
 
@@ -108,80 +104,22 @@ fun GanttChartScreen(
                 }
 
                 // Wait for all jobs to finish
-                job1.join()
-                job2.join()
-                job3.join()
+                joinAll(job1, job2, job3)
             }
         }
     }
 
-    LaunchedEffect(Unit) {
-        supervisorScope {
-            // WebSocket connections concurrently
-            val url = "${WEB_SOCKET}project/$projectId/"
-
-            val job1 = launch {
-                try {
-                    taskManagementViewModel.connectToTaskWebSocket(url)
-                } catch (e: Exception) {
-                    Log.e("TaskManagement", "Error connecting to task WebSocket: ${e.message}")
-                }
-            }
-
-            val job2 = launch {
-                try {
-                    projectManagementViewModel.connectToProjectWebsocket(url)
-                } catch (e: Exception) {
-                    Log.e("ProjectManagement", "Error connecting to project WebSocket: ${e.message}")
-                }
-            }
-
-            val job3 = launch {
-                try {
-                    projectManagementViewModel.connectToMemberWebsocket(url)
-                } catch (e: Exception) {
-                    Log.e("ProjectManagement", "Error connecting to member WebSocket: ${e.message}")
-                }
-            }
-
-            // Wait for all jobs to finish
-            job1.join()
-            job2.join()
-            job3.join()
+    LaunchedEffect(shouldDisableAction){
+        if(shouldDisableAction){
+            onDisableAction()
         }
     }
 
-
-    HandleOutProjectWebSocket(
-        memberSocket = memberSocket,
-        projectSocket = projectSocket,
-        user = user,
-        projectId = projectId,
-        onDisableAction = onDisableAction
-    )
-
-    LaunchedEffect(taskSocket){
-        if(taskSocket is Resource.Success) {
-            supervisorScope {
-                launch {
-                    projectManagementViewModel.getGanttChartData(
-                        id = projectId,
-                        authorization = "Bearer ${accessToken.value}"
-                    )
-                }
-            }
-
-        }
-    }
-
-    LaunchedEffect(
-        key1 = ganttChartData,
-        key2 = project
-    ) {
-        if (ganttChartData is Resource.Success && project is Resource.Success) {
+    LaunchedEffect(ganttChartData)
+    {
+        if (ganttChartData is Resource.Success) {
             isLoading = false
             tasks = ganttChartData?.data ?: emptyList()
-            projectDueDate = project?.data?.dueDate ?: "No Data"
         } else {
             isLoading = true
         }
@@ -231,7 +169,7 @@ fun GanttChartScreen(
                     GanttChart(
                         generateChartData(
                             tasks = tasks,
-                            projectDueDate = projectDueDate
+                            projectDueDate = dueDate ?: ""
                         )
                     )
                 }
