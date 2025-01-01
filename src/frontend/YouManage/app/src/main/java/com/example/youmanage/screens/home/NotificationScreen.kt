@@ -57,7 +57,7 @@ import com.example.youmanage.data.remote.notification.Object
 import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.utils.formatToRelativeTime
 import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.NotificationViewModel
+import com.example.youmanage.viewmodel.home.NotificationViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 

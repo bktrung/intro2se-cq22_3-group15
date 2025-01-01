@@ -38,8 +38,7 @@ import com.example.youmanage.screens.task_management.ButtonSection
 import com.example.youmanage.screens.task_management.TaskItem
 import com.example.youmanage.utils.Constants.statusMapping
 import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.MyTaskViewModel
-import com.example.youmanage.viewmodel.TaskManagementViewModel
+import com.example.youmanage.viewmodel.home.MyTaskViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 

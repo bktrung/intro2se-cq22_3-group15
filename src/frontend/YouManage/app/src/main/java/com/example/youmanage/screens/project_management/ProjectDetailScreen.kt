@@ -70,8 +70,10 @@ import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.viewmodel.AuthenticationViewModel
+import com.example.youmanage.viewmodel.ProjectDetailViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
+import com.example.youmanage.viewmodel.TraceInProjectViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -79,7 +81,6 @@ import kotlinx.coroutines.supervisorScope
 
 @Composable
 fun ProjectDetailScreen(
-    backgroundColor: Color = Color(0xffBAE5F5),
     id: Int,
     onNavigateBack: () -> Unit,
     onClickMenu: () -> Unit,
@@ -87,23 +88,22 @@ fun ProjectDetailScreen(
     onUpdateProject: () -> Unit,
     onMemberProfile: (Int) -> Unit,
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
-    taskManagementViewModel: TaskManagementViewModel = hiltViewModel()
+    projectDetailViewModel: ProjectDetailViewModel = hiltViewModel()
 ) {
-    val project by projectManagementViewModel.project.observeAsState()
-    val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
-    val addMemberResponse by projectManagementViewModel.addMemberResponse.observeAsState()
-    val removeMemberResponse by projectManagementViewModel.deleteMemberResponse.observeAsState()
-    val projectProgress by projectManagementViewModel.progress.observeAsState()
-    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
-    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
-    val taskSocket by taskManagementViewModel.taskSocket.observeAsState()
 
-    val isHost by projectManagementViewModel.isHost.observeAsState()
+    val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
+
+    val project by projectDetailViewModel.project.observeAsState()
+    val pieChartInputList by projectDetailViewModel.progress.observeAsState()
+    val addMemberResponse by projectDetailViewModel.addMemberResponse.observeAsState()
+    val removeMemberResponse by projectDetailViewModel.removeMemberResponse.observeAsState()
+    val isHost by projectDetailViewModel.isHost.observeAsState()
+
+    val memberSocket by projectDetailViewModel.memberSocket.observeAsState()
+    val projectSocket by projectDetailViewModel.projectSocket.observeAsState()
+    val taskSocket by projectDetailViewModel.taskSocket.observeAsState()
 
     val user by authenticationViewModel.user.observeAsState()
-
-    var pieChartInputList by remember { mutableStateOf<List<PieChartInput>>(emptyList()) }
 
     var showAddMemberDialog by rememberSaveable { mutableStateOf(false) }
     var showRemoveAlertDialog by rememberSaveable { mutableStateOf(false) }
@@ -125,9 +125,9 @@ fun ProjectDetailScreen(
                 supervisorScope {
                     // Khởi chạy các coroutine song song cho các API gọi
                     val apiJobs = listOf(
-                        launch { projectManagementViewModel.getProject(id = id.toString(), authorization = authorization) },
-                        launch { projectManagementViewModel.getProgressTrack(id = id.toString(), authorization = authorization) },
-                        launch { projectManagementViewModel.isHost(id = id.toString(), authorization = authorization) }
+                        launch { projectDetailViewModel.getProject(id.toString(), authorization) },
+                        launch { projectDetailViewModel.getProgressTrack(id.toString(), authorization) },
+                        launch { projectDetailViewModel.isHost(id.toString(), authorization) }
                     )
 
                     // Đợi tất cả API hoàn thành trước khi tiếp tục
@@ -137,9 +137,8 @@ fun ProjectDetailScreen(
                     val webSocketUrl = "${WEB_SOCKET}project/$id/"
                     val webSocketJobs = listOf(
                         launch { authenticationViewModel.getUser("Bearer $token") },
-                        launch { projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl) },
-                        launch { projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl) },
-                        launch { taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl) }
+                        launch { projectDetailViewModel.connectToAllWebSockets(url = webSocketUrl) },
+
                     )
                     // Đợi tất cả các WebSocket kết nối
                     webSocketJobs.joinAll()
@@ -150,33 +149,68 @@ fun ProjectDetailScreen(
         }
     }
 
-    LaunchedEffect(addMemberResponse) {
+    val memberStage = listOf(
+        "member_added",
+        "member_removed"
+    )
+
+    val taskStage = listOf(
+        "task_created",
+        "task_updated",
+        "task_deleted"
+    )
+
+    LaunchedEffect(
+        addMemberResponse,
+        removeMemberResponse,
+        projectSocket,
+        memberSocket
+    ) {
+        // Xử lý khi thêm thành viên
         if (addMemberResponse is Resource.Error && isAdd) {
             showAddAlertDialog = true
         }
 
         if (addMemberResponse is Resource.Success) {
-            projectManagementViewModel.getProject(
-                id = id.toString(),
-                authorization = "Bearer ${accessToken.value}"
-            )
+            supervisorScope {
+                projectDetailViewModel.getProject(
+                    projectId = id.toString(),
+                    authorization = "Bearer ${accessToken.value}"
+                )
+            }
         }
-    }
 
-    LaunchedEffect(removeMemberResponse) {
+        // Xử lý khi xóa thành viên
         if (removeMemberResponse is Resource.Error && isRemove) {
             showRemoveAlertDialog = true
         }
 
         if (removeMemberResponse is Resource.Success) {
-            projectManagementViewModel.getProject(
-                id = id.toString(),
+            projectDetailViewModel.getProject(
+                projectId = id.toString(),
                 authorization = "Bearer ${accessToken.value}"
             )
         }
+
+        if (projectSocket is Resource.Success &&
+            projectSocket?.data?.type == "project_updated" &&
+            projectSocket?.data?.content?.id == id
+        ) {
+            projectDetailViewModel.getProject(
+                id.toString(),
+                "Bearer ${accessToken.value}"
+            )
+        }
+
+        if (memberSocket is Resource.Success &&
+            memberStage.contains(memberSocket?.data?.type) &&
+            projectSocket?.data?.content?.id == id
+        ) {
+            projectDetailViewModel.getProject(
+                id.toString(),
+                "Bearer ${accessToken.value}")
+        }
     }
-
-
 
     HandleOutProjectWebSocket(
         memberSocket = memberSocket,
@@ -186,82 +220,19 @@ fun ProjectDetailScreen(
         onDisableAction = onDisableAction
     )
 
-    LaunchedEffect(projectSocket) {
-        if (projectSocket is Resource.Success &&
-            projectSocket?.data?.type == "project_updated" &&
-            projectSocket?.data?.content?.id == id
-        ) {
-            projectManagementViewModel.getProject(
-                id.toString(),
-                "Bearer ${accessToken.value}"
-            )
-        }
-    }
-
-    val taskStage = listOf(
-        "task_created",
-        "task_updated",
-        "task_deleted"
-    )
-
     LaunchedEffect(taskSocket) {
         if (taskSocket is Resource.Success &&
             taskStage.contains(taskSocket?.data?.type) &&
             projectSocket?.data?.content?.id == id
         ) {
-            projectManagementViewModel.getProgressTrack(
-                id = id.toString(),
-                authorization = "Bearer ${accessToken.value}"
-            )
-        }
-    }
-
-    val memberStage = listOf(
-        "member_added",
-        "member_removed"
-    )
-
-    LaunchedEffect(memberSocket) {
-        if (memberSocket is Resource.Success &&
-            memberStage.contains(memberSocket?.data?.type) &&
-            projectSocket?.data?.content?.id == id
-        ) {
-            projectManagementViewModel.getProject(id.toString(), "Bearer ${accessToken.value}")
-        }
-    }
-
-    LaunchedEffect(projectProgress) {
-        if (projectProgress is Resource.Success) {
-
-            var total = projectProgress?.data?.total ?: 1
-            var pending = projectProgress?.data?.pending ?: 0
-            val inProgress = projectProgress?.data?.inProgress ?: 0
-            val completed = projectProgress?.data?.completed ?: 0
-
-            if (total == 0) {
-                total = 1
-                pending = 1
+            supervisorScope {
+                launch {
+                    projectDetailViewModel.getProgressTrack(
+                        projectId = id.toString(),
+                        authorization = "Bearer ${accessToken.value}"
+                    )
+                }
             }
-
-            pieChartInputList = listOf(
-                PieChartInput(
-                    color = Color(0xffFFD580),
-                    value = pending.toDouble().div(total) * 100.0,
-                    description = "Pending"
-                ),
-                PieChartInput(
-                    color = Color(0xff90CAF9),
-                    value = inProgress.toDouble().div(total) * 100.0,
-                    description = "In Progress"
-                ),
-                PieChartInput(
-                    color = Color(0xffA5D6A7),
-                    value = completed.toDouble().div(total) * 100.0,
-                    description = "Completed"
-                )
-            )
-        } else if (projectProgress is Resource.Error) {
-            Log.d("Progress Tracker Error", projectProgress?.message.toString())
         }
     }
 
@@ -354,9 +325,9 @@ fun ProjectDetailScreen(
                         )
                     }
 
-                    if (projectProgress is Resource.Success) {
+                    if (pieChartInputList != null && pieChartInputList?.isNotEmpty() == true) {
                         PieChart(
-                            input = pieChartInputList,
+                            input = pieChartInputList ?: emptyList(),
                             modifier = Modifier.padding(36.dp)
                         )
                     }
@@ -418,14 +389,14 @@ fun ProjectDetailScreen(
             },
             onConfirm = {
                 accessToken.value?.let { token ->
-                    projectManagementViewModel.addMember(
-                        id = id.toString(),
-                        username = Username(it.username),
+                    projectDetailViewModel.addMember(
+                        projectId = id.toString(),
+                        username = it.username,
                         authorization = "Bearer $token"
                     )
                 }
-                isAdd = true
 
+                isAdd = true
                 showAddMemberDialog = false
             },
         )
@@ -459,12 +430,13 @@ fun ProjectDetailScreen(
             onDismiss = { showDeleteDialog = false },
             onConfirm = {
                 accessToken.value?.let { token ->
-                    projectManagementViewModel.removeMember(
-                        id = id.toString(),
-                        memberId = Id(memberId),
+                    projectDetailViewModel.removeMember(
+                        projectId = id.toString(),
+                        memberId = memberId,
                         authorization = "Bearer $token"
                     )
                 }
+
                 isRemove = true
                 showDeleteDialog = false
             }

@@ -13,7 +13,6 @@ import com.example.youmanage.repository.ProjectManagementRepository
 import com.example.youmanage.repository.TaskManagementRepository
 import com.example.youmanage.repository.WebSocketRepository
 import com.example.youmanage.utils.Constants.BASE_URL
-import com.example.youmanage.viewmodel.NotificationViewModel
 import com.example.youmanage.viewmodel.SnackBarViewModel
 import com.google.gson.Gson
 import dagger.Module
