@@ -79,21 +79,6 @@ fun ChangePasswordScreen(
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
-        IconButton(
-            onClick = {
-                onNavigateBack()
-            },
-            modifier = Modifier
-                .padding(start = 20.dp, top = 30.dp)
-                .align(Alignment.TopStart)
-
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.back_arrow_icon),
-                contentDescription = "Back",
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,

@@ -33,8 +33,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -45,7 +43,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -57,8 +54,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -75,9 +70,14 @@ import com.example.youmanage.data.remote.chat.MessageRequest
 import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.utils.Constants.BASE_URL
 import com.example.youmanage.utils.Constants.WEB_SOCKET
+import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
+import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ChatViewModel
+import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 @Preview(showBackground = true)
 @Composable
@@ -95,14 +95,16 @@ fun ChatScreen(
     val isFirstTime = remember { mutableStateOf(true) }
     val listState = rememberLazyListState()// Trạng thái để kiểm tra lần đầu vào chat
 
-    // Tự động cuộn xuống khi lần đầu vào
-
 
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
             .padding(WindowInsets.statusBars.asPaddingValues())
-            .padding(bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()),
+            .padding(
+                bottom = WindowInsets.systemBars
+                    .asPaddingValues()
+                    .calculateBottomPadding()
+            ),
 
         topBar = {
             com.example.youmanage.screens.project_management.TopBar(
@@ -117,7 +119,7 @@ fun ChatScreen(
         bottomBar = {
             ChatInputBar(
                 onMessageSent = onMessageSent,
-                onImageSent = onImageSent ,
+                onImageSent = onImageSent,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp, vertical = 16.dp)
@@ -190,7 +192,10 @@ fun ChatScreen(
 
 @Composable
 fun MessageBubble(
-    message: Message = Message(User(), "Yes","", 0, 0, ""),
+    message: Message = Message(
+        User(),
+        "Yes", "", 0, 0, ""
+    ),
     isSentByUser: Boolean = false,
     username: String = "Tuong",
     avatarUrl: String = ""
@@ -209,7 +214,13 @@ fun MessageBubble(
 
             // Avatar for received messages
             if (!isSentByUser) {
-                Avatar(icon = Icons.Default.Person, contentDescription = "Your Avatar")
+                Image(
+                    painter = painterResource(randomAvatar(message?.author?.id ?: -1)),
+                    contentDescription = "Avatar",
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                )
             }
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -231,37 +242,22 @@ fun MessageBubble(
                     )
                 }
 
-
-                // Message content (Audio or Text)
-//                if (message.isAudioMessage) {
-//                    AudioMessageBubble(
-//                        audioPath = message.content,
-//                        isSentByUser = isSentByUser
-//                    )
-//                } else {
                 TextMessageBubble(
                     content = message.content,
                     isSentByUser = isSentByUser,
                     imagePath = message.imageUrl
                 )
-                //  }
             }
 
             if (isSentByUser) {
                 Spacer(modifier = Modifier.width(8.dp))
             }
-
-
-            // Avatar for sent messages (You can also add an icon or image here)
-//            if (isSentByUser) {
-//                Avatar(icon = Icons.Default.Person, contentDescription = "Your Avatar")
-//            }
         }
     }
 }
 
 @Composable
-fun Avatar(icon: ImageVector, contentDescription: String) {
+fun Avatar(image: Int, contentDescription: String) {
     Box(
         modifier = Modifier
             .size(40.dp) // Size of the avatar
@@ -270,8 +266,8 @@ fun Avatar(icon: ImageVector, contentDescription: String) {
             .border(2.dp, AppColors.BackgroundColor, CircleShape) // Border color and shape
             .padding(8.dp) // Padding around the icon
     ) {
-        Icon(
-            imageVector = icon,
+        Image(
+            painter = painterResource(image),
             contentDescription = contentDescription,
             modifier = Modifier.fillMaxSize(),
         )
@@ -279,19 +275,17 @@ fun Avatar(icon: ImageVector, contentDescription: String) {
 }
 
 
-
 @Composable
 fun TextMessageBubble(content: String, imagePath: String?, isSentByUser: Boolean) {
     val fullImageUrl = imagePath?.let { "$BASE_URL$it" } // Xây dựng URL nếu imagePath không null
 
     // Hiển thị văn bản
-    if (content.isNotBlank()){
+    if (content.isNotBlank()) {
         MessageContent(
             content = content,
             isSentByUser = isSentByUser
         )
     }
-
     // Hiển thị hình ảnh nếu có
     if (fullImageUrl != null) {
         MessageImage(imageUrl = fullImageUrl)
@@ -343,104 +337,10 @@ fun MessageImage(imageUrl: String) {
     }
 }
 
-
-
-
-
-//@Composable
-//fun AudioMessageBubble(audioPath: String, isSentByUser: Boolean) {
-//    val context = LocalContext.current
-//    val mediaPlayer = remember { MediaPlayer() }
-//    var isPlaying by remember { mutableStateOf(false) }
-//    var duration by remember { mutableIntStateOf(0) }
-//    var progress by remember { mutableFloatStateOf(0f) }
-//
-//    // Initialize media player and load audio file
-//    LaunchedEffect(audioPath) {
-//        try {
-//            mediaPlayer.reset()
-//            mediaPlayer.setDataSource(audioPath)
-//            mediaPlayer.prepare()
-//            duration = mediaPlayer.duration
-//        } catch (e: Exception) {
-//            e.printStackTrace()
-//        }
-//    }
-//
-//    // Cleanup MediaPlayer resources
-//    DisposableEffect(Unit) {
-//        onDispose {
-//            mediaPlayer.release()
-//        }
-//    }
-//    // Update progress while playing
-//    LaunchedEffect(isPlaying) {
-//        if (isPlaying) {
-//            while (mediaPlayer.isPlaying) {
-//                progress = mediaPlayer.currentPosition / duration.toFloat()
-//                delay(100)
-//            }
-//        }
-//    }
-//    // Audio message UI
-//    Row(
-//        modifier = Modifier
-//            .background(
-//                color = if (isSentByUser) Color(0xFF007AFF) else Color(0xFFF1F0F0),
-//                shape = MaterialTheme.shapes.medium
-//            )
-//            .padding(8.dp),
-//        verticalAlignment = Alignment.CenterVertically
-//    ) {
-//        IconButton(
-//            onClick = {
-//                if (mediaPlayer.isPlaying) {
-//                    mediaPlayer.pause()
-//                    isPlaying = false
-//                } else {
-//                    mediaPlayer.start()
-//                    isPlaying = true
-//                }
-//            },
-//            modifier = Modifier.size(40.dp)
-//        ) {
-//            Icon(
-//                imageVector = if (isPlaying) Icons.Default.PlayArrow else Icons.Default.PlayArrow,
-//                contentDescription = if (isPlaying) "Pause Audio" else "Play Audio"
-//            )
-//        }
-//
-//        Column(modifier = Modifier.weight(1f)) {
-//            LinearProgressIndicator(
-//                progress = progress,
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .padding(horizontal = 8.dp),
-//                color = Color.Gray
-//            )
-//
-//            Text(
-//                text = "${(progress * duration / 1000).toInt()}s / ${duration / 1000}s",
-//                style = TextStyle(fontSize = 12.sp),
-//                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-//            )
-//        }
-//    }
-//}
-//
-//// Phát âm thanh từ file
-//fun playAudio(filePath: String) {
-//    val mediaPlayer = MediaPlayer().apply {
-//        setDataSource(filePath)
-//        prepare()
-//        start()
-//    }
-//}
-
 @Composable
 fun ChatInputBar(
     onMessageSent: (String, Boolean) -> Unit,
-    onImageSent:(String) ->Unit,
+    onImageSent: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var messageText by remember { mutableStateOf("") }
@@ -578,8 +478,10 @@ fun ChatInputBar(
 fun ChatScreenWithViewModel(
     projectId: String,
     onNavigateBack: () -> Unit,
+    onDisableAction: () -> Unit,
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
-    chatViewModel: ChatViewModel = hiltViewModel()
+    chatViewModel: ChatViewModel = hiltViewModel(),
+    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel(),
 ) {
 
     val accessToken = authenticationViewModel.accessToken.collectAsState(initial = null)
@@ -587,30 +489,81 @@ fun ChatScreenWithViewModel(
     val messages by chatViewModel.messages.observeAsState()
     val message by chatViewModel.messageSocket.observeAsState()
 
+    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
+    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
+
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
+            val url = "${WEB_SOCKET}project/${projectId}"
+            val webSocketUrl = "${WEB_SOCKET}chat/$projectId/?token=$token"
 
-            authenticationViewModel.getUser("Bearer $token")
+            supervisorScope {
+                launch {
+                    try {
+                        projectManagementViewModel.connectToProjectWebsocket(url)
+                    } catch (e: Exception) {
+                        Log.e("ProjectWebsocket", "Error: ${e.message}")
+                    }
+                }
 
-            chatViewModel.getMessages(
-                projectId = projectId,
-                authorization = "Bearer $token"
-            )
+                launch {
+                    try {
+                        projectManagementViewModel.connectToMemberWebsocket(url)
+                    } catch (e: Exception) {
+                        Log.e("MemberWebsocket", "Error: ${e.message}")
+                    }
+                }
 
-            Log.d("Call getMessage", messages.toString())
+                launch {
+                    try {
+                        authenticationViewModel.getUser("Bearer $token")
+                    } catch (e: Exception) {
+                        Log.e("Authentication", "Error: ${e.message}")
+                    }
+                }
 
-            val webSocketUrl = "${WEB_SOCKET}chat/$projectId/?token=${accessToken.value}"
+                launch {
+                    try {
+                        chatViewModel.getMessages(
+                            projectId = projectId,
+                            authorization = "Bearer $token"
+                        )
+                        Log.d("Call getMessage", chatViewModel.messages.value.toString())
+                    } catch (e: Exception) {
+                        Log.e("ChatMessages", "Error: ${e.message}")
+                    }
+                }
 
-            Log.d("WEB SOCKET", webSocketUrl)
-            chatViewModel.connectToSocket(webSocketUrl)
+                launch {
+                    try {
+                        Log.d("WEB SOCKET", webSocketUrl)
+                        chatViewModel.connectToSocket(webSocketUrl)
+                    } catch (e: Exception) {
+                        Log.e("ChatWebSocket", "Error: ${e.message}")
+                    }
+                }
+            }
         }
     }
 
+
+    HandleOutProjectWebSocket(
+        memberSocket = memberSocket,
+        projectSocket = projectSocket,
+        user = user,
+        projectId = projectId,
+        onDisableAction = onDisableAction
+    )
+
     LaunchedEffect(message) {
-        chatViewModel.getNewSocketMessage(
-            projectId = projectId,
-            authorization = "Bearer ${accessToken.value}"
-        )
+        supervisorScope {
+            launch {
+                chatViewModel.getNewSocketMessage(
+                    projectId = projectId,
+                    authorization = "Bearer ${accessToken.value}"
+                )
+            }
+        }
     }
 
     var userId by remember {
@@ -636,8 +589,7 @@ fun ChatScreenWithViewModel(
             onMessageSent = { content, isAudio ->
                 chatViewModel.sendMessage(MessageRequest(message = content, image = null))
             },
-            onImageSent = {
-                base64Image ->
+            onImageSent = { base64Image ->
                 chatViewModel.sendMessage(MessageRequest(message = null, image = base64Image))
             },
             userId = userId,

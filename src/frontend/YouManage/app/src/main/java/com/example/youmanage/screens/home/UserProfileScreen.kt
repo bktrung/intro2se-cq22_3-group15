@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -33,6 +35,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,7 +45,10 @@ import com.example.youmanage.data.remote.authentication.RefreshToken
 import com.example.youmanage.screens.components.AlertDialog
 import com.example.youmanage.utils.Constants.ACCESS_TOKEN_KEY
 import com.example.youmanage.utils.Resource
+import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.viewmodel.AuthenticationViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 @Composable
 fun UserProfileScreen(
@@ -68,7 +75,13 @@ fun UserProfileScreen(
 
     LaunchedEffect(accessToken) {
         accessToken?.let { token ->
-            authenticationViewModel.getUser(authorization = "Bearer $token")
+            supervisorScope {
+               val job = launch {
+                    authenticationViewModel.getUser(authorization = "Bearer $token")
+                }
+
+                job.join()
+            }
         }
     }
 
@@ -86,6 +99,15 @@ fun UserProfileScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+
+            Image(
+                painter = painterResource(id = randomAvatar(user?.data?.id ?: 0)),
+                contentDescription = "Avatar",
+                modifier = Modifier.height(150.dp)
+                    .clip(CircleShape)
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
 
             Text(
                 "Welcome, ${user?.data?.username}",

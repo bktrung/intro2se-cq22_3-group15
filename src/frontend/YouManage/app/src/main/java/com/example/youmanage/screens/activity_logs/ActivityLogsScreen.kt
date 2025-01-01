@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,7 +28,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -39,10 +36,8 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -51,11 +46,16 @@ import com.example.youmanage.data.remote.activitylogs.Activity
 import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.HandleOutProjectWebSocket
-import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.formatToRelativeTime
 import com.example.youmanage.viewmodel.ActivityLogsViewModel
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -80,15 +80,36 @@ fun ActivityLogScreen(
 
     // Only trigger API call when accessToken is updated and activityLogs are empty
     LaunchedEffect(accessToken.value) {
-        accessToken.value?.let {
+        accessToken.value?.let { token ->
             if (activityLogs.isEmpty()) {
-                activityLogViewModel.getActivityLogs(
-                    projectId = projectId,
-                    authorization = "Bearer $it"
-                )
+                // Tạo một SupervisorJob để quản lý các coroutine
+                val supervisorJob = SupervisorJob()
+                val scope = CoroutineScope(Dispatchers.IO + supervisorJob)
 
-                projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
-                projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
+                // Khởi tạo các công việc cần thực hiện
+                val getActivityLogsJob = scope.launch {
+                    activityLogViewModel.getActivityLogs(
+                        projectId = projectId,
+                        authorization = "Bearer $token"
+                    )
+                }
+
+                val connectToMemberWebsocketJob = scope.launch {
+                    projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+                }
+
+                val connectToProjectWebsocketJob = scope.launch {
+                    projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
+                }
+
+                // Sử dụng joinAll để đợi tất cả các công việc hoàn thành
+                try {
+                    // Chờ tất cả các coroutine hoàn thành
+                    joinAll(getActivityLogsJob, connectToMemberWebsocketJob, connectToProjectWebsocketJob)
+                } catch (e: CancellationException) {
+                    // Xử lý nếu một trong các job bị hủy
+                    Log.e("LaunchedEffect", "A coroutine was cancelled", e)
+                }
             }
         }
     }

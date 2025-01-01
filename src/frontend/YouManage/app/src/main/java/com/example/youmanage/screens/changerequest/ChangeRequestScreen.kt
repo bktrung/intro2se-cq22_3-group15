@@ -61,6 +61,8 @@ import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ChangeRequestViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.requestStatus
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -91,16 +93,30 @@ fun ChangeRequestScreen(
     var selectedChangeRequest by remember { mutableStateOf(ChangeRequest()) }
 
     LaunchedEffect(accessToken.value) {
-        accessToken.value?.let {
-            changeRequestViewModel.getChangeRequests(
-                projectId = projectId,
-                status = "PENDING",
-                authorization = "Bearer $it"
-            )
-            projectManagementViewModel.isHost(projectId.toString(), "Bearer $it")
-            projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-            projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
-            authenticationViewModel.getUser("Bearer $it")
+        accessToken.value?.let { token ->
+            val authorization = "Bearer $token"
+
+            supervisorScope {
+                launch {
+                    changeRequestViewModel.getChangeRequests(
+                        projectId = projectId,
+                        status = "PENDING",
+                        authorization = authorization
+                    )
+                }
+                launch {
+                    projectManagementViewModel.isHost(projectId.toString(), authorization)
+                }
+                launch {
+                    projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
+                }
+                launch {
+                    projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+                }
+                launch {
+                    authenticationViewModel.getUser(authorization)
+                }
+            }
         }
     }
 
@@ -117,11 +133,15 @@ fun ChangeRequestScreen(
     LaunchedEffect(
         key1 = isSelectedButton
     ) {
-        changeRequestViewModel.getChangeRequests(
-            projectId = projectId,
-            status = requestStatus[isSelectedButton].second,
-            authorization = "Bearer ${accessToken.value}"
-        )
+        supervisorScope {
+            launch {
+                changeRequestViewModel.getChangeRequests(
+                    projectId = projectId,
+                    status = requestStatus[isSelectedButton].second,
+                    authorization = "Bearer ${accessToken.value}"
+                )
+            }
+        }
     }
 
     Scaffold(

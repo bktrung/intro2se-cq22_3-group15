@@ -49,12 +49,16 @@ import com.example.youmanage.screens.components.ChooseItemDialog
 import com.example.youmanage.screens.components.ErrorDialog
 import com.example.youmanage.screens.components.LeadingTextFieldComponent
 import com.example.youmanage.screens.components.TaskSelector
+import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.IssuesViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
@@ -101,10 +105,34 @@ fun AddIssueScreen(
     }
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
-            projectManagementViewModel.getMembers(projectId, "Bearer $token")
-            taskManagementViewModel.getTasks(projectId, "Bearer $token")
+            val webSocketUrl = "${WEB_SOCKET}project/${projectId}/"
+
+            supervisorScope {
+                // Launch all tasks concurrently
+                val jobs = listOf(
+                    launch {
+                        projectManagementViewModel.getMembers(projectId, "Bearer $token")
+                    },
+                    launch {
+                        taskManagementViewModel.getTasks(projectId, "Bearer $token")
+                    },
+                    launch {
+                        projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
+                    },
+                    launch {
+                        projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+                    },
+                    launch {
+                        authenticationViewModel.getUser("Bearer $token")
+                    }
+                )
+
+                // Wait for all tasks to complete before proceeding
+                jobs.joinAll()
+            }
         }
     }
+
 
     HandleOutProjectWebSocket(
         memberSocket = memberSocket,
@@ -251,7 +279,8 @@ fun AddIssueScreen(
                 // Choose Assignee
                 AssigneeSelector(
                     label = "Assign to",
-                    avatarRes = R.drawable.avatar,
+                    avatarRes = R.drawable.no_avatar,
+                    userId = assignedMemberId,
                     username = assignedMember,
                     onClick = { showChooseMember.value = true }
                 )

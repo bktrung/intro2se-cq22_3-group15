@@ -4,6 +4,7 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -48,6 +49,8 @@ import com.example.youmanage.navigation.ProjectManagementNavGraph
 import com.example.youmanage.navigation.ProjectManagementRouteScreen
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.NotificationViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 data class BottomNavigationItem(
     val title: String,
@@ -111,8 +114,14 @@ fun MainScreen(
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let {
-            notificationViewModel.getUnreadCountNotifications("Bearer $it")
-            Log.d("Count in Main", badgeCount.toString())
+            supervisorScope {
+                val job = launch {
+                    notificationViewModel.getUnreadCountNotifications("Bearer $it")
+                    Log.d("Count in Main", badgeCount.toString())
+                }
+
+                job.join()
+            }
         }
     }
 
@@ -148,69 +157,64 @@ fun BottomNavigationBar(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    Log.d("Count Mesage", badgeCount.toString());
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .padding(horizontal = 20.dp, vertical = 16.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(Color.Black.copy(alpha = 0.1f)),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
         bottomNavigationItems.forEachIndexed { _, item ->
-            IconButton(
-                onClick = {
-                    navController.navigate(item.route) {
-                        popUpTo(navController.graph.findStartDestination().id)
-                        launchSingleTop = true
-                    }
-                },
-                modifier = Modifier.padding(8.dp)
-            ) {
-                Box(
-                    contentAlignment = Alignment.TopEnd,
-                    modifier = Modifier.size(45.dp), // Cân chỉnh kích thước cho dễ nhìn,
-                ) {
-                    // Icon
-                    if (badgeCount > 0 && item.route == ProjectManagementRouteScreen.Notification.route) {
-                        BadgedBox(
-                            badge = {
-                                Badge {
-                                    Text(
-                                        badgeCount.toString(),
-                                        modifier =
-                                        Modifier.semantics {
-                                            contentDescription = "$badgeCount new notifications"
-                                        }
-                                    )
-                                }
-                            }
-                        ) {
-                            Icon(
-                                painter = painterResource(id = item.icon),
-                                contentDescription = item.title,
-                                modifier = Modifier
-                                    .size(32.dp),
-                                tint = if (currentDestination?.hierarchy?.any {
-                                        it.route == item.route
-                                    } == true) MaterialTheme.colorScheme.primary else Color.Gray
-                            )
+
+
+            Box(
+                modifier = Modifier.padding(12.dp)
+                    .clickable {
+                        navController.navigate(item.route) {
+                            popUpTo(navController.graph.findStartDestination().id)
+                            launchSingleTop = true
                         }
-                    } else {
+                    }
+            ) {
+                // Icon
+                if (badgeCount > 0 && item.route == ProjectManagementRouteScreen.Notification.route) {
+                    BadgedBox(
+                        badge = {
+                            Badge {
+                                Text(
+                                    badgeCount.toString(),
+                                    modifier =
+                                    Modifier.semantics {
+                                        contentDescription = "$badgeCount new notifications"
+                                    }
+                                )
+                            }
+                        }
+                    ) {
                         Icon(
                             painter = painterResource(id = item.icon),
                             contentDescription = item.title,
                             modifier = Modifier
-                                .size(32.dp),
+                                .size(32.dp)
+                                ,
                             tint = if (currentDestination?.hierarchy?.any {
                                     it.route == item.route
                                 } == true) MaterialTheme.colorScheme.primary else Color.Gray
                         )
                     }
+                } else {
+                    Icon(
+                        painter = painterResource(id = item.icon),
+                        contentDescription = item.title,
+                        modifier = Modifier
+                            .size(32.dp),
+                        tint = if (currentDestination?.hierarchy?.any {
+                                it.route == item.route
+                            } == true) MaterialTheme.colorScheme.primary else Color.Gray
+                    )
                 }
-
             }
         }
     }

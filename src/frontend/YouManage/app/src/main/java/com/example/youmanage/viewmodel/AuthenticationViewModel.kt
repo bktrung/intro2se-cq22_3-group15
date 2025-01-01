@@ -23,6 +23,9 @@ import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.repository.AuthenticationRepository
 import com.example.youmanage.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -60,101 +63,122 @@ class AuthenticationViewModel @Inject constructor(
     val accessToken: Flow<String?> = repository.accessToken
     val refreshToken: Flow<String?> = repository.refreshToken
 
+    private val supervisorJob = SupervisorJob() // Tạo SupervisorJob
+    private val scope = CoroutineScope(Dispatchers.Main + supervisorJob) // Tạo CoroutineScope với SupervisorJob
+
+    // Hàm đăng ký
     fun signUp(user: UserSignUp) {
-        viewModelScope.launch {
+        scope.launch {
             _signUpResponse.value = Resource.Loading(UserSignUpResponse("", ""))
             _signUpResponse.value = repository.signUp(user)
         }
     }
 
+    // Hàm đăng nhập
     fun logIn(user: UserLogIn) {
-        viewModelScope.launch {
+        scope.launch {
             _logInResponse.value = repository.logIn(user)
         }
     }
 
+    // Hàm đăng nhập với Google
     fun logInWithGoogle(user: UserGoogleLogIn) {
-        viewModelScope.launch {
+        scope.launch {
             _logInResponse.value = repository.logInWithGoogle(user)
         }
     }
 
+    // Hàm xác nhận OTP
     fun verifyOTP(request: VerifyRequest){
-        viewModelScope.launch {
+        scope.launch {
             _verifyOTPResponse.value = repository.verifyOTP(request)
         }
     }
 
+    // Hàm refresh access token
     fun refreshAccessToken(refreshToken: RefreshToken, authorization: String) {
-        viewModelScope.launch {
+        scope.launch {
             _refreshResponse.value = repository.refreshAccessToken(refreshToken, authorization)
         }
     }
 
+    // Hàm xác nhận reset password OTP
     fun verifyResetPasswordOTP(request: VerifyRequest){
-        viewModelScope.launch {
+        scope.launch {
             _verifyResetPasswordOTP.value = repository.verifyResetPasswordOTP(request)
         }
     }
+
+    // Hàm gửi OTP
     fun sendOTP(email: Email){
-        viewModelScope.launch {
+        scope.launch {
             repository.sendOPT(email)
         }
     }
 
+    // Hàm kiểm tra email
     fun checkEmail(email: Email){
-        viewModelScope.launch {
+        scope.launch {
             _message.value = repository.checkEmail(email)
         }
     }
 
+    // Hàm gửi OTP cho quên mật khẩu
     fun forgotPasswordSendOTP(email: Email){
-        viewModelScope.launch {
-           _verifyOTPResponse.value = repository.forgotPasswordSendOTP(email)
+        scope.launch {
+            _verifyOTPResponse.value = repository.forgotPasswordSendOTP(email)
         }
     }
 
+    // Hàm logout
     fun logOut(logoutRequest: RefreshToken, authorization: String) {
-        viewModelScope.launch {
+        scope.launch {
             _logOutResponse.value =
                 repository.logOut(logoutRequest = logoutRequest, authorization = authorization)
         }
     }
 
+    // Hàm reset mật khẩu
     fun resetPassword(request: ResetPassword){
-        viewModelScope.launch {
+        scope.launch {
             Log.d("changePassword", "changePassword: 1")
             _message.value = repository.resetPassword(request)
         }
     }
 
+    // Hàm đổi mật khẩu
     fun changePassword(request: ChangePassword, authorization: String){
-        viewModelScope.launch {
+        scope.launch {
             Log.d("changePassword", "changePassword: 1")
             _message.value = repository.changePassword(request, authorization)
         }
     }
 
+    // Hàm lưu token
     fun saveToken(
         accessToken: String,
         refreshToken: String,
         key1: Preferences.Key<String>,
         key2: Preferences.Key<String>
     ) {
-        viewModelScope.launch {
+        scope.launch {
             repository.saveToken(accessToken, refreshToken, key1, key2)
         }
     }
 
+    // Hàm xóa token
     fun clearToken(key: Preferences.Key<String>) {
-        viewModelScope.launch {
+        scope.launch {
             repository.clearToken(key)
         }
     }
 
+    // Hàm lấy thông tin người dùng
     fun getUser(authorization: String){
-        viewModelScope.launch {
+        scope.launch {
             _user.value = repository.getUser(authorization)
         }
     }
+
+
 }

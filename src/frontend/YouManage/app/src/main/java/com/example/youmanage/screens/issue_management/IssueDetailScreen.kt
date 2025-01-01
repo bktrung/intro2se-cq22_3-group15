@@ -60,6 +60,9 @@ import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.IssuesViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -91,6 +94,7 @@ fun IssueDetailScreen(
     var description by rememberSaveable { mutableStateOf("") }
     var selectedTask by rememberSaveable { mutableStateOf<Task?>(null) }
     var reporter by remember { mutableStateOf("Unassigned") }
+    var reporterId by remember { mutableIntStateOf(-1) }
     var assignedMember by remember { mutableStateOf("Unassigned") }
     var assignedMemberId by remember { mutableIntStateOf(-1) }
     var selectedStatus by rememberSaveable { mutableStateOf("PENDING") }
@@ -105,11 +109,38 @@ fun IssueDetailScreen(
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
-            issueManagementViewModel.getIssue(projectId, issueId, "Bearer $token")
-            taskManagementViewModel.getTasks(projectId, "Bearer $token")
-            projectManagementViewModel.getMembers(projectId, "Bearer $token")
+            supervisorScope {
+                // Collecting all launched jobs
+                val jobs = listOf(
+                    launch {
+                        try {
+                            issueManagementViewModel.getIssue(projectId, issueId, "Bearer $token")
+                        } catch (e: Exception) {
+                            Log.e("IssueManagement", "Error fetching issue: ${e.message}")
+                        }
+                    },
+                    launch {
+                        try {
+                            taskManagementViewModel.getTasks(projectId, "Bearer $token")
+                        } catch (e: Exception) {
+                            Log.e("TaskManagement", "Error fetching tasks: ${e.message}")
+                        }
+                    },
+                    launch {
+                        try {
+                            projectManagementViewModel.getMembers(projectId, "Bearer $token")
+                        } catch (e: Exception) {
+                            Log.e("ProjectManagement", "Error fetching members: ${e.message}")
+                        }
+                    }
+                )
+
+                // Waiting for all tasks to complete
+                jobs.joinAll()
+            }
         }
     }
+
 
     HandleOutProjectWebSocket(
         memberSocket = memberSocket,
@@ -129,6 +160,7 @@ fun IssueDetailScreen(
             selectedTask = data.task
             selectedStatus = data.status
             reporter = data.reporter.username ?: "Unassigned"
+            reporterId = data.reporter.id
         }
         if (issue is Resource.Error) {
             openErrorDialog = true
@@ -269,7 +301,8 @@ fun IssueDetailScreen(
 
                 AssigneeSelector(
                     label = "Reporter",
-                    avatarRes = R.drawable.avatar,
+                    avatarRes = R.drawable.no_avatar,
+                    userId = reporterId,
                     username = reporter,
                     onClick = { }
                 )
@@ -284,7 +317,8 @@ fun IssueDetailScreen(
                 // Choose Assignee
                 AssigneeSelector(
                     label = "Assign to",
-                    avatarRes = R.drawable.avatar,
+                    avatarRes = R.drawable.no_avatar,
+                    userId = assignedMemberId,
                     username = assignedMember,
                     onClick = { showChooseMember.value = true }
                 )

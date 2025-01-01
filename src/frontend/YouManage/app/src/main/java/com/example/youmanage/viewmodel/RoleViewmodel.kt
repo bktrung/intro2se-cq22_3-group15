@@ -11,6 +11,9 @@ import com.example.youmanage.data.remote.taskmanagement.Detail
 import com.example.youmanage.repository.ProjectManagementRepository
 import com.example.youmanage.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -18,6 +21,10 @@ import javax.inject.Inject
 class RoleViewmodel @Inject constructor(
     private val repository: ProjectManagementRepository
 ) : ViewModel() {
+
+    private val supervisorJob = SupervisorJob() // Tạo SupervisorJob
+    private val scope = CoroutineScope(Dispatchers.Main + supervisorJob) // Tạo CoroutineScope với SupervisorJob
+
     private val _roles: MutableLiveData<Resource<List<Role>>> = MutableLiveData()
     val roles: MutableLiveData<Resource<List<Role>>> get() = _roles
 
@@ -36,11 +43,13 @@ class RoleViewmodel @Inject constructor(
     private val _members = MutableLiveData<List<Map<User, Boolean>>>()
     val members: MutableLiveData<List<Map<User, Boolean>>> get() = _members
 
+    // Cập nhật các hàm sử dụng scope mới
+
     fun getRoles(
         projectId: String,
         authorization: String
     ) {
-        viewModelScope.launch {
+        scope.launch {
             _roles.value = repository.getRoles(
                 projectId,
                 authorization
@@ -53,7 +62,7 @@ class RoleViewmodel @Inject constructor(
         roleId: String,
         authorization: String
     ) {
-        viewModelScope.launch {
+        scope.launch {
             _role.value = repository.getRole(
                 projectId,
                 roleId,
@@ -67,7 +76,7 @@ class RoleViewmodel @Inject constructor(
         role: RoleRequest,
         authorization: String
     ) {
-        viewModelScope.launch {
+        scope.launch {
             _response.value = repository.createRole(
                 projectId,
                 role,
@@ -76,14 +85,13 @@ class RoleViewmodel @Inject constructor(
         }
     }
 
-
     fun updateRole(
         projectId: String,
         roleId: String,
         role: RoleRequest,
         authorization: String
     ) {
-        viewModelScope.launch {
+        scope.launch {
             _response.value = repository.updateRole(
                 projectId,
                 roleId,
@@ -98,7 +106,7 @@ class RoleViewmodel @Inject constructor(
         roleId: String,
         authorization: String
     ) {
-        viewModelScope.launch {
+        scope.launch {
             _deleteResponse.value = repository.deleteRole(
                 projectId,
                 roleId,
@@ -114,7 +122,7 @@ class RoleViewmodel @Inject constructor(
         action: String,
         authorization: String
     ) {
-        viewModelScope.launch {
+        scope.launch {
             _assignResponse.value = repository.assignRole(
                 projectId,
                 roleId,
@@ -130,7 +138,7 @@ class RoleViewmodel @Inject constructor(
         roleId: String,
         authorization: String
     ) {
-        viewModelScope.launch {
+        scope.launch {
             val member = repository.getMembers(
                 projectId,
                 authorization
@@ -152,8 +160,8 @@ class RoleViewmodel @Inject constructor(
         projectId: String,
         memberId: String,
         authorization: String
-    ){
-        viewModelScope.launch {
+    ) {
+        scope.launch {
             _roles.value = repository.getRolesOfMember(
                 projectId,
                 memberId,
@@ -161,4 +169,6 @@ class RoleViewmodel @Inject constructor(
             )
         }
     }
+
+
 }

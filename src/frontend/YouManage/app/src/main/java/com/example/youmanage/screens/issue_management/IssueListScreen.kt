@@ -1,5 +1,6 @@
 package com.example.youmanage.screens.issue_management
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -57,9 +58,13 @@ import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Constants.statusMapping
 import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
+import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.IssuesViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 @Composable
 fun IssueListScreen(
@@ -86,16 +91,53 @@ fun IssueListScreen(
     // Fetch issues when the token is available
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
-            issueManagementViewModel.getIssues(
-                projectId = projectId,
-                authorization = "Bearer $token"
-            )
+            val bearerToken = "Bearer $token"
+            val projectWebSocketUrl = "${WEB_SOCKET}project/$projectId/"
+            val memberWebSocketUrl = "${WEB_SOCKET}member/$projectId/"
 
-            authenticationViewModel.getUser("Bearer $token")
+            supervisorScope {
+                // Collecting the launched jobs
+                val jobs = listOf(
+                    launch {
+                        try {
+                            issueManagementViewModel.getIssues(
+                                projectId = projectId,
+                                authorization = bearerToken
+                            )
+                        } catch (e: Exception) {
+                            Log.e("IssueManagement", "Error fetching issues: ${e.message}")
+                        }
+                    },
+                    launch {
+                        try {
+                            authenticationViewModel.getUser(bearerToken)
+                        } catch (e: Exception) {
+                            Log.e("Authentication", "Error fetching user: ${e.message}")
+                        }
+                    },
+                    launch {
+                        try {
+                            projectManagementViewModel.connectToProjectWebsocket(url = projectWebSocketUrl)
+                        } catch (e: Exception) {
+                            Log.e("ProjectWebSocket", "Error connecting to project WebSocket: ${e.message}")
+                        }
+                    },
+                    launch {
+                        try {
+                            projectManagementViewModel.connectToMemberWebsocket(url = memberWebSocketUrl)
+                        } catch (e: Exception) {
+                            Log.e("MemberWebSocket", "Error connecting to member WebSocket: ${e.message}")
+                        }
+                    }
+                )
+
+                // Waiting for all jobs to finish
+                jobs.joinAll()
+            }
         }
-        projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-        projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
     }
+
+
 
     HandleOutProjectWebSocket(
         memberSocket = memberSocket,
@@ -106,14 +148,24 @@ fun IssueListScreen(
     )
 
     LaunchedEffect(Unit) {
-        issueManagementViewModel.connectToIssueWebSocket(webSocketUrl)
+        supervisorScope {
+            launch {
+                issueManagementViewModel.connectToIssueWebSocket(webSocketUrl)
+            }
+        }
+
     }
 
     LaunchedEffect(issueSocket) {
-        issueManagementViewModel.getIssues(
-            projectId = projectId,
-            authorization = "Bearer ${accessToken.value}"
-        )
+        supervisorScope {
+            launch {
+                issueManagementViewModel.getIssues(
+                    projectId = projectId,
+                    authorization = "Bearer ${accessToken.value}"
+                )
+            }
+        }
+
     }
 
     var isSelectedButton by rememberSaveable { mutableIntStateOf(0) }
@@ -208,6 +260,7 @@ fun IssueListScreen(
                             IssueItem(
                                 title = filterIssues[index].title,
                                 reporter = filterIssues[index].reporter.username ?: "Unassigned",
+                                reporterId = filterIssues[index].reporter.id,
                                 onIssueClick = { onIssueDetail(filterIssues[index].id) }
                             )
                         }
@@ -222,6 +275,7 @@ fun IssueListScreen(
 fun IssueItem(
     title: String,
     reporter: String,
+    reporterId: Int = -1,
     onIssueClick: () -> Unit = {}
 ) {
     Card(
@@ -269,7 +323,7 @@ fun IssueItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.avatar),
+                    painter = painterResource(id = randomAvatar(reporterId)),
                     contentDescription = "Reporter Avatar",
                     modifier = Modifier
                         .size(50.dp)

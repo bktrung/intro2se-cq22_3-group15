@@ -2,6 +2,7 @@ package com.example.youmanage.screens.project_management
 
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -26,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,8 +36,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -45,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -55,7 +60,9 @@ import com.example.youmanage.R
 import com.example.youmanage.data.remote.projectmanagement.ProjectCreate
 import com.example.youmanage.screens.components.AddMemberDialog
 import com.example.youmanage.screens.components.DatePickerModal
+import com.example.youmanage.screens.components.ErrorDialog
 import com.example.youmanage.screens.components.LeadingTextFieldComponent
+import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 
@@ -75,6 +82,9 @@ fun AddProjectScreen(
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showAddMemberDialog by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf(false) }
+
+    val response by projectManagementViewModel.createProjectResponse.observeAsState()
 
     var members by remember { mutableStateOf(listOf<MemberItem>()) }
 
@@ -83,6 +93,21 @@ fun AddProjectScreen(
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
     var dueDate by rememberSaveable { mutableStateOf("") }
+
+    var errorMessage by remember { mutableStateOf("Something went wrong. Please try again!") }
+
+
+    val context = LocalContext.current
+
+    LaunchedEffect(response) {
+        if (response is Resource.Success) {
+            Toast.makeText(context, "Project created successfully", Toast.LENGTH_SHORT).show()
+            onNavigateBack()
+        } else if (response is Resource.Error) {
+            errorMessage = response?.message.toString()
+            showErrorDialog = true
+        }
+    }
 
     val access = authenticationViewModel.accessToken.collectAsState(initial = null)
 
@@ -270,15 +295,22 @@ fun AddProjectScreen(
 
                     Button(
                         onClick = {
-                            projectManagementViewModel.createProject(
-                                project = ProjectCreate(
-                                    description = description,
-                                    dueDate = dueDate,
-                                    name = title
-                                ),
-                                authorization = "Bearer ${access.value}"
-                            )
-                            onNavigateBack()
+                            if (title.isEmpty()) {
+                                showErrorDialog = true
+                                errorMessage = "Project title cannot be empty"
+                            } else if (dueDate.isEmpty()) {
+                                showErrorDialog = true
+                                errorMessage = "Due date cannot be empty"
+                            } else {
+                                projectManagementViewModel.createProject(
+                                    project = ProjectCreate(
+                                        description = description,
+                                        dueDate = dueDate,
+                                        name = title
+                                    ),
+                                    authorization = "Bearer ${access.value}"
+                                )
+                            }
                         },
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
@@ -293,13 +325,10 @@ fun AddProjectScreen(
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
-
                     }
-
-
                 }
-
             }
+
         }
     }
     if (showDatePicker) {
@@ -325,6 +354,14 @@ fun AddProjectScreen(
             }
         )
     }
+
+    ErrorDialog(
+        title = "Something went wrong?",
+        content = errorMessage,
+        showDialog = showErrorDialog,
+        onDismiss = { showErrorDialog = false },
+        onConfirm = { showErrorDialog = false }
+    )
 }
 
 

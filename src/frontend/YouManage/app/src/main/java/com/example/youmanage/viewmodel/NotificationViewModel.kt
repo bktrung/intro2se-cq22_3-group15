@@ -13,6 +13,9 @@ import com.example.youmanage.data.remote.notification.Notifications
 import com.example.youmanage.repository.NotificationRepository
 import com.example.youmanage.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +27,9 @@ import javax.inject.Inject
 class NotificationViewModel @Inject constructor(
     private val repository: NotificationRepository
 ) : ViewModel() {
+
+    private val supervisorJob = SupervisorJob() // Tạo SupervisorJob
+    private val scope = CoroutineScope(Dispatchers.Main + supervisorJob) // Tạo CoroutineScope với SupervisorJob
 
     private val _notificationFromSocket = MutableLiveData<Resource<NotificationSocket>>()
     val notificationFromSocket: LiveData<Resource<NotificationSocket>> = _notificationFromSocket
@@ -64,7 +70,7 @@ class NotificationViewModel @Inject constructor(
     }
 
     fun connectToWebSocket(url: String) {
-        viewModelScope.launch {
+        scope.launch {
             repository.connectToSocket(url, _notificationFromSocket)
         }
     }
@@ -73,7 +79,7 @@ class NotificationViewModel @Inject constructor(
         cursor: String? = null,
         authorization: String
     ){
-        viewModelScope.launch {
+        scope.launch {
 
             isLoading.value = true
 
@@ -109,9 +115,8 @@ class NotificationViewModel @Inject constructor(
         }
     }
 
-
     fun getUnreadCountNotifications(authorization: String) {
-        viewModelScope.launch {
+        scope.launch {
             val response = repository.getUnreadCountNotifications(authorization)
 
             if(response is Resource.Success){
@@ -126,7 +131,7 @@ class NotificationViewModel @Inject constructor(
         notificationId: Int,
         authorization: String
     ){
-        viewModelScope.launch {
+        scope.launch {
             val response = repository.markAsRead(notificationId, authorization)
             if(response is Resource.Success){
                 markAsRead(notificationId)
@@ -135,11 +140,10 @@ class NotificationViewModel @Inject constructor(
         }
     }
 
-
     fun readAll(
         authorization: String
     ){
-        viewModelScope.launch {
+        scope.launch {
             val response = repository.readAll(authorization)
             if(response is Resource.Success){
                 markAllAsRead()
@@ -148,12 +152,11 @@ class NotificationViewModel @Inject constructor(
         }
     }
 
-
     fun deleteNotification(
         notificationId: Int,
         authorization: String
     ){
-        viewModelScope.launch {
+        scope.launch {
             val response = repository.deleteNotification(notificationId, authorization)
             if(response is Resource.Success){
                 _message.value = Resource.Success(Message(response.data!!))
@@ -164,4 +167,6 @@ class NotificationViewModel @Inject constructor(
             }
         }
     }
+
+
 }

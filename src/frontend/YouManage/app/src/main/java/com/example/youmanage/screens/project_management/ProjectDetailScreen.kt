@@ -68,10 +68,14 @@ import com.example.youmanage.screens.components.pieChartInput
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
+import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 @Composable
 fun ProjectDetailScreen(
@@ -111,23 +115,39 @@ fun ProjectDetailScreen(
 
     val context = LocalContext.current
 
-    LaunchedEffect(accessToken.value)
-    {
+    LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             val authorization = "Bearer $token"
 
-            projectManagementViewModel.getProject(
-                id = id.toString(),
-                authorization = authorization
-            )
-            projectManagementViewModel.getProgressTrack(
-                id = id.toString(),
-                authorization = authorization
-            )
-            projectManagementViewModel.isHost(
-                id = id.toString(),
-                authorization = authorization
-            )
+            // Lệnh gọi API và WebSocket được thực hiện tuần tự hoặc song song có kiểm soát
+            try {
+                // Gọi API trước
+                supervisorScope {
+                    // Khởi chạy các coroutine song song cho các API gọi
+                    val apiJobs = listOf(
+                        launch { projectManagementViewModel.getProject(id = id.toString(), authorization = authorization) },
+                        launch { projectManagementViewModel.getProgressTrack(id = id.toString(), authorization = authorization) },
+                        launch { projectManagementViewModel.isHost(id = id.toString(), authorization = authorization) }
+                    )
+
+                    // Đợi tất cả API hoàn thành trước khi tiếp tục
+                    apiJobs.joinAll()
+
+                    // Sau khi các API hoàn thành, kết nối WebSocket
+                    val webSocketUrl = "${WEB_SOCKET}project/$id/"
+                    val webSocketJobs = listOf(
+                        launch { authenticationViewModel.getUser("Bearer $token") },
+                        launch { projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl) },
+                        launch { projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl) },
+                        launch { taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl) }
+                    )
+
+                    // Đợi tất cả các WebSocket kết nối
+                    webSocketJobs.joinAll()
+                }
+            } catch (e: Exception) {
+                Log.e("ProjectDetailScreen", "Error occurred: ${e.message}")
+            }
         }
     }
 
@@ -157,16 +177,7 @@ fun ProjectDetailScreen(
         }
     }
 
-    LaunchedEffect(accessToken.value)
-    {
-        accessToken.value?.let {
-            val webSocketUrl = "${WEB_SOCKET}project/$id/"
-            authenticationViewModel.getUser("Bearer $it")
-            projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-            projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
-            taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
-        }
-    }
+
 
     HandleOutProjectWebSocket(
         memberSocket = memberSocket,
@@ -474,6 +485,7 @@ fun ProjectDetailScreen(
 fun TopBar(
     title: String,
     color: Color,
+    haveLeading: Boolean = true,
     leading: @Composable (() -> Unit)? = null,
     trailing: @Composable (() -> Unit)? = null,
     onNavigateBack: () -> Unit = {}
@@ -487,13 +499,18 @@ fun TopBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = { onNavigateBack() }) {
-            Icon(
-                painter = painterResource(id = R.drawable.back_arrow_icon),
-                contentDescription = "Back",
-                tint = MaterialTheme.colorScheme.primary
-            )
+        if(haveLeading){
+            IconButton(onClick = { onNavigateBack() }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.back_arrow_icon),
+                    contentDescription = "Back",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        } else {
+            Box(modifier = Modifier.size(24.dp))
         }
+
         Text(
             text = title,
             fontSize = 30.sp,
@@ -595,7 +612,7 @@ fun MembersSection(
                         MemberItem(
                             username = members[index].username ?: "Unknown",
                             backgroundColor = Color.Transparent,
-                            avatar = R.drawable.avatar,
+                            avatar = randomAvatar(index = members[index].id),
                         ),
                         onDelete = {
                             onDeleteMember(members[index].id.toString())

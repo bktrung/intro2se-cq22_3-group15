@@ -1,7 +1,6 @@
 package com.example.youmanage.screens.home
 
 import android.os.Build
-import android.os.Build.VERSION_CODES
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
@@ -9,20 +8,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -38,23 +28,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.youmanage.R
 import com.example.youmanage.data.remote.taskmanagement.Task
 import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.screens.task_management.ButtonSection
 import com.example.youmanage.screens.task_management.TaskItem
 import com.example.youmanage.utils.Constants.statusMapping
-import com.example.youmanage.utils.Resource
-import com.example.youmanage.utils.formatToRelativeTime
 import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.NotificationViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -73,8 +59,15 @@ fun MyTaskScreen(
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let {
-            taskManagementViewModel.getMyTask(
-                authorization = "Bearer $it")
+            supervisorScope {
+                val job = launch {
+                    taskManagementViewModel.getMyTask(
+                        authorization = "Bearer $it")
+                }
+
+                job.join()
+            }
+
         }
     }
 
@@ -102,6 +95,7 @@ fun MyTaskScreen(
             TopBar(
                 title = "My Task",
                 color = Color.Transparent,
+                haveLeading = false,
                 trailing = {
                     Box(
                         modifier = Modifier.size(24.dp)
@@ -111,8 +105,6 @@ fun MyTaskScreen(
             )
         }
     ) { it ->
-
-
 
         Column(
             modifier = Modifier
@@ -126,8 +118,6 @@ fun MyTaskScreen(
                 isSelectedButton = isSelectedButton,
                 onClick = {
                     isSelectedButton = it
-
-                    Log.d("CHECK", "${statusMapping[isSelectedButton].second}")
                 },
                 status = statusMapping
             )
@@ -151,7 +141,7 @@ fun MyTaskScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     // Display each activity
-                    itemsIndexed(myTask ?: emptyList()) { index, item ->
+                    itemsIndexed(myTask ?: emptyList()) { _, item ->
                         TaskItem(
                             title = item.title,
                             priority = item.priority,

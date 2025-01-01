@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -74,6 +75,9 @@ import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.viewmodel.ChangeRequestViewModel
 import com.example.youmanage.viewmodel.SnackBarViewModel
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 
 @Preview
@@ -106,8 +110,10 @@ fun CreateTaskScreen(
     var errorMessage by remember { mutableStateOf("") }
     var openErrorDialog by remember { mutableStateOf(false) }
 
+    var isLoading by remember { mutableStateOf(false) }
+
     LaunchedEffect(task) {
-        if (task is Resource.Success) {
+        if (task is Resource.Success && !isLoading) {
             onCreateTask()
         } else if (task is Resource.Error) {
             errorMessage = (task as Resource.Error).message ?: "Something went wrong"
@@ -118,12 +124,21 @@ fun CreateTaskScreen(
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             val webSocketUrl = "${WEB_SOCKET}project/${projectId}/"
-            taskManagementViewModel.getMembers(projectId, "Bearer $token")
-            taskManagementViewModel.isHost(projectId, "Bearer $token")
-            authenticationViewModel.getUser("Bearer $token")
-            taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
-            projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-            projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+            supervisorScope {
+                // Track all async tasks with Deferred
+                val job1 = launch { taskManagementViewModel.getMembers(projectId, "Bearer $token") }
+                val job2 = launch { taskManagementViewModel.isHost(projectId, "Bearer $token") }
+                val job3 = launch { authenticationViewModel.getUser("Bearer $token") }
+                val job4 =
+                    launch { taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl) }
+                val job5 =
+                    launch { projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl) }
+                val job6 =
+                    launch { projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl) }
+
+                // Wait for all jobs to complete
+                joinAll(job1, job2, job3, job4, job5, job6)
+            }
         }
     }
 
@@ -166,215 +181,221 @@ fun CreateTaskScreen(
 
     LaunchedEffect(send) {
         if (send) {
-            changeRequestViewModel.createChangeRequest(
-                projectId = projectId.toInt(),
-                SendChangeRequest(
-                    requestType = "CREATE",
-                    targetTable = "TASK",
-                    targetTableId = null,
-                    description = requestDescription,
-                    newData = TaskCreate(
-                        title = title,
-                        description = description,
-                        startDate = startDate,
-                        endDate = endDate,
-                        assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
-                        priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
+            supervisorScope {
+                launch {
+                    changeRequestViewModel.createChangeRequest(
+                        projectId = projectId.toInt(),
+                        SendChangeRequest(
+                            requestType = "CREATE",
+                            targetTable = "TASK",
+                            targetTableId = null,
+                            description = requestDescription,
+                            newData = TaskCreate(
+                                title = title,
+                                description = description,
+                                startDate = startDate,
+                                endDate = endDate,
+                                assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
+                                priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
+                            )
+                        ),
+                        "Bearer ${accessToken.value}"
                     )
-                ),
-                "Bearer ${accessToken.value}"
-            )
+                }
+            }
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopBar(
-                title = "Create Task",
-                color = Color.Transparent,
-                trailing = {
-                    Box(
-                        modifier = Modifier.size(24.dp)
-                    )
-                },
-                onNavigateBack = { onNavigateBack() }
-            )
-        },
-        bottomBar = {
-            Box(
+
+        Scaffold(
+            topBar = {
+                TopBar(
+                    title = "Create Task",
+                    color = Color.Transparent,
+                    trailing = {
+                        Box(
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
+                    onNavigateBack = { onNavigateBack() }
+                )
+            },
+            bottomBar = {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Button(
+                        onClick = {
+                            if (isHost == false) {
+                                showChangeRequestDialog = true
+                            } else {
+                                taskManagementViewModel.createTask(
+                                    projectId = projectId,
+                                    TaskCreate(
+                                        title = title,
+                                        description = description,
+                                        startDate = startDate,
+                                        endDate = endDate,
+                                        assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
+                                        priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
+                                    ),
+                                    authorization = "Bearer ${accessToken.value}"
+                                )
+                            }
+                        },
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ),
+                    ) {
+                        Text(
+                            "Create",
+                            fontSize = 20.sp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
+                }
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    top = WindowInsets.statusBars
+                        .asPaddingValues()
+                        .calculateTopPadding(),
+                    bottom = WindowInsets.systemBars
+                        .asPaddingValues()
+                        .calculateBottomPadding()
+                )
+        ) { paddingValues ->
+
+            val scrollState = rememberScrollState()
+
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 10.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Button(
-                    onClick = {
-                        if (isHost == false) {
-                            showChangeRequestDialog = true
-                        } else {
-                            taskManagementViewModel.createTask(
-                                projectId = projectId,
-                                TaskCreate(
-                                    title = title,
-                                    description = description,
-                                    startDate = startDate,
-                                    endDate = endDate,
-                                    assigneeId = if (assignedMemberId == -1) null else assignedMemberId,
-                                    priority = if (priority == -1) null else priorityChoice[priority].uppercase(),
-                                ),
-                                authorization = "Bearer ${accessToken.value}"
-                            )
-                        }
-                    },
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ),
-                ) {
-                    Text(
-                        "Create",
-                        fontSize = 20.sp,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
-            }
-        },
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(
-                top = WindowInsets.statusBars
-                    .asPaddingValues()
-                    .calculateTopPadding(),
-                bottom = WindowInsets.systemBars
-                    .asPaddingValues()
-                    .calculateBottomPadding()
-            )
-    ) { paddingValues ->
-
-        val scrollState = rememberScrollState()
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(paddingValues)
-                .padding(horizontal = 36.dp)
-                .padding(bottom = 10.dp)
-                .verticalScroll(scrollState),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(paddingValues)
+                    .padding(horizontal = 36.dp)
+                    .padding(bottom = 10.dp)
+                    .verticalScroll(scrollState),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
 
-                Text(
-                    "Task Title",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp
-                )
-
-                LeadingTextFieldComponent(
-                    content = title,
-                    onChangeValue = { title = it },
-                    placeholderContent = "Enter project title",
-                    placeholderColor = MaterialTheme.colorScheme.primary,
-                    containerColor = textFieldColor,
-                    icon = R.drawable.project_title_icon
-                )
-            }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-
-                Text(
-                    "Description",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp
-                )
-
-                TextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = textFieldColor,
-                        unfocusedContainerColor = textFieldColor,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    ),
+                Column(
                     modifier = Modifier
                         .fillMaxWidth(),
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.description_icon),
-                            contentDescription = "",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+
+                    Text(
+                        "Task Title",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
+
+                    LeadingTextFieldComponent(
+                        content = title,
+                        onChangeValue = { title = it },
+                        placeholderContent = "Enter project title",
+                        placeholderColor = MaterialTheme.colorScheme.primary,
+                        containerColor = textFieldColor,
+                        icon = R.drawable.project_title_icon
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+
+                    Text(
+                        "Description",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
+
+                    TextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = textFieldColor,
+                            unfocusedContainerColor = textFieldColor,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(id = R.drawable.description_icon),
+                                contentDescription = "",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        placeholder = {
+                            Text(
+                                "Enter project description",
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        maxLines = Int.MAX_VALUE,
+                        shape = RoundedCornerShape(10.dp),
+                        textStyle = TextStyle(MaterialTheme.colorScheme.primary)
+                    )
+                }
+
+                DatePickerField(
+                    label = "Start date",
+                    date = startDate,
+                    onDateClick = {
+                        isTime = 1
+                        showDatePicker = true
                     },
-                    placeholder = {
-                        Text(
-                            "Enter project description",
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                    iconResource = R.drawable.calendar_icon,
+                    placeholder = "Enter start date",
+                    containerColor = textFieldColor
+                )
+
+                DatePickerField(
+                    label = "End date",
+                    date = endDate,
+                    onDateClick = {
+                        isTime = 2
+                        showDatePicker = true
                     },
-                    maxLines = Int.MAX_VALUE,
-                    shape = RoundedCornerShape(10.dp),
-                    textStyle = TextStyle(MaterialTheme.colorScheme.primary)
+                    iconResource = R.drawable.calendar_icon,
+                    placeholder = "Enter end date",
+                    containerColor = textFieldColor
+                )
+
+                PrioritySelector(
+                    priorityChoice = priorityChoice,
+                    priority = priority,
+                    onPrioritySelected = {
+                        priority = it
+                    }
+                )
+
+                AssigneeSelector(
+                    label = "Assign to",
+                    avatarRes = R.drawable.no_avatar,
+                    userId = assignedMemberId,
+                    username = assignedMember,
+                    onClick = {
+                        showChooseMember = true
+                    }
                 )
             }
-
-            DatePickerField(
-                label = "Start date",
-                date = startDate,
-                onDateClick = {
-                    isTime = 1
-                    showDatePicker = true
-                },
-                iconResource = R.drawable.calendar_icon,
-                placeholder = "Enter start date",
-                containerColor = textFieldColor
-            )
-
-            DatePickerField(
-                label = "End date",
-                date = endDate,
-                onDateClick = {
-                    isTime = 2
-                    showDatePicker = true
-                },
-                iconResource = R.drawable.calendar_icon,
-                placeholder = "Enter end date",
-                containerColor = textFieldColor
-            )
-
-            PrioritySelector(
-                priorityChoice = priorityChoice,
-                priority = priority,
-                onPrioritySelected = {
-                    priority = it
-                }
-            )
-
-            AssigneeSelector(
-                label = "Assign to",
-                avatarRes = R.drawable.avatar,
-                username = assignedMember,
-                onClick = {
-                    showChooseMember = true
-                }
-            )
-        }
     }
 
     if (showDatePicker) {

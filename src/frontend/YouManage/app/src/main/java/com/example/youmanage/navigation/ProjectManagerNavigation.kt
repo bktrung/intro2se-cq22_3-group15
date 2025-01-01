@@ -13,6 +13,11 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -86,8 +91,36 @@ fun ProjectManagementNavGraph(
             route = ProjectManagementRouteScreen.Notification.route,
             deepLinks = listOf(navDeepLink { uriPattern = "app://home/notification" })
         ) {
+
+            var routeMessage by remember { mutableStateOf("notification") }
+
             NotificationScreen(
-                paddingValues = paddingValues
+                paddingValues = paddingValues,
+                onItemClick = {
+                    val objectContent = it
+
+                    if (objectContent.projectId != null) {
+                        routeMessage = if (objectContent.taskId != null) {
+                            "task_detail/${objectContent.projectId}/${objectContent.taskId}"
+                        } else if (objectContent.issueId != null) {
+                            "issue_detail/${objectContent.projectId}/${objectContent.issueId}"
+                        } else if (objectContent.changeRequestId != null) {
+                            "change_requests/${objectContent.projectId}"
+                        } else {
+                            "project_detail/${objectContent.projectId}"
+                        }
+                    } else {
+                        routeMessage = "notification"
+                    }
+
+                    try{
+                        rootNavController.navigate(routeMessage)
+                    } catch (e: Exception){
+                        rootNavController.navigate("notification")
+                    }
+
+                },
+                haveLeading = false
             )
         }
 
@@ -131,8 +164,34 @@ fun NavGraphBuilder.projectManagementNavGraph(
             route = ProjectManagementRouteScreen.Notification.route
         ){
 
+               var routeMessage by remember { mutableStateOf("notification") }
+
                 NotificationScreen(
-                    paddingValues = WindowInsets.systemBars.asPaddingValues()
+                    paddingValues = WindowInsets.systemBars.asPaddingValues(),
+                    onItemClick = {
+                        val objectContent = it
+
+                        routeMessage = if (objectContent.projectId != null) {
+                            if (objectContent.taskId != null) {
+                                "task_detail/${objectContent.projectId}/${objectContent.taskId}"
+                            } else if (objectContent.issueId != null) {
+                                "issue_detail/${objectContent.projectId}/${objectContent.issueId}"
+                            } else if (objectContent.changeRequestId != null) {
+                                "change_requests/${objectContent.projectId}"
+                            } else {
+                                "project_detail/${objectContent.projectId}"
+                            }
+                        } else {
+                            "notification"
+                        }
+                        try{
+                            rootNavController.navigate(routeMessage)
+                        } catch (e: Exception){
+                            rootNavController.navigate("notification")
+                        }
+
+                    },
+                    haveLeading = true
                 )
 
         }
@@ -245,7 +304,11 @@ fun NavGraphBuilder.projectManagementNavGraph(
 
             ChatScreenWithViewModel(
                 projectId = projectId ?: "",
-                onNavigateBack = { rootNavController.navigateUp() })
+                onNavigateBack = { rootNavController.navigateUp() },
+                onDisableAction = {
+                    rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
+                }
+            )
         }
 
         composable(
@@ -278,6 +341,9 @@ fun NavGraphBuilder.projectManagementNavGraph(
                     projectId = projectId,
                     onNavigateBack = {
                         rootNavController.navigateUp()
+                    },
+                    onDisableAction = {
+                        rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
                     }
                 )
             }

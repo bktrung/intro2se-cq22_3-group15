@@ -1,5 +1,6 @@
 package com.example.youmanage.screens.home
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -54,6 +55,8 @@ import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.randomColor
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 @Composable
 fun HomeScreen(
@@ -72,12 +75,33 @@ fun HomeScreen(
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
-            projectManagementViewModel.getProjectList(
-                authorization = "Bearer $token"
-            )
-            authenticationViewModel.getUser("Bearer $token")
+            supervisorScope {
+                // Launch tasks concurrently
+                val job1 = launch {
+                    try {
+                        projectManagementViewModel.getProjectList(
+                            authorization = "Bearer $token"
+                        )
+                    } catch (e: Exception) {
+                        Log.e("ProjectManagement", "Error fetching project list: ${e.message}")
+                    }
+                }
+
+                val job2 = launch {
+                    try {
+                        authenticationViewModel.getUser("Bearer $token")
+                    } catch (e: Exception) {
+                        Log.e("Authentication", "Error fetching user: ${e.message}")
+                    }
+                }
+
+                // Wait for both jobs to finish
+                job1.join()
+                job2.join()
+            }
         }
     }
+
 
     var projectList by remember { mutableStateOf<List<Project>>(emptyList()) }
 

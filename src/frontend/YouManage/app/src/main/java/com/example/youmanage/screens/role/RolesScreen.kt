@@ -68,6 +68,8 @@ import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ChangeRequestViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.RoleViewmodel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 
 @Composable
@@ -111,34 +113,58 @@ fun RolesScreen(
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
-            roleViewmodel.getRoles(
-                projectId,
-                "Bearer $token"
-            )
-            projectManagementViewModel.isHost(
-                projectId,
-                "Bearer $token"
-            )
+            supervisorScope {
+                // Launching tasks concurrently
+                val job1 = launch {
+                    roleViewmodel.getRoles(
+                        projectId,
+                        "Bearer $token"
+                    )
+                }
+
+                val job2 = launch {
+                    projectManagementViewModel.isHost(
+                        projectId,
+                        "Bearer $token"
+                    )
+                }
+
+                // Waiting for both jobs to complete
+                job1.join()
+                job2.join()
+            }
         }
     }
+
 
     LaunchedEffect(
         key1 = response,
         key2 = deleteResponse
     ) {
-        if (response is Resource.Success) {
-            roleViewmodel.getRoles(
-                projectId,
-                "Bearer ${accessToken.value}"
-            )
+        supervisorScope {
+            val job1 =launch {
+                if (response is Resource.Success) {
+                    roleViewmodel.getRoles(
+                        projectId,
+                        "Bearer ${accessToken.value}"
+                    )
+                }
+            }
+
+            val job2 = launch {
+                if (deleteResponse is Resource.Success) {
+                    roleViewmodel.getRoles(
+                        projectId,
+                        "Bearer ${accessToken.value}"
+                    )
+                }
+            }
+
+            job1.join()
+            job2.join()
         }
 
-        if (deleteResponse is Resource.Success) {
-            roleViewmodel.getRoles(
-                projectId,
-                "Bearer ${accessToken.value}"
-            )
-        }
+
     }
 
     HandleOutProjectWebSocket(

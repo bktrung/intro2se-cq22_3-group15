@@ -1,5 +1,6 @@
 package com.example.youmanage.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -22,7 +23,11 @@ import com.example.youmanage.repository.WebSocketRepository
 import com.example.youmanage.utils.Resource
 import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -30,6 +35,9 @@ class ProjectManagementViewModel @Inject constructor(
     private val repository: ProjectManagementRepository,
     private val webSocketRepository: WebSocketRepository
 ) : ViewModel() {
+
+    private val supervisorJob = SupervisorJob()
+    private val viewModelScopeWithSupervisor = CoroutineScope(Dispatchers.Main + supervisorJob)
 
     private val _projects = MutableLiveData<Resource<Projects>>()
     val projects: LiveData<Resource<Projects>> get() = _projects
@@ -70,6 +78,9 @@ class ProjectManagementViewModel @Inject constructor(
     private val _empowerResponse = MutableLiveData<Resource<Message>>()
     val empowerResponse: LiveData<Resource<Message>> get() = _empowerResponse
 
+    private val _createProjectResponse = MutableLiveData<Resource<Project>>()
+    val createProjectResponse: LiveData<Resource<Project>> get() = _createProjectResponse
+
     private val _isHost = MutableLiveData<Boolean>(false)
     val isHost: LiveData<Boolean> get() = _isHost
 
@@ -77,8 +88,10 @@ class ProjectManagementViewModel @Inject constructor(
         id: String,
         authorization: String
     ){
-        viewModelScope.launch {
-            val response = repository.isHost(id, authorization)
+        viewModelScopeWithSupervisor.launch {
+            val response = withContext(Dispatchers.IO){
+                repository.isHost(id, authorization)
+            }
             if(response is Resource.Success){
                 _isHost.value = response.data?.isHost ?: false
             } else{
@@ -88,37 +101,42 @@ class ProjectManagementViewModel @Inject constructor(
     }
 
     fun getProjectList(authorization: String) {
-        viewModelScope.launch {
-            _projects.value = repository.getProjectList(authorization = authorization)
+        viewModelScopeWithSupervisor.launch {
+            val response = withContext(Dispatchers.IO){
+                repository.getProjectList(authorization = authorization)
+            }
+            _projects.value = response
         }
     }
 
     fun createProject(project: ProjectCreate, authorization: String) {
-        viewModelScope.launch {
-            repository.createProject(project = project, authorization = authorization)
+        viewModelScopeWithSupervisor.launch {
+            _createProjectResponse.value = repository.createProject(
+                project = project,
+                authorization = authorization)
         }
     }
 
     fun getProject(id: String, authorization: String) {
-        viewModelScope.launch {
+        viewModelScopeWithSupervisor.launch {
             _project.value = repository.getProject(id = id, authorization = authorization)
         }
     }
 
     fun updateFullProject(id: String, project: ProjectCreate, authorization: String) {
-        viewModelScope.launch {
+        viewModelScopeWithSupervisor.launch {
             _updateProjectResponse.value = repository.updateFullProject(id = id, project = project, authorization = authorization)
         }
     }
 
     fun updateProject(id: String, project: ProjectCreate, authorization: String) {
-        viewModelScope.launch {
+        viewModelScopeWithSupervisor.launch {
             repository.updateProject(id = id, project = project, authorization = authorization)
         }
     }
 
     fun deleteProject(id: String, authorization: String) {
-        viewModelScope.launch {
+        viewModelScopeWithSupervisor.launch {
             _deleteProjectResponse.value = repository.deleteProject(
                 id = id,
                 authorization = authorization
@@ -127,7 +145,7 @@ class ProjectManagementViewModel @Inject constructor(
     }
 
     fun addMember(id: String, username: Username, authorization: String) {
-        viewModelScope.launch {
+        viewModelScopeWithSupervisor.launch {
             _addMemberResponse.value = repository.addMember(
                 id = id,
                 member = username,
@@ -137,7 +155,7 @@ class ProjectManagementViewModel @Inject constructor(
     }
 
     fun removeMember(id: String, memberId: Id, authorization: String) {
-        viewModelScope.launch {
+        viewModelScopeWithSupervisor.launch {
             _deleteMemberResponse.value = repository.removeMember(
                 id = id,
                 memberId = memberId,
@@ -147,7 +165,7 @@ class ProjectManagementViewModel @Inject constructor(
     }
 
     fun getMembers(id: String, authorization: String) {
-        viewModelScope.launch {
+        viewModelScopeWithSupervisor.launch {
             _members.value = repository.getMembers(
                 id = id,
                 authorization = authorization
@@ -156,7 +174,7 @@ class ProjectManagementViewModel @Inject constructor(
     }
 
     fun getProgressTrack(id: String, authorization: String) {
-        viewModelScope.launch {
+        viewModelScopeWithSupervisor.launch {
             _progress.value = repository.getProgressTrack(
                 projectId = id,
                 authorization = authorization
@@ -165,7 +183,7 @@ class ProjectManagementViewModel @Inject constructor(
     }
 
     fun connectToProjectWebsocket(url: String) {
-        viewModelScope.launch {
+        viewModelScopeWithSupervisor.launch {
             webSocketRepository.connectToSocket(
                 url,
                 object : TypeToken<WebSocketResponse<Project>>() {},
@@ -175,7 +193,7 @@ class ProjectManagementViewModel @Inject constructor(
     }
 
     fun connectToMemberWebsocket(url: String) {
-        viewModelScope.launch {
+        viewModelScopeWithSupervisor.launch {
             webSocketRepository.connectToSocket(
                 url,
                 object : TypeToken<WebSocketResponse<MemberObject>>() {},
@@ -185,7 +203,7 @@ class ProjectManagementViewModel @Inject constructor(
     }
 
     fun getGanttChartData(id: String, authorization: String) {
-        viewModelScope.launch {
+        viewModelScopeWithSupervisor.launch {
             _ganttChartData.value = repository.getGanttChartData(
                 id = id,
                 authorization = authorization
@@ -197,7 +215,7 @@ class ProjectManagementViewModel @Inject constructor(
         id: String,
         authorization: String
     ){
-        viewModelScope.launch {
+        viewModelScopeWithSupervisor.launch {
             _quitResponse.value = repository.quitProject(
                 id = id,
                 authorization = authorization
@@ -210,7 +228,7 @@ class ProjectManagementViewModel @Inject constructor(
         userId: UserId,
         authorization: String
     ){
-        viewModelScope.launch {
+        viewModelScopeWithSupervisor.launch {
             _empowerResponse.value = repository.empower(
                 id = id,
                 userId,
@@ -218,5 +236,5 @@ class ProjectManagementViewModel @Inject constructor(
             )
         }
     }
-}
 
+}

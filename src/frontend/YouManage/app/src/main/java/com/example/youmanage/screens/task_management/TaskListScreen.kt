@@ -60,9 +60,13 @@ import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.Constants.statusMapping
 import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
+import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TaskManagementViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
+import kotlin.coroutines.cancellation.CancellationException
 
 
 @Composable
@@ -86,20 +90,59 @@ fun TaskListScreen(
     val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
     val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
     val user by authenticationViewModel.user.observeAsState()
+    var isSelectedButton by rememberSaveable { mutableIntStateOf(0) }
 
     val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
 
-    LaunchedEffect(accessToken.value) {
-        accessToken.value?.let { token ->
-            taskManagementViewModel.getTasks(
-                projectId = projectId,
-                authorization = "Bearer $token"
-            )
-            authenticationViewModel.getUser("Bearer $token")
+    LaunchedEffect(Unit) {
+        try {
+            supervisorScope {
+                // Launching websocket connections concurrently
+                val job1 = launch {
+                    projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
+                }
+                val job2 = launch {
+                    taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl)
+                }
+
+                // Waiting for all coroutines to complete before finishing LaunchedEffect
+                job1.join()
+                job2.join()
+            }
+        } catch (e: CancellationException) {
+            Log.d("Coroutine", "Job was cancelled during websocket connections: ${e.localizedMessage}")
+        } catch (e: Exception) {
+            Log.d("Coroutine", "Exception during websocket connection setup: ${e.localizedMessage}")
         }
-        projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-        projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
     }
+
+    LaunchedEffect(accessToken.value) {
+        try {
+            accessToken.value?.let { token ->
+                supervisorScope {
+                    // Launching API calls concurrently
+                    val job1 = launch {
+                        taskManagementViewModel.getTasks(
+                            projectId = projectId,
+                            authorization = "Bearer $token"
+                        )
+                    }
+                    val job2 = launch {
+                        authenticationViewModel.getUser("Bearer $token")
+                    }
+
+                    // Optionally wait for all jobs to finish
+                    job1.join()
+                    job2.join()
+                }
+            }
+        } catch (e: CancellationException) {
+            Log.d("Coroutine", "Job was cancelled during API calls: ${e.localizedMessage}")
+        } catch (e: Exception) {
+            Log.d("Coroutine", "Exception during API calls: ${e.localizedMessage}")
+        }
+    }
+
 
     HandleOutProjectWebSocket(
         memberSocket = memberSocket,
@@ -109,31 +152,43 @@ fun TaskListScreen(
         onDisableAction = onDisableAction
     )
 
-    var isSelectedButton by rememberSaveable { mutableIntStateOf(0) }
-
-    LaunchedEffect(Unit) {
-        taskManagementViewModel.connectToTaskWebSocket(webSocketUrl)
-    }
-
     LaunchedEffect(taskSocket) {
-        taskManagementViewModel.getTasks(
-            projectId = projectId,
-            authorization = "Bearer ${accessToken.value}"
-        )
+        try {
+            supervisorScope {
+                launch {
+                    taskManagementViewModel.getTasks(
+                        projectId = projectId,
+                        authorization = "Bearer ${accessToken.value}"
+                    )
+                }
+            }
+        } catch (e: CancellationException) {
+            Log.d("Coroutine", "Job was cancelled: ${e.localizedMessage}")
+        } catch (e: Exception) {
+            Log.d("Coroutine", "Exception: ${e.localizedMessage}")
+        }
+
     }
 
     LaunchedEffect(
         key1 = isSelectedButton,
         key2 = tasks
     ) {
-        if (tasks is Resource.Success) {
-            Log.d("TAG", "TaskListScreen: ${statusMapping[isSelectedButton]}")
-            filterTasks = tasks?.data?.filter {
-                it.status == statusMapping[isSelectedButton].second
-            } ?: emptyList()
+        try {
+            if (tasks is Resource.Success) {
+                Log.d("TAG", "TaskListScreen: ${statusMapping[isSelectedButton]}")
+                filterTasks = tasks?.data?.filter {
+                    it.status == statusMapping[isSelectedButton].second
+                } ?: emptyList()
+            }
+
+            Log.d("TAG", "TaskListScreen: $filterTasks")
+        } catch (e: CancellationException) {
+            Log.d("Coroutine", "Job was cancelled: ${e.localizedMessage}")
+        } catch (e: Exception) {
+            Log.d("Coroutine", "Exception: ${e.localizedMessage}")
         }
 
-        Log.d("TAG", "TaskListScreen: $filterTasks")
     }
 
     Scaffold(
@@ -226,6 +281,7 @@ fun TaskListScreen(
                                 priority = filterTasks[index].priority,
                                 assignee = filterTasks[index].assignee?.username ?: "No Assignee",
                                 endDate = filterTasks[index].endDate,
+                                userId = filterTasks[index].assignee?.id ?: -1,
                                 comments = filterTasks[index].commentsCount,
                                 onCommentClick = {},
                                 onTaskClick = { onTaskDetail(filterTasks[index].id) }
@@ -244,6 +300,7 @@ fun TaskItem(
     title: String,
     priority: String?,
     assignee: String,
+    userId: Int = -1,
     endDate: String,
     comments: Int,
     onCommentClick: () -> Unit = {},
@@ -309,8 +366,11 @@ fun TaskItem(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+
+                val id = if(userId > 0) userId else -1
+
                 Image(
-                    painter = painterResource(id = R.drawable.avatar),
+                    painter = painterResource(id = randomAvatar(id)),
                     contentDescription = "Avatar",
                     modifier = Modifier
                         .size(50.dp)

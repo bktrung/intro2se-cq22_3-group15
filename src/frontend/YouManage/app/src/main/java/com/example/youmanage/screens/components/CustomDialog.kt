@@ -65,6 +65,7 @@ import com.example.youmanage.R
 import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.screens.project_management.MemberItem
 import com.example.youmanage.ui.theme.fontFamily
+import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.utils.randomVibrantLightColor
 import java.time.Instant
 import java.time.LocalDate
@@ -406,8 +407,10 @@ fun <T> ChooseItemDialog(
                                 ) {
 
                                     if (items[index] is User) {
+                                        val user = items[index] as User
+                                        val id = if(user.id > 0) user.id else 0
                                         Image(
-                                            painter = painterResource(id = R.drawable.avatar),
+                                            painter = painterResource(id = randomAvatar(id)),
                                             contentDescription = null,
                                             modifier = Modifier
                                                 .size(40.dp)
@@ -758,6 +761,7 @@ fun AddMemberDialog(
                                 )
                             )
                         },
+                        enabled = username.isNotEmpty(),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary
