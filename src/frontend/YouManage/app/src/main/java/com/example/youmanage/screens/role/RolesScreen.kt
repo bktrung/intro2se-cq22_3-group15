@@ -1,6 +1,5 @@
 package com.example.youmanage.screens.role
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,13 +43,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -63,12 +60,11 @@ import com.example.youmanage.screens.components.ChooseItemDialog
 import com.example.youmanage.screens.components.CreateRoleDialog
 import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.utils.Constants.WEB_SOCKET
-import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.ChangeRequestViewModel
+import com.example.youmanage.viewmodel.projectmanagement.ChangeRequestViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
-import com.example.youmanage.viewmodel.RoleViewmodel
+import com.example.youmanage.viewmodel.projectmanagement.RoleViewmodel
 import com.example.youmanage.viewmodel.TraceInProjectViewModel
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch

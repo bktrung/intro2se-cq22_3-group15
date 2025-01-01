@@ -70,12 +70,10 @@ import com.example.youmanage.data.remote.chat.MessageRequest
 import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.utils.Constants.BASE_URL
 import com.example.youmanage.utils.Constants.WEB_SOCKET
-import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.ChatViewModel
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import com.example.youmanage.viewmodel.projectmanagement.ChatViewModel
 import com.example.youmanage.viewmodel.TraceInProjectViewModel
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch

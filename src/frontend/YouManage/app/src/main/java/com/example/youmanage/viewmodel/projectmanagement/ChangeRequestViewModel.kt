@@ -1,11 +1,9 @@
-package com.example.youmanage.viewmodel
+package com.example.youmanage.viewmodel.projectmanagement
 
 import android.util.Log
-import android.view.View
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.youmanage.data.remote.changerequest.ChangeRequest
 import com.example.youmanage.data.remote.changerequest.Reply
 import com.example.youmanage.data.remote.changerequest.SendChangeRequest
@@ -64,9 +62,9 @@ class ChangeRequestViewModel @Inject constructor(
                 projectRepo.isHost(projectId, authorization)
             }
 
-            _isHost.value = if (response is Resource.Success) {
-                true
-            } else false
+            if (response is Resource.Success) {
+                _isHost.value = response.data?.isHost ?: false
+            }
         }
     }
 

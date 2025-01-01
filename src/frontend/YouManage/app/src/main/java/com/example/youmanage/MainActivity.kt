@@ -6,12 +6,9 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import com.example.youmanage.navigation.RootNavGraph
 import com.example.youmanage.ui.theme.YouManageTheme
-import com.example.youmanage.viewmodel.ActivityLogsViewModel
-import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
 

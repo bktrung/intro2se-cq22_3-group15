@@ -55,8 +55,8 @@ import com.example.youmanage.screens.components.AlertDialog
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.MemberProfileViewModel
-import com.example.youmanage.viewmodel.RoleViewmodel
+import com.example.youmanage.viewmodel.projectmanagement.MemberProfileViewModel
+import com.example.youmanage.viewmodel.projectmanagement.RoleViewmodel
 import com.example.youmanage.viewmodel.TraceInProjectViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

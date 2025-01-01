@@ -1,4 +1,4 @@
-package com.example.youmanage.viewmodel
+package com.example.youmanage.viewmodel.projectmanagement
 
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.LiveData
@@ -90,7 +90,7 @@ class ProjectDetailViewModel @Inject constructor(
                 projectManagementRepository.isHost(id, authorization)
             }
             if (response is Resource.Success) {
-                _isHost.value = true
+                _isHost.value = response.data?.isHost ?: false
             }
         }
     }

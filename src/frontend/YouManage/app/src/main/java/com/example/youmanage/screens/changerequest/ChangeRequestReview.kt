@@ -18,10 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.youmanage.data.remote.changerequest.ChangeRequest
 import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.screens.task_management.ButtonBottomBar
-import com.example.youmanage.viewmodel.ChangeRequestViewModel
 
 @Preview
 @Composable

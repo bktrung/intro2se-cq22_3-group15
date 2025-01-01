@@ -45,11 +45,9 @@ import com.example.youmanage.R
 import com.example.youmanage.data.remote.activitylogs.Activity
 import com.example.youmanage.screens.project_management.TopBar
 import com.example.youmanage.utils.Constants.WEB_SOCKET
-import com.example.youmanage.utils.HandleOutProjectWebSocket
 import com.example.youmanage.utils.formatToRelativeTime
-import com.example.youmanage.viewmodel.ActivityLogsViewModel
+import com.example.youmanage.viewmodel.projectmanagement.ActivityLogsViewModel
 import com.example.youmanage.viewmodel.AuthenticationViewModel
-import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.TraceInProjectViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
