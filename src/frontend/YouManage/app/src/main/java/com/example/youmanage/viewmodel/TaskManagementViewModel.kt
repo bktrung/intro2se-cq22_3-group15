@@ -3,7 +3,6 @@ package com.example.youmanage.viewmodel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.data.remote.taskmanagement.Comment
 import com.example.youmanage.data.remote.taskmanagement.Content
@@ -12,7 +11,6 @@ import com.example.youmanage.data.remote.taskmanagement.TaskCreate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdate
 import com.example.youmanage.data.remote.taskmanagement.TaskUpdateStatus
 import com.example.youmanage.data.remote.websocket.WebSocketResponse
-import com.example.youmanage.repository.AuthenticationRepository
 import com.example.youmanage.repository.ProjectManagementRepository
 import com.example.youmanage.repository.TaskManagementRepository
 import com.example.youmanage.repository.WebSocketRepository
@@ -22,9 +20,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import retrofit2.Response
 import javax.inject.Inject
 
 @HiltViewModel

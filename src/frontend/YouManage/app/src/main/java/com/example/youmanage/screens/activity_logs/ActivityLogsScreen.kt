@@ -50,6 +50,7 @@ import com.example.youmanage.utils.formatToRelativeTime
 import com.example.youmanage.viewmodel.ActivityLogsViewModel
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
+import com.example.youmanage.viewmodel.TraceInProjectViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -66,27 +67,22 @@ fun ActivityLogScreen(
     onDisableAction: () -> Unit = {},
     authenticationViewModel: AuthenticationViewModel = hiltViewModel(),
     activityLogViewModel: ActivityLogsViewModel = hiltViewModel(),
-    projectManagementViewModel: ProjectManagementViewModel = hiltViewModel()
+    traceInProjectViewModel: TraceInProjectViewModel = hiltViewModel()
 ) {
     val accessToken = authenticationViewModel.accessToken.collectAsState(null)
     val activityLogs by activityLogViewModel.activityLogs.collectAsState()
     val isLoading by activityLogViewModel.isLoading.collectAsState()
-
-    val user by authenticationViewModel.user.observeAsState()
-    val memberSocket by projectManagementViewModel.memberSocket.observeAsState()
-    val projectSocket by projectManagementViewModel.projectSocket.observeAsState()
+    val shouldDisableAction by traceInProjectViewModel.observeCombinedLiveData(projectId).observeAsState(false)
 
     val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
-
-    // Only trigger API call when accessToken is updated and activityLogs are empty
+    
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
             if (activityLogs.isEmpty()) {
-                // Tạo một SupervisorJob để quản lý các coroutine
+
                 val supervisorJob = SupervisorJob()
                 val scope = CoroutineScope(Dispatchers.IO + supervisorJob)
 
-                // Khởi tạo các công việc cần thực hiện
                 val getActivityLogsJob = scope.launch {
                     activityLogViewModel.getActivityLogs(
                         projectId = projectId,
@@ -94,33 +90,28 @@ fun ActivityLogScreen(
                     )
                 }
 
-                val connectToMemberWebsocketJob = scope.launch {
-                    projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl)
+                val connectToWebsocketJob = scope.launch {
+                    traceInProjectViewModel.connectToWebSocketAndUser(
+                        token,
+                        webSocketUrl)
                 }
 
-                val connectToProjectWebsocketJob = scope.launch {
-                    projectManagementViewModel.connectToProjectWebsocket(url = webSocketUrl)
-                }
-
-                // Sử dụng joinAll để đợi tất cả các công việc hoàn thành
                 try {
-                    // Chờ tất cả các coroutine hoàn thành
-                    joinAll(getActivityLogsJob, connectToMemberWebsocketJob, connectToProjectWebsocketJob)
+
+                    joinAll(getActivityLogsJob, connectToWebsocketJob)
                 } catch (e: CancellationException) {
-                    // Xử lý nếu một trong các job bị hủy
+
                     Log.e("LaunchedEffect", "A coroutine was cancelled", e)
                 }
             }
         }
     }
 
-    HandleOutProjectWebSocket(
-        memberSocket = memberSocket,
-        projectSocket = projectSocket,
-        user = user,
-        projectId = projectId,
-        onDisableAction = onDisableAction
-    )
+    LaunchedEffect(shouldDisableAction){
+        if(shouldDisableAction){
+            onDisableAction()
+        }
+    }
 
     Scaffold(
         modifier = Modifier

@@ -141,7 +141,6 @@ fun ProjectDetailScreen(
                         launch { projectManagementViewModel.connectToMemberWebsocket(url = webSocketUrl) },
                         launch { taskManagementViewModel.connectToTaskWebSocket(url = webSocketUrl) }
                     )
-
                     // Đợi tất cả các WebSocket kết nối
                     webSocketJobs.joinAll()
                 }

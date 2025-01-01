@@ -141,7 +141,6 @@ fun IssueDetailScreen(
         }
     }
 
-
     HandleOutProjectWebSocket(
         memberSocket = memberSocket,
         projectSocket = projectSocket,

@@ -64,8 +64,11 @@ import com.example.youmanage.utils.randomAvatar
 import com.example.youmanage.viewmodel.AuthenticationViewModel
 import com.example.youmanage.viewmodel.ProjectManagementViewModel
 import com.example.youmanage.viewmodel.RoleViewmodel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
 
 @Preview
 @Composable
@@ -94,8 +97,6 @@ fun MemberProfileScreen(
 
     LaunchedEffect(accessToken.value) {
         accessToken.value?.let { token ->
-            // Constructing the WebSocket URL
-            val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
 
             // Using supervisorScope to launch tasks concurrently
             supervisorScope {
@@ -144,7 +145,16 @@ fun MemberProfileScreen(
 
     LaunchedEffect(unAssignResponse) {
         if (unAssignResponse is Resource.Success) {
-            roleViewmodel.getRolesOfMember(projectId, memberId, "Bearer ${accessToken.value}")
+            supervisorScope {
+                launch {
+                    roleViewmodel.getRolesOfMember(
+                        projectId,
+                        memberId,
+                        "Bearer ${accessToken.value}"
+                    )
+                }.join()
+            }
+
         }
     }
 
@@ -156,9 +166,9 @@ fun MemberProfileScreen(
                 onNavigateBack = onNavigateBack,
                 color = Color.Transparent,
                 trailing = {
-                   Box(
-                       modifier = Modifier.size(24.dp)
-                   )
+                    Box(
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             )
         },
@@ -260,18 +270,24 @@ fun MemberProfileScreen(
         showDialog = showUnAssignDialog,
         onDismiss = { showUnAssignDialog = false },
         onConfirm = {
-            accessToken.value?.let { token ->
-                if (isSelectedRole != -1) {
-                    roleViewmodel.assignRole(
-                        projectId = projectId,
-                        roleId = isSelectedRole.toString(),
-                        member = Assign(userId = member.id),
-                        action = "unassign",
-                        authorization = "Bearer $token"
-                    )
+
+            CoroutineScope(Dispatchers.IO).launch {
+                accessToken.value?.let { token ->
+                    if (isSelectedRole != -1) {
+                        withContext(Dispatchers.IO) {
+                            roleViewmodel.assignRole(
+                                projectId = projectId,
+                                roleId = isSelectedRole.toString(),
+                                member = Assign(userId = member.id),
+                                action = "unassign",
+                                authorization = "Bearer $token"
+                            )
+                        }
+                    }
                 }
             }
             showUnAssignDialog = false
+
         }
     )
 }

@@ -361,55 +361,6 @@ fun ChatInputBar(
         }
     }
 
-    // Thay đổi cách khởi tạo MediaRecorder để đảm bảo nó được tái khởi tạo khi cần
-    //var mediaRecorder: MediaRecorder? by remember { mutableStateOf(null) }
-    //val outputFile = remember { File(context.getExternalFilesDir(null), "audio_message.3gp") }
-
-//    val microphonePermission = rememberLauncherForActivityResult(
-//        contract = ActivityResultContracts.RequestPermission(),
-//        onResult = { isGranted ->
-//            if (!isGranted) {
-//                // Thông báo nếu không cấp quyền
-//            }
-//        }
-//    )
-
-//    LaunchedEffect(Unit) {
-//        microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
-//    }
-
-//    // Thêm vào chức năng bắt đầu và dừng ghi âm
-//    fun startRecording() {
-//        // Khởi tạo lại MediaRecorder mỗi lần ghi âm bắt đầu
-//        mediaRecorder = MediaRecorder().apply {
-//            try {
-//                reset()  // Đặt lại trạng thái nếu có bất kỳ ghi âm nào trước đó
-//                setAudioSource(MediaRecorder.AudioSource.MIC)
-//                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-//                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-//                setOutputFile(outputFile.absolutePath)
-//                prepare()
-//                start()
-//            } catch (e: Exception) {
-//                e.printStackTrace()
-//            }
-//        }
-//    }
-//
-//    fun stopRecordingAndSend() {
-//        try {
-//            mediaRecorder?.apply {
-//                stop()
-//                release() // Giải phóng tài nguyên của MediaRecorder
-//            }
-//            // Gửi tin nhắn âm thanh
-//            onMessageSent(outputFile.absolutePath, true)
-//        } catch (e: Exception) {
-//            e.printStackTrace()
-//        } finally {
-//            mediaRecorder = null // Đảm bảo giải phóng tài nguyên sau khi ghi âm
-//        }
-//    }
 
     Row(
         modifier = modifier,
