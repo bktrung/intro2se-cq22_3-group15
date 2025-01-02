@@ -3,7 +3,7 @@ WORKDIR /usr/src
 EXPOSE 8000
 
 RUN apt update && \
-    apt install -y python3 python3-pip python3.12-venv build-essential libffi-dev && \
+    apt install -y python3 python3-pip python3.12-venv build-essential libffi-dev libpq-dev && \
     apt-get clean && rm -rf /var/lib/apt/lists/* && \
     python3 -m venv /venv
 

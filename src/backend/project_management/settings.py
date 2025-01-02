@@ -123,8 +123,13 @@ CHANNEL_LAYERS = {
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'youmanage',
+        'USER': 'test',
+        'PASSWORD': '123456',
+        'HOST': 'localhost',
+        # 'HOST': 'postgres',
+        'PORT': '5432',
     }
 }
 
@@ -201,4 +206,10 @@ CACHES = {
 }
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = '/home/ubuntu/app/media'
+CSRF_TRUSTED_ORIGINS = ['https://youmanage.c0smic.tech']
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
