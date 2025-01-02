@@ -72,6 +72,7 @@
 - 'LOCATION': 'redis://127.0.0.1:6379/2' to 'LOCATION': 'redis://redis:6379/2'
 - CELERY_BROKER_URL = 'redis://localhost:6379/1' to CELERY_BROKER_URL = 'redis://redis:6379/1'
 - CELERY_RESULT_BACKEND = 'redis://localhost:6379/1' to CELERY_RESULT_BACKEND = 'redis://redis:6379/1'
+- 'HOST': 'localhost' to 'HOST': 'postgres'
 
 3. **cd into the backend folder and run the following command:**
 
@@ -81,3 +82,6 @@
 - If encounter this error: "Error response from daemon: driver failed programming external connectivity on endpoint redis-db (05130a1f5d33c5c31644d42bf654df467a321bdddd418a9d30a0a1a7b406147b): failed to bind port 0.0.0.0:6379/tcp: Error starting userland proxy: listen tcp4 0.0.0.0:6379: bind: address already in use", run the following command (only work for Linux):
     ```bash
     sudo systemctl stop redis
+- Or a similar error for postgres, run the following command:
+    ```bash
+    sudo systemctl stop postgresql
