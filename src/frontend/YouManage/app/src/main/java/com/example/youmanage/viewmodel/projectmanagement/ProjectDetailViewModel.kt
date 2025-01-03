@@ -56,31 +56,24 @@ class ProjectDetailViewModel @Inject constructor(
 
     fun addMember(projectId: String, username: String, authorization: String) {
         viewModelScope.launch {
-            val response = withContext(Dispatchers.IO) {
+            _addMemberResponse.value = withContext(Dispatchers.IO) {
                 projectManagementRepository.addMember(
                     projectId,
                     Username(username),
                     authorization)
             }
 
-            if(response is Resource.Success){
-                _addMemberResponse.value = response
-            }
         }
     }
 
     fun removeMember(projectId: String, memberId: String, authorization: String) {
         viewModelScope.launch {
-            val response = withContext(Dispatchers.IO) {
+            _removeMemberResponse.value = withContext(Dispatchers.IO) {
                 projectManagementRepository.removeMember(
                     projectId,
                     Id(memberId),
                     authorization
                 )
-            }
-
-            if (response is Resource.Success) {
-                _removeMemberResponse.value = response
             }
         }
     }
@@ -97,11 +90,8 @@ class ProjectDetailViewModel @Inject constructor(
 
     fun getProject(projectId: String, authorization: String){
         viewModelScope.launch {
-            val response = withContext(Dispatchers.IO){
+            _project.value = withContext(Dispatchers.IO){
                 projectManagementRepository.getProject(projectId, authorization)
-            }
-            if(response is Resource.Success){
-                _project.value = response
             }
         }
     }
@@ -144,7 +134,7 @@ class ProjectDetailViewModel @Inject constructor(
         }
     }
 
-    fun connectToProjectWebsocket(url: String) {
+    private fun connectToProjectWebsocket(url: String) {
         viewModelScope.launch {
             webSocketRepository.connectToSocket(
                 url,
@@ -154,7 +144,7 @@ class ProjectDetailViewModel @Inject constructor(
         }
     }
 
-    fun connectToMemberWebsocket(url: String) {
+    private fun connectToMemberWebsocket(url: String) {
         viewModelScope.launch {
             webSocketRepository.connectToSocket(
                 url,
@@ -164,7 +154,7 @@ class ProjectDetailViewModel @Inject constructor(
         }
     }
 
-    fun connectToTaskWebSocket(url: String){
+    private fun connectToTaskWebSocket(url: String){
         viewModelScope.launch {
             webSocketRepository.connectToSocket(
                 url,
@@ -190,7 +180,5 @@ class ProjectDetailViewModel @Inject constructor(
             }
         }
     }
-
-
 
 }

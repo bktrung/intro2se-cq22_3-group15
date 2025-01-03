@@ -262,7 +262,9 @@ fun ProjectItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Bold),
+                    color = Color.Black
+
                 )
                 Text(
                     text = team,

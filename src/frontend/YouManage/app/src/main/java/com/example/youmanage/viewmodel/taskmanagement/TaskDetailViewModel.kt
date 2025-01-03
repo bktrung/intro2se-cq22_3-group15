@@ -73,24 +73,16 @@ class TaskDetailViewModel @Inject constructor(
 
     fun getTask(projectId: String, taskId: String, authorization: String) {
         viewModelScope.launch {
-            val response = withContext(Dispatchers.IO) {
+            _task.value = withContext(Dispatchers.IO) {
                 taskManagementRepository.getTask(projectId, taskId, authorization)
             }
-
-            if (response is Resource.Success) {
-                _task.value = response
-            }
-
         }
     }
 
     fun getComments(projectId: String, taskId: String, authorization: String) {
         viewModelScope.launch {
-            val response = withContext(Dispatchers.IO) {
+            _comments.value = withContext(Dispatchers.IO) {
                 taskManagementRepository.getComments(projectId, taskId, authorization)
-            }
-            if (response is Resource.Success) {
-                _comments.value = response
             }
         }
     }
@@ -238,6 +230,4 @@ class TaskDetailViewModel @Inject constructor(
             }
         }
     }
-
-
 }

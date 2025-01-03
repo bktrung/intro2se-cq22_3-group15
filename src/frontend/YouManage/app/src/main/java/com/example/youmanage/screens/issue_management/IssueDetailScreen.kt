@@ -146,14 +146,15 @@ fun IssueDetailScreen(
     LaunchedEffect(issue) {
         if (issue is Resource.Success) {
             val data = (issue as Resource.Success).data
-            title = data!!.title
-            description = data.description?:""
-            assignedMemberId = data.assignee.id
-            assignedMember = data.assignee.username ?: "Unassigned"
-            selectedTask = data.task
-            selectedStatus = data.status
-            reporter = data.reporter.username ?: "Unassigned"
-            reporterId = data.reporter.id
+            Log.d("Data", data.toString())
+            title = data?.title ?: "Unknown"
+            description = data?.description?:""
+            assignedMemberId = data?.assignee?.id ?: -1
+            assignedMember = data?.assignee?.username ?: "Unassigned"
+            selectedTask = data?.task
+            selectedStatus = data?.status ?: "PENDING"
+            reporter = data?.reporter?.username ?: "Unassigned"
+            reporterId = data?.reporter?.id ?: -1
         }
         if (issue is Resource.Error) {
             openErrorDialog = true

@@ -227,10 +227,10 @@ fun IssueListScreen(
                     ) {
                         items(filterIssues.size) { index ->
                             IssueItem(
-                                title = filterIssues[index].title,
-                                reporter = filterIssues[index].reporter.username ?: "Unassigned",
-                                reporterId = filterIssues[index].reporter.id,
-                                onIssueClick = { onIssueDetail(filterIssues[index].id) }
+                                title = filterIssues[index].title ?: "Unknown",
+                                reporter = filterIssues[index].reporter?.username ?: "Unassigned",
+                                reporterId = filterIssues[index].reporter?.id ?: -1,
+                                onIssueClick = { onIssueDetail(filterIssues[index].id ?: -1) }
                             )
                         }
                     }

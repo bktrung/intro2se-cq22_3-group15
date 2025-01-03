@@ -50,7 +50,7 @@ class ChangeRequestViewModel @Inject constructor(
     private val _isHost = MutableLiveData<Boolean>(false)
     val isHost: MutableLiveData<Boolean> get() = _isHost
 
-    var currentStatus = MutableStateFlow("PENDING")
+    private var currentStatus = MutableStateFlow("PENDING")
 
     private var nextCursor: String? = null
     private var preCursor: String? = null

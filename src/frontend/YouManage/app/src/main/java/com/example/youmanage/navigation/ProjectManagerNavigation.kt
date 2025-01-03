@@ -120,7 +120,10 @@ fun ProjectManagementNavGraph(
                     }
 
                 },
-                haveLeading = false
+                haveLeading = false,
+                onNavigateBack = {
+                    rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
+                }
             )
         }
 
@@ -191,7 +194,10 @@ fun NavGraphBuilder.projectManagementNavGraph(
                         }
 
                     },
-                    haveLeading = true
+                    haveLeading = true,
+                    onNavigateBack = {
+                        rootNavController.navigate(ProjectManagementRouteScreen.Main.route)
+                    }
                 )
 
         }

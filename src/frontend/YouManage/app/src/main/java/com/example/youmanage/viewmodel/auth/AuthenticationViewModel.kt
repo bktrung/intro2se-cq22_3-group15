@@ -21,11 +21,15 @@ import com.example.youmanage.data.remote.authentication.VerifyRequest
 import com.example.youmanage.data.remote.projectmanagement.User
 import com.example.youmanage.repository.AuthenticationRepository
 import com.example.youmanage.utils.Resource
+import com.example.youmanage.viewmodel.home.NotificationViewModel.Companion.unreadCount
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -62,6 +66,13 @@ class AuthenticationViewModel @Inject constructor(
     val accessToken: Flow<String?> = repository.accessToken
     val refreshToken: Flow<String?> = repository.refreshToken
 
+    companion object {
+        private var _isGoogleLogin = MutableStateFlow(false)
+        val isGoogleLogIn = _isGoogleLogin.asStateFlow()
+    }
+
+    fun getGoogleLogin(): StateFlow<Boolean> = isGoogleLogIn
+
     private val supervisorJob = SupervisorJob() // Tạo SupervisorJob
     private val scope = CoroutineScope(Dispatchers.Main + supervisorJob) // Tạo CoroutineScope với SupervisorJob
 
@@ -84,6 +95,7 @@ class AuthenticationViewModel @Inject constructor(
     fun logInWithGoogle(user: UserGoogleLogIn) {
         scope.launch {
             _logInResponse.value = repository.logInWithGoogle(user)
+            _isGoogleLogin.value = true
         }
     }
 
@@ -132,6 +144,9 @@ class AuthenticationViewModel @Inject constructor(
     // Hàm logout
     fun logOut(logoutRequest: RefreshToken, authorization: String) {
         scope.launch {
+            if(_isGoogleLogin.value){
+                _isGoogleLogin.value = false
+            }
             _logOutResponse.value =
                 repository.logOut(logoutRequest = logoutRequest, authorization = authorization)
         }

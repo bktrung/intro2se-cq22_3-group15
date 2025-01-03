@@ -21,7 +21,7 @@ class MemberProfileViewModel @Inject constructor(
     private val projectManagementRepository: ProjectManagementRepository
 ): ViewModel() {
 
-    private val _member = MutableStateFlow<User>(User())
+    private val _member = MutableStateFlow(User())
     val member: StateFlow<User> = _member
 
     private val _roles = MutableStateFlow<List<Role>>(emptyList())

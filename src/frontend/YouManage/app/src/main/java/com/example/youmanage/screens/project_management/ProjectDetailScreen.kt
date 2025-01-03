@@ -156,6 +156,7 @@ fun ProjectDetailScreen(
     ) {
         // Xử lý khi thêm thành viên
         if (addMemberResponse is Resource.Error && isAdd) {
+            Log.d("ERRRR", "ADĐ")
             showAddAlertDialog = true
         }
 
@@ -170,6 +171,7 @@ fun ProjectDetailScreen(
 
         // Xử lý khi xóa thành viên
         if (removeMemberResponse is Resource.Error && isRemove) {
+            Log.d("ERRRR", "ADĐ")
             showRemoveAlertDialog = true
         }
 

@@ -60,6 +60,7 @@ fun UserProfileScreen(
     val refreshToken by authenticationViewModel.refreshToken.collectAsState(initial = null)
     val logOutResponse by authenticationViewModel.logOutResponse.observeAsState()
     val user by authenticationViewModel.user.observeAsState()
+    val isGoogleLogIn by authenticationViewModel.getGoogleLogin().collectAsState()
 
     var openLogoutDialog by remember { mutableStateOf(false) }
 
@@ -125,22 +126,23 @@ fun UserProfileScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-
-            Button(
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                ),
-                onClick = {
-                    onChangePassword()
-                }) {
-                Text(
-                    "Change Password",
-                    fontSize = 20.sp,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+            if(!isGoogleLogIn){
+                Button(
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                    ),
+                    onClick = {
+                        onChangePassword()
+                    }) {
+                    Text(
+                        "Change Password",
+                        fontSize = 20.sp,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

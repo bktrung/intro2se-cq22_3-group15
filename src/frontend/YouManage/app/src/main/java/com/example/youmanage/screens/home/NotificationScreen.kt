@@ -66,6 +66,7 @@ import kotlinx.coroutines.supervisorScope
 fun NotificationScreen(
     paddingValues: PaddingValues = PaddingValues(),
     onItemClick: (Object) -> Unit,
+    onNavigateBack: () -> Unit,
     haveLeading: Boolean,
     notificationViewModel: NotificationViewModel = hiltViewModel(),
     authenticationViewModel: AuthenticationViewModel = hiltViewModel()
@@ -118,7 +119,7 @@ fun NotificationScreen(
                         )
                     }
                 },
-                onNavigateBack = {}
+                onNavigateBack = onNavigateBack
             )
         }
     ) { it ->
