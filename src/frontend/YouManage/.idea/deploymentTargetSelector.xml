@@ -25,6 +25,7 @@
             </Target>
           </targets>
         </DialogSelection>
+        <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>
   </component>
