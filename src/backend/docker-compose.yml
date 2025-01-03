@@ -1,0 +1,63 @@
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: unless-stopped
+        container_name: only-app
+        ports:
+            - 6969:8000
+            - 7000:8000
+            - 8000:8000
+            - 9000:8000
+        depends_on:
+            - postgres
+            - redis
+            - celery-worker
+            - celery-beat
+
+    postgres:
+        image: postgres:15
+        restart: unless-stopped
+        container_name: postgres-db
+        environment:
+            - POSTGRES_DB=youmanage
+            - POSTGRES_USER=test
+            - POSTGRES_PASSWORD=123456
+        ports:
+            - 5432:5432
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+
+    redis:
+        image: redis:7 
+        restart: unless-stopped
+        container_name: redis-db
+        ports:
+            - 6379:6379
+
+    celery-worker:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: unless-stopped
+        container_name: celery-worker
+        working_dir: /usr/src/backend
+        command: celery -A project_management worker -l info
+        depends_on:
+            - redis
+
+    celery-beat:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: unless-stopped
+        container_name: celery-beat
+        working_dir: /usr/src/backend
+        command: celery -A project_management beat -l info
+        depends_on:
+            - redis
+
+volumes:
+    postgres_data:
+        name: postgres_data

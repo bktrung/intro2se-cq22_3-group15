@@ -122,7 +122,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+# .env
 .venv
 env/
 venv/
@@ -163,3 +163,15 @@ cython_debug/
 
 # Only for backend testing
 client_secret_76922283431-11olbqs5uu5fmq37m33svsrlam19pnt5.apps.googleusercontent.com.json
+
+# celery
+celerybeat-schedule.bak
+celerybeat-schedule.dat
+celerybeat-schedule.dir
+
+# bat
+tempCodeRunnerFile.bat
+
+.vscode/
+
+.VSCodeCounter/
