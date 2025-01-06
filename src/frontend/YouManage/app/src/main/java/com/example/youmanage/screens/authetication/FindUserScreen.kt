@@ -126,7 +126,7 @@ fun FindUserScreen(
                 content = user,
                 onChangeValue = { user = it },
                 placeholderContent = "Email",
-                placeholderColor = Color.Gray,
+                placeholderColor = MaterialTheme.colorScheme.primary,
                 containerColor = MaterialTheme.colorScheme.surface,
                 imeAction = androidx.compose.ui.text.input.ImeAction.Done,
                 onDone = { focusManager.clearFocus() },

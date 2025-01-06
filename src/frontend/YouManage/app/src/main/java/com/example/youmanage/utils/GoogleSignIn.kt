@@ -10,6 +10,7 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
 import androidx.credentials.PasswordCredential
 import androidx.credentials.PublicKeyCredential
+import androidx.credentials.exceptions.NoCredentialException
 import com.example.youmanage.data.remote.authentication.UserGoogleLogIn
 import com.example.youmanage.utils.Constants.WEB_CLIENT_ID
 import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
@@ -38,17 +39,15 @@ object GoogleSignIn {
 
         coroutineScope.launch {
             try {
-                val result = credentialManager.getCredential(
-                    request = request,
-                    context = context
-                )
-
+                val result = credentialManager.getCredential(request = request, context = context)
                 handleSignIn(result, viewModel)
-            } catch (e: Exception) {
-                Log.d("Error", e.toString())
+            } catch (e: NoCredentialException) {
                 redirectToGoogleLoginPage(context)
             }
+            catch (e: Exception) {
 
+                Log.d("Error", "Unexpected error: ${e.message} ${e}")
+            }
         }
     }
 

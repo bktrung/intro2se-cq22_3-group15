@@ -295,8 +295,10 @@ fun UpdateProjectScreen(
                             onDone = { focusManager.clearFocus() }
                         ),
                         maxLines = Int.MAX_VALUE,
-                        shape = RoundedCornerShape(5.dp),
-                        textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
+                        shape = RoundedCornerShape(10.dp),
+                        textStyle = TextStyle(
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     )
                 }
 
@@ -346,13 +348,16 @@ fun UpdateProjectScreen(
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             },
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = MaterialTheme.colorScheme.surface,
                                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                                 focusedIndicatorColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent
                             ),
-                            textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
+                            textStyle = TextStyle(
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         )
                     }
 

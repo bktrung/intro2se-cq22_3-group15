@@ -225,7 +225,7 @@ fun AddProjectScreen(
                             )
                         },
                         maxLines = Int.MAX_VALUE,
-                        shape = RoundedCornerShape(5.dp),
+                        shape = RoundedCornerShape(10.dp),
                         textStyle = TextStyle(color = MaterialTheme.colorScheme.primary),
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(
@@ -288,7 +288,7 @@ fun AddProjectScreen(
                                 focusedIndicatorColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent
                             ),
-
+                            shape = RoundedCornerShape(10.dp),
                             textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
                         )
                     }
@@ -420,7 +420,8 @@ fun MemberItem(
                 text = member.username,
                 color = MaterialTheme.colorScheme.secondary,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 18.sp
+                fontSize = 18.sp,
+                modifier = Modifier.weight(1f)
             )
 
             Spacer(modifier = Modifier.width(10.dp))

@@ -72,8 +72,8 @@ class MainActivity : ComponentActivity() {
                         title = "No Internet Connection",
                         content = "Please check your internet connection and try again.",
                         showDialog = true,
-                        onDismiss = {finish() },
-                        onConfirm = {}
+                        onDismiss = { finish() },
+                        onConfirm = { finish() }
                     )
                 }
 

@@ -85,7 +85,7 @@ fun PasswordTextField(
             placeholder = {
                 Text(
                     text = placeholderContent,
-                    color = Color.Gray
+                    color = placeholderColor
                 )
             },
             trailingIcon = {
@@ -108,12 +108,14 @@ fun PasswordTextField(
             ),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = containerColor,
+                unfocusedContainerColor = containerColor,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent
             ),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 30.dp)
+                .padding(horizontal = 30.dp),
+            shape = RoundedCornerShape(10.dp)
         )
 
 }
@@ -141,11 +143,12 @@ fun TextFieldComponent(
         placeholder = {
             Text(
                 text = placeholderContent,
-                color = Color.Gray
+                color = placeholderColor
             )
         },
         colors = TextFieldDefaults.colors(
             focusedContainerColor = containerColor,
+            unfocusedContainerColor = containerColor,
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
         ),
@@ -157,7 +160,7 @@ fun TextFieldComponent(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 30.dp),
-
+        shape = RoundedCornerShape(10.dp)
 
     )
 }
@@ -209,7 +212,8 @@ fun LeadingTextFieldComponent(
                 onDone = { onDone() }
             ),
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(10.dp)
         )
 
 }
@@ -278,6 +282,7 @@ fun DatePickerField(
                     onNext = { onNext() },
                     onDone = { onDone() }
                 ),
+                shape = RoundedCornerShape(10.dp)
             )
         }
     }
