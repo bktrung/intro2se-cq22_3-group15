@@ -483,9 +483,9 @@ fun CreateRoleDialog(
         Dialog(onDismissRequest = onDismiss) {
             Column(
                 modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
                     .background(MaterialTheme.colorScheme.onSurface)
                     .padding(16.dp)
-                    .clip(RoundedCornerShape(10.dp))
                     .widthIn(min = 300.dp, max = 400.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center

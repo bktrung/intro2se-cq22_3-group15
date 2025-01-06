@@ -406,6 +406,7 @@ fun OTPVerificationScreen(
                         "Check your email to receive a new OTP!",
                         Toast.LENGTH_SHORT
                     ).show()
+
                     timeInSeconds = expiredTime
 
                 }) {

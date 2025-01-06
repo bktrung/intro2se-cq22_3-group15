@@ -1,5 +1,6 @@
 package com.example.youmanage.screens.authetication
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -78,6 +79,7 @@ fun LoginScreen(
 
     LaunchedEffect(loginResponse) {
         if (loginResponse is Resource.Success) {
+            Toast.makeText(context, "Login successfully", Toast.LENGTH_SHORT).show()
             loginResponse.data?.let {
                 viewModel.saveToken(
                     loginResponse.data.access,
@@ -144,7 +146,7 @@ fun LoginScreen(
                 content = username,
                 onChangeValue = { username = it },
                 placeholderContent = "Email/Username",
-                placeholderColor = Color.Gray,
+                placeholderColor = MaterialTheme.colorScheme.primary,
                 containerColor = textFieldBackgroundColor,
                 imeAction = androidx.compose.ui.text.input.ImeAction.Next,
                 onDone = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) },
@@ -159,7 +161,7 @@ fun LoginScreen(
                 content = password,
                 onChangeValue = { password = it },
                 placeholderContent = "Password",
-                placeholderColor = Color.Gray,
+                placeholderColor = MaterialTheme.colorScheme.primary,
                 containerColor = textFieldBackgroundColor,
                 imeAction = androidx.compose.ui.text.input.ImeAction.Done,
                 onDone = { focusManager.clearFocus() },
