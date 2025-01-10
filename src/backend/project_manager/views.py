@@ -42,36 +42,36 @@ class ProjectMemberManagementView(generics.GenericAPIView):
         elif action == 'remove':
             return self.remove_member(request, project)
         else:
-            return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
 
     def add_member(self, request, project):
         username = request.data.get('username')
         if not username:
-            return Response({"detail": "Please provide username."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Please provide username."}, status=status.HTTP_400_BAD_REQUEST)
 
         user = get_object_or_404(User, username=username)
 
         if user in project.members.all():
-            return Response({"detail": "User is already a member of this project."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "User is already a member of this project."}, status=status.HTTP_400_BAD_REQUEST)
 
         project.members.add(user)
-        return Response({"detail": "Member added successfully."}, status=status.HTTP_200_OK)
+        return Response({"success": "Member added successfully."}, status=status.HTTP_200_OK)
 
     def remove_member(self, request, project):
         user_id = request.data.get('user_id')
         if not user_id:
-            return Response({"detail": "Please provide user_id."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Please provide user_id."}, status=status.HTTP_400_BAD_REQUEST)
         
         user = get_object_or_404(User, id=user_id)
         
         if user == project.host:
-            return Response({"detail": "Cannot remove the host from the project."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Cannot remove the host from the project."}, status=status.HTTP_400_BAD_REQUEST)
         
         if user not in project.members.all():
-            return Response({"detail": "User is not a member of this project."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "User is not a member of this project."}, status=status.HTTP_400_BAD_REQUEST)
         
         project.remove_member(user)
-        return Response({"detail": "Member removed successfully."}, status=status.HTTP_200_OK)
+        return Response({"success": "Member removed successfully."}, status=status.HTTP_200_OK)
     
 
 class TaskListCreateView(generics.ListCreateAPIView):
@@ -227,37 +227,37 @@ class RoleManagementView(generics.GenericAPIView):
         elif action == 'unassign':
             return self.unassign_role(request, project, role)
         else:
-            return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
         
     def assign_role(self, request, project, role):
         user_id = request.data.get('user_id')
         
         if not user_id:
-            return Response({"detail": "Please provide user_id."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Please provide user_id."}, status=status.HTTP_400_BAD_REQUEST)
         
         user = get_object_or_404(User, id=user_id)
         
         if user not in project.members.all():
-            return Response({"detail": "User must be a project member to be assigned a role."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "User must be a project member to be assigned a role."}, status=status.HTTP_400_BAD_REQUEST)
         if user in role.users.all():
-            return Response({"detail": "User is already assigned to this role."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "User is already assigned to this role."}, status=status.HTTP_400_BAD_REQUEST)
         
         role.users.add(user)
-        return Response({"detail": "User assigned to role successfully."}, status=status.HTTP_200_OK)
+        return Response({"success": "User assigned to role successfully."}, status=status.HTTP_200_OK)
     
     def unassign_role(self, request, project, role):
         user_id = request.data.get('user_id')
         
         if not user_id:
-            return Response({"detail": "Please provide user_id."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Please provide user_id."}, status=status.HTTP_400_BAD_REQUEST)
         
         user = get_object_or_404(User, id=user_id)
         
         if user not in role.users.all():
-            return Response({"detail": "User is not assigned to this role."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "User is not assigned to this role."}, status=status.HTTP_400_BAD_REQUEST)
         
         role.users.remove(user)
-        return Response({"detail": "User unassigned from role successfully."}, status=status.HTTP_200_OK)
+        return Response({"success": "User unassigned from role successfully."}, status=status.HTTP_200_OK)
     
 class MemberRoleListView(generics.ListAPIView):
     serializer_class = RoleSerializer
@@ -562,20 +562,20 @@ class ProjectHostEmpowerView(generics.GenericAPIView):
         self.check_object_permissions(request, project)
         user_id = request.data.get('user_id')
         if not user_id:
-            return Response({"detail": "Please provide user_id."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Please provide user_id."}, status=status.HTTP_400_BAD_REQUEST)
         
         user = get_object_or_404(User, id=user_id)
         
         if user == project.host:
-            return Response({"detail": "User is already the host of this project."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "User is already the host of this project."}, status=status.HTTP_400_BAD_REQUEST)
         
         if user not in project.members.all():
-            return Response({"detail": "User must be a project member to be empowered as host."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "User must be a project member to be empowered as host."}, status=status.HTTP_400_BAD_REQUEST)
         
         project.host = user
         project.save()
         
-        return Response({"detail": "Project host updated successfully."}, status=status.HTTP_200_OK)
+        return Response({"success": "Project host updated successfully."}, status=status.HTTP_200_OK)
     
     
 class ProjectProgressTrackingView(generics.GenericAPIView):
@@ -615,13 +615,13 @@ class ProjectMemberQuitView(generics.GenericAPIView):
         project = get_object_or_404(Project, pk=pk)
         
         if not project.members.filter(id=request.user.id).exists():
-            return Response({"detail": "You are not a member of this project."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "You are not a member of this project."}, status=status.HTTP_400_BAD_REQUEST)
         
         if request.user == project.host:
-            return Response({"detail": "The project host cannot quit the project."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "The project host cannot quit the project."}, status=status.HTTP_400_BAD_REQUEST)
         
         project.remove_member(request.user)
-        return Response({"detail": "You have successfully quit the project."}, status=status.HTTP_200_OK)
+        return Response({"success": "You have successfully quit the project."}, status=status.HTTP_200_OK)
 
 
 class ProjectHostCheckView(generics.GenericAPIView):
