@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.db import models
 from .models import Project, Task, Comment, Role, Issue, ChangeRequest
 User = get_user_model()
 
@@ -19,7 +20,17 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'description', 'duedate', 'host', 'members', 'created_at', 'updated_at']
         read_only_fields = ['host', 'created_at', 'updated_at']
         
-        
+    def validate_duedate(self, value):
+        """
+        Check that the duedate is not before the latest end_date of tasks in the project.
+        """
+        project = self.instance
+        if project:
+            latest_task_end_date = project.tasks.aggregate(models.Max('end_date'))['end_date__max']
+            if latest_task_end_date and value < latest_task_end_date:
+                raise serializers.ValidationError("The project duedate cannot be before the latest end_date of tasks in the project.")
+        return value
+    
 class TaskIssueSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
