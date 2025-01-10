@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -126,7 +127,7 @@ fun NotificationScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(it),
+                .padding(top = it.calculateTopPadding()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -147,7 +148,7 @@ fun NotificationScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Display each activity
                     itemsIndexed(notifications ?: emptyList()) { index, item ->
@@ -213,72 +214,75 @@ fun NotificationItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(10.dp)
-            .clip(RoundedCornerShape(10.dp))
+            .padding(horizontal = 12.dp)
+            .clip(RoundedCornerShape(20.dp)) // Corner radius tăng thêm cho mềm mại
             .clickable {
                 onClick(notification.objectContent ?: Object())
             },
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(20.dp), // Các góc được bo tròn mềm mại hơn
         border = BorderStroke(
-            2.dp,
-            if (notification.isRead == true) MaterialTheme.colorScheme.primaryContainer else Color.Green
+            1.dp,
+            if (notification.isRead == true) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary // Màu sắc nhẹ nhàng hơn
         ),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = MaterialTheme.colorScheme.background // Màu nền dễ chịu
         )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 18.dp)
-                .padding(vertical = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(18.dp), // Padding bao quanh lớn hơn để tạo không gian thoải mái
+            horizontalAlignment = Alignment.Start // Căn trái để dễ nhìn hơn
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(10.dp),
+                    .padding(vertical = 8.dp), // Padding giữa các phần tử ít hơn để không quá dày
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
                 Icon(
                     imageVector = Icons.Default.Notifications,
-                    contentDescription = "Read all",
-                    tint = Color(0xffFFC107),
-                    modifier = Modifier.size(24.dp)
+                    contentDescription = "Notification",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(26.dp)
+
                 )
 
                 Text(
-                    notification.title ?: "",
-                    textAlign = TextAlign.Start,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(start = 10.dp)
-
+                    text = notification.title ?: "No Title", // Tên mặc định nếu không có title
+                    style = TextStyle(
+                        fontWeight = FontWeight.Medium, // Font nhẹ nhàng hơn
+                        color = MaterialTheme.colorScheme.onBackground
+                    ),
+                    modifier = Modifier.padding(start = 12.dp)
+                        .weight(1f)
                 )
 
-
-               IconWithDropdownMenu(
-                   onMarkAsRead = onMarkAsRead,
-                   onDelete = onDelete
-               )
-
+                IconWithDropdownMenu(
+                    onMarkAsRead = onMarkAsRead,
+                    onDelete = onDelete
+                )
             }
 
             Text(
-                notification.body ?: "",
-                textAlign = TextAlign.Start,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 10.dp)
+                text = notification.body ?: "No content available",
+                style = TextStyle(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Normal
+                ),
+                modifier = Modifier.padding(start = 12.dp, top = 6.dp)
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp)) // Khoảng cách nhẹ giữa các thành phần
 
             Text(
-                if (notification.createdAt !== null) formatToRelativeTime(notification.createdAt) else "",
-                textAlign = TextAlign.Start,
-                color = Color.Gray,
-                modifier = Modifier.padding(start = 10.dp)
+                text = if (notification.createdAt != null) formatToRelativeTime(notification.createdAt) else "Just now",
+                style = TextStyle(
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                modifier = Modifier.padding(start = 12.dp, top = 4.dp)
             )
         }
     }
@@ -287,11 +291,14 @@ fun NotificationItem(
 @Composable
 fun IconWithDropdownMenu(
     onMarkAsRead: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) } // Trạng thái menu
 
-    Box {
+    Box(
+        modifier = modifier
+    ) {
         // Icon
         Icon(
             imageVector = Icons.Default.MoreVert,
