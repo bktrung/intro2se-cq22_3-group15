@@ -206,7 +206,8 @@ CACHES = {
 }
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/home/ubuntu/app/media'
+# MEDIA_ROOT = '/home/ubuntu/app/media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 CSRF_TRUSTED_ORIGINS = ['https://youmanage.c0smic.tech']
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
