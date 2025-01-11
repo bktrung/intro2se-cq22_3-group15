@@ -1,5 +1,6 @@
 package com.example.youmanage.viewmodel.projectmanagement
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -33,7 +34,7 @@ class ProjectMenuViewModel @Inject constructor(
     private val _memberList = MutableLiveData<List<User>>(emptyList())
     val memberList: LiveData<List<User>> = _memberList
 
-    private val _isHost = MutableLiveData<Boolean>(false)
+    private val _isHost = MutableLiveData(false)
     val isHost: LiveData<Boolean> = _isHost
 
     fun deleteProject(id: String, authorization: String) {
@@ -60,8 +61,8 @@ class ProjectMenuViewModel @Inject constructor(
                 projectManagementRepository.getProject(id, authorization)
             }
             if (response is Resource.Success) {
-                _memberList.value = response.data?.members
-                _memberList.value = _memberList.value?.filter { it.id != hostId }
+                Log.d("Test get list", hostId.toString())
+                _memberList.value = response.data?.members?.filter { it.id != hostId }
             }
         }
     }

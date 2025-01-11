@@ -64,6 +64,7 @@ import com.example.youmanage.screens.components.AddMemberDialog
 import com.example.youmanage.screens.components.DatePickerModal
 import com.example.youmanage.screens.components.ErrorDialog
 import com.example.youmanage.screens.components.LeadingTextFieldComponent
+import com.example.youmanage.ui.theme.fontFamily
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
 import com.example.youmanage.viewmodel.common.ProjectManagementViewModel
@@ -173,8 +174,8 @@ fun AddProjectScreen(
                         content = title,
                         onChangeValue = { title = it },
                         placeholderContent = "Enter project title",
-                        placeholderColor = MaterialTheme.colorScheme.primary,
-                        containerColor = textFieldColor,
+                        placeholderColor = MaterialTheme.colorScheme.onBackground,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         icon = R.drawable.project_title_icon,
                         imeAction = ImeAction.Done,
                         onDone = { focusManager.clearFocus() },
@@ -204,8 +205,8 @@ fun AddProjectScreen(
                         value = description,
                         onValueChange = { description = it },
                         colors = TextFieldDefaults.colors(
-                            focusedContainerColor = textFieldColor,
-                            unfocusedContainerColor = textFieldColor,
+                            focusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent
                         ),
@@ -215,18 +216,22 @@ fun AddProjectScreen(
                             Icon(
                                 painter = painterResource(id = R.drawable.description_icon),
                                 contentDescription = "",
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.onBackground
                             )
                         },
                         placeholder = {
                             Text(
                                 "Enter project description",
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.onBackground
                             )
                         },
                         maxLines = Int.MAX_VALUE,
                         shape = RoundedCornerShape(10.dp),
-                        textStyle = TextStyle(color = MaterialTheme.colorScheme.primary),
+                        textStyle = TextStyle(
+                            fontSize = 20.sp,
+                            fontFamily = fontFamily,
+                            color = MaterialTheme.colorScheme.onBackground
+                        ),
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(
                             onNext = { focusManager.clearFocus() },
@@ -270,7 +275,7 @@ fun AddProjectScreen(
                                     ),
 
                                     contentDescription = "",
-                                    tint = MaterialTheme.colorScheme.primary,
+                                    tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.clickable {
                                         showDatePicker = true
                                     }
@@ -279,17 +284,21 @@ fun AddProjectScreen(
                             placeholder = {
                                 Text(
                                     text = "Enter due date",
-                                    color = MaterialTheme.colorScheme.primary
+                                    color = MaterialTheme.colorScheme.onBackground
                                 )
                             },
                             colors = TextFieldDefaults.colors(
-                                focusedContainerColor = textFieldColor,
-                                unfocusedContainerColor = textFieldColor,
+                                focusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                                 focusedIndicatorColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent
                             ),
                             shape = RoundedCornerShape(10.dp),
-                            textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
+                            textStyle = TextStyle(
+                                fontSize = 20.sp,
+                                fontFamily = fontFamily,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
                         )
                     }
                 }

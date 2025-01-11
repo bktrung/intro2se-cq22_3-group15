@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -44,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -249,63 +251,71 @@ fun IssueItem(
 ) {
     Card(
         onClick = { onIssueClick() },
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .shadow(4.dp, RoundedCornerShape(16.dp))
     ) {
         Column(
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp)
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = title,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Medium,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .weight(1f)
-                        .wrapContentWidth(Alignment.Start)
-                        .padding(end = 5.dp)
-                )
-            }
-
+            // Title
             Text(
-                "Reporter",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold
+                text = title,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1,
+                modifier = Modifier.padding(bottom = 8.dp)
             )
 
+            // Reporter Section
             Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Image(
                     painter = painterResource(id = randomAvatar(reporterId)),
                     contentDescription = "Reporter Avatar",
                     modifier = Modifier
-                        .size(50.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface)
                 )
-                Text(
-                    reporter, fontSize = 20.sp,
-                    fontWeight = FontWeight.Medium
-                )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column {
+                    Text(
+                        text = "Reporter",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    )
+                    Text(
+                        text = reporter,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    )
+                }
             }
         }
     }
 }
+
 
 @Composable
 fun TopBar(

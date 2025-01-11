@@ -113,8 +113,8 @@ fun ChangePasswordScreen(
                 content = oldPassword,
                 onChangeValue = { oldPassword = it },
                 placeholderContent = "Old Password",
-                placeholderColor = MaterialTheme.colorScheme.primary,
-                containerColor = MaterialTheme.colorScheme.surface,
+                placeholderColor = MaterialTheme.colorScheme.onBackground,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 imeAction = androidx.compose.ui.text.input.ImeAction.Next,
                 onDone = { focusManager.moveFocus(FocusDirection.Down) },
                 onNext = { focusManager.moveFocus(FocusDirection.Down)}
@@ -126,8 +126,8 @@ fun ChangePasswordScreen(
                 content = newPassword,
                 onChangeValue = { newPassword = it },
                 placeholderContent = "New Password",
-                placeholderColor = MaterialTheme.colorScheme.primary,
-                containerColor = MaterialTheme.colorScheme.surface,
+                placeholderColor = MaterialTheme.colorScheme.onBackground,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 imeAction = androidx.compose.ui.text.input.ImeAction.Done,
                 onDone = { focusManager.moveFocus(FocusDirection.Down) },
                 onNext = { focusManager.moveFocus(FocusDirection.Down)}
@@ -139,8 +139,8 @@ fun ChangePasswordScreen(
                 content = confirmPassword,
                 onChangeValue = { confirmPassword = it },
                 placeholderContent = "Confirm New Password",
-                placeholderColor = MaterialTheme.colorScheme.primary,
-                containerColor = MaterialTheme.colorScheme.surface,
+                placeholderColor = MaterialTheme.colorScheme.onBackground,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 imeAction = androidx.compose.ui.text.input.ImeAction.Done,
                 onDone = { focusManager.clearFocus() },
                 onNext = { focusManager.clearFocus() }

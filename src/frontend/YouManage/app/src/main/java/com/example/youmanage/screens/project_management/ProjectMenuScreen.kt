@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -320,7 +323,10 @@ fun ProjectMenuScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(
+                    top = paddingValues.calculateTopPadding()/2,
+                    bottom = paddingValues.calculateBottomPadding()
+                )
         ) {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -410,7 +416,7 @@ fun ProjectMenuScreen(
     ChooseItemDialog(
         title = "Choose Member to assign host role: ",
         showDialog = showChooseMemberDialog,
-        items = memberList,
+        items = memberList.filter { it.id != user?.data?.id },
         displayText = { it.username ?: "Unassigned" },
         onDismiss = { showChooseMemberDialog = false },
         onConfirm = {
@@ -436,8 +442,8 @@ fun MenuItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 25.dp)
-            .clip(RoundedCornerShape(5.dp))
-            .background(MaterialTheme.colorScheme.surface)
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.secondaryContainer)
             .clickable { onClick() }
     ) {
         Row(
@@ -445,7 +451,7 @@ fun MenuItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp)
+                .padding(horizontal = 16.dp, vertical = 24.dp)
 
         ) {
             trailingIcon()
@@ -457,7 +463,12 @@ fun MenuItem(
 
             )
 
-            Spacer(modifier = modifier.size(24.dp))
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "Arrow",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(30.dp)
+            )
         }
     }
 }

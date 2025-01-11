@@ -311,8 +311,9 @@ fun IconWithDropdownMenu(
 
         // DropdownMenu
         DropdownMenu(
-            containerColor = MaterialTheme.colorScheme.onPrimary,
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
             expanded = expanded,
+            tonalElevation = 10.dp,
             onDismissRequest = { expanded = false } // Đóng menu khi nhấn bên ngoài
         ) {
             // Mark as Read Option

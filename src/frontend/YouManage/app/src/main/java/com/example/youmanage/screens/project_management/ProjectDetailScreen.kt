@@ -171,7 +171,6 @@ fun ProjectDetailScreen(
 
         // Xử lý khi xóa thành viên
         if (removeMemberResponse is Resource.Error && isRemove) {
-            Log.d("ERRRR", "ADĐ")
             showRemoveAlertDialog = true
         }
 
@@ -225,9 +224,6 @@ fun ProjectDetailScreen(
             }
         }
     }
-
-    Log.d("Access Token", "${accessToken.value}")
-    Log.d("Project ID", "$id")
 
     if (project is Resource.Success) {
 
@@ -304,13 +300,13 @@ fun ProjectDetailScreen(
                         Text(
                             text = "Project Name",
                             color = MaterialTheme.colorScheme.primary,
-                            fontSize = 25.sp,
+                            fontSize = 23.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = project?.data?.name.toString(),
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 24.sp,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -343,9 +339,9 @@ fun ProjectDetailScreen(
                         )
                         Text(
                             text = project?.data?.dueDate.toString(),
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Medium
                         )
                     }
 
@@ -465,7 +461,7 @@ fun TopBar(
                 Icon(
                     painter = painterResource(id = R.drawable.back_arrow_icon),
                     contentDescription = "Back",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
         } else {
@@ -476,7 +472,7 @@ fun TopBar(
             text = title,
             fontSize = 30.sp,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.onBackground
         )
 
         trailing?.invoke()
@@ -558,7 +554,7 @@ fun MembersSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(10.dp))
-                .background(Color.Black.copy(alpha = 0.1f))
+                .background(MaterialTheme.colorScheme.secondaryContainer)
         ) {
             LazyColumn(
                 modifier = Modifier

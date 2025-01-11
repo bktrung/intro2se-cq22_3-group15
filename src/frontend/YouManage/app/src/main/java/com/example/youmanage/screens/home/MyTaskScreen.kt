@@ -124,7 +124,7 @@ fun MyTaskScreen(
             if (filterTask.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     Text(
-                        text = "No Task",
+                        text = "No Task Found",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
@@ -139,12 +139,13 @@ fun MyTaskScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     // Display each activity
-                    itemsIndexed(myTask ?: emptyList()) { _, item ->
+                    itemsIndexed(filterTask) { _, item ->
                         TaskItem(
                             title = item.title,
                             priority = item.priority,
                             assignee = item.assignee?.username ?: "Unknown",
                             endDate = item.endDate,
+                            userId = item.assignee?.id ?: -1,
                             comments = item.commentsCount,
                             onTaskClick = {
                                 onClick(item.id.toString(), item.project.toString())

@@ -1,6 +1,7 @@
 package com.example.youmanage.screens.role
 
 import android.widget.Toast
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -484,44 +485,43 @@ fun RoleItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 3.dp
-        ),
+            .padding(horizontal = 16.dp, vertical = 8.dp), // Giảm khoảng cách cho hợp lý
+        shape = RoundedCornerShape(12.dp), // Bo góc mềm mại hơn
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp), // Shadow nhẹ hơn
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surfaceVariant // Dùng màu surface variant để làm mềm giao diện
         )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(16.dp), // Điều chỉnh padding hợp lý
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Tên vai trò
             Text(
                 text = name,
-                textAlign = TextAlign.Center,
                 style = TextStyle(
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 20.sp,
-                    color = MaterialTheme.colorScheme.primary
+                    fontWeight = FontWeight.Bold, // Làm đậm để nổi bật hơn
+                    fontSize = 18.sp, // Font size vừa phải
+                    color = MaterialTheme.colorScheme.onSurface, // Sử dụng màu onSurface để dễ nhìn
+                    letterSpacing = 0.5.sp
                 ),
-                maxLines = Int.MAX_VALUE,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Start
             )
 
-            Spacer(modifier = Modifier.width(5.dp))
-
+            // Các icon hành động
             Row {
                 Icon(
                     imageVector = Icons.Default.Create,
                     contentDescription = "Edit",
                     modifier = Modifier
-                        .padding(5.dp)
-                        .size(30.dp)
-                        .clickable { onUpdate() },
+                        .padding(8.dp)
+                        .size(24.dp)
+                        .clickable { onUpdate() }
+                        .animateContentSize(), // Thêm hiệu ứng cho icon
                     tint = MaterialTheme.colorScheme.primary
                 )
 
@@ -529,23 +529,24 @@ fun RoleItem(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Delete",
                     modifier = Modifier
-                        .padding(5.dp)
-                        .size(30.dp)
-                        .clickable { onDelete() },
-                    tint = MaterialTheme.colorScheme.primary
+                        .padding(8.dp)
+                        .size(24.dp)
+                        .clickable { onDelete() }
+                        .animateContentSize(), // Thêm hiệu ứng cho icon
+                    tint = MaterialTheme.colorScheme.error // Dùng màu đỏ cho Delete
                 )
 
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = "Assign",
                     modifier = Modifier
-                        .padding(5.dp)
-                        .size(30.dp)
-                        .clickable { onAssign() },
-                    tint = MaterialTheme.colorScheme.primary
+                        .padding(8.dp)
+                        .size(24.dp)
+                        .clickable { onAssign() }
+                        .animateContentSize(), // Thêm hiệu ứng cho icon
+                    tint = MaterialTheme.colorScheme.secondary
                 )
             }
         }
     }
 }
-

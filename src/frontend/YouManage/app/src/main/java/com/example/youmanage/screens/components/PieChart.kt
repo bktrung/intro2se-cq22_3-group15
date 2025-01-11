@@ -71,7 +71,7 @@ fun PieChart(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(10.dp))
-            .background(MaterialTheme.colorScheme.primaryContainer)
+            .background(MaterialTheme.colorScheme.secondaryContainer)
             .padding(horizontal = 30.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -82,12 +82,12 @@ fun PieChart(
             text = "Overall Activity",
             fontWeight = FontWeight.Medium,
             fontSize = 20.sp,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.onBackground
         )
 
-        val semiCircleColor = MaterialTheme.colorScheme.primaryContainer
-        var donePercentColor = MaterialTheme.colorScheme.primary
-        val textColor = MaterialTheme.colorScheme.onTertiary
+        val semiCircleColor = MaterialTheme.colorScheme.secondaryContainer
+        var donePercentColor = MaterialTheme.colorScheme.onBackground
+        val textColor = MaterialTheme.colorScheme.onBackground
 
         Spacer(modifier = Modifier.height(30.dp))
 
@@ -226,7 +226,7 @@ fun AnnotationItem(
             text = name,
             fontWeight = FontWeight.Bold,
             fontSize = textSize,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.onBackground
         )
     }
 }

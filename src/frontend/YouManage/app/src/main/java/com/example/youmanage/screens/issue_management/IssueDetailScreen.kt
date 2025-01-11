@@ -261,7 +261,7 @@ fun IssueDetailScreen(
                         onChangeValue = { title = it },
                         placeholderContent = "Enter issue title",
                         placeholderColor = Color.Gray,
-                        containerColor = textFieldColor,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         icon = R.drawable.project_title_icon,
                         imeAction = ImeAction.Done,
                         onDone = { focusManager.clearFocus() },
@@ -287,7 +287,7 @@ fun IssueDetailScreen(
                         onChangeValue = { description = it },
                         placeholderContent = "Enter issue description",
                         placeholderColor = Color.Gray,
-                        containerColor = textFieldColor,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         icon = R.drawable.description_icon,
                         imeAction = ImeAction.Done,
                         onDone = { focusManager.clearFocus() },
@@ -299,7 +299,7 @@ fun IssueDetailScreen(
                     text = selectedStatus,
                     onClick = { showStatusDialog = true },
                     backgroundColor = primaryColor,
-                    textColor = MaterialTheme.colorScheme.primary
+                    textColor = MaterialTheme.colorScheme.onBackground
                 )
 
                 AssigneeSelector(
@@ -440,8 +440,8 @@ fun IssueBottomBar(
                 onClick = onDeleteClick,
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
                 )
             ) {
                 Text(

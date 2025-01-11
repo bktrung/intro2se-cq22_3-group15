@@ -136,7 +136,9 @@ fun ActivityLogScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(top = paddingValues.calculateTopPadding(), bottom = 10.dp)
+
+            ,
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -156,8 +158,8 @@ fun ActivityLogScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                        .padding(horizontal = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     // Display each activity
                     itemsIndexed(activityLogs) { index, activity ->
@@ -189,61 +191,54 @@ fun ActivityLogScreen(
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ActivityItems(
-    activity: Activity
-) {
+fun ActivityItems(activity: Activity) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 100.dp),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 10.dp
-        ),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-
+            .heightIn(min = 100.dp)
+            .padding(horizontal = 16.dp), // Giảm khoảng cách để nhìn gọn hơn
+        shape = RoundedCornerShape(16.dp), // Bo góc mềm mại
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(10.dp),
+                .padding(16.dp), // Padding bên ngoài cho gọn gàng
             contentAlignment = Alignment.Center
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(10.dp)
-                    .padding(end = 16.dp),
+                    .padding(end = 24.dp), // Giảm khoảng cách bên phải
                 horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.SpaceBetween
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(
                     activity.description,
                     color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 20.sp,
-                    modifier = Modifier.padding(bottom = 10.dp)
+                    fontWeight = FontWeight.Bold, // Tăng độ đậm của font cho dễ đọc
+                    fontSize = 18.sp, // Font nhỏ hơn một chút để nhẹ nhàng hơn
+                    modifier = Modifier.padding(bottom = 8.dp) // Khoảng cách giữa các text
                 )
-
-                Spacer(modifier = Modifier.height(20.dp))
 
                 Text(
                     formatToRelativeTime(activity.timestamp),
-                    color = Color.Gray,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp,
-                    modifier = Modifier.padding(bottom = 10.dp)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Màu xám nhạt cho phần thời gian
+                    fontWeight = FontWeight.Medium, // Font nhẹ nhàng hơn
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(top = 4.dp)
                 )
             }
 
+            // Tạo hiệu ứng cho icon "pin"
             Image(
                 painter = painterResource(id = R.drawable.pin),
                 contentDescription = "pin",
-                modifier = Modifier.align(Alignment.TopEnd)
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(30.dp) // Icon nhỏ hơn một chút
+                    .padding(8.dp) // Giảm padding để nó không chiếm quá nhiều không gian
             )
         }
-
     }
 }

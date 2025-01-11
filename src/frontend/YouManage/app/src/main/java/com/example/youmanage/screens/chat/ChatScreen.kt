@@ -124,7 +124,7 @@ fun ChatScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp, vertical = 16.dp)
                     .background(
-                        color = MaterialTheme.colorScheme.primaryContainer,
+                        color = MaterialTheme.colorScheme.secondaryContainer,
                         shape = MaterialTheme.shapes.medium
                     )
             )

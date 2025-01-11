@@ -68,6 +68,7 @@ import com.example.youmanage.utils.Constants.priorityChoice
 import com.example.youmanage.utils.Resource
 import com.example.youmanage.viewmodel.auth.AuthenticationViewModel
 import com.example.youmanage.screens.project_management.TopBar
+import com.example.youmanage.ui.theme.fontFamily
 import com.example.youmanage.viewmodel.TraceInProjectViewModel
 import com.example.youmanage.viewmodel.taskmanagement.AddTaskViewModel
 import kotlinx.coroutines.joinAll
@@ -289,8 +290,8 @@ fun CreateTaskScreen(
                     content = title,
                     onChangeValue = { title = it },
                     placeholderContent = "Enter project title",
-                    placeholderColor = MaterialTheme.colorScheme.primary,
-                    containerColor = textFieldColor,
+                    placeholderColor = MaterialTheme.colorScheme.onBackground,
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     icon = R.drawable.project_title_icon,
                     imeAction = ImeAction.Next,
                     onDone = { focusManager.moveFocus(FocusDirection.Down)},
@@ -317,8 +318,8 @@ fun CreateTaskScreen(
                     value = description,
                     onValueChange = { description = it },
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = textFieldColor,
-                        unfocusedContainerColor = textFieldColor,
+                        focusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent
                     ),
@@ -328,18 +329,20 @@ fun CreateTaskScreen(
                         Icon(
                             painter = painterResource(id = R.drawable.description_icon),
                             contentDescription = "",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.onBackground
                         )
                     },
                     placeholder = {
                         Text(
                             "Enter project description",
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                     },
                     maxLines = Int.MAX_VALUE,
                     shape = RoundedCornerShape(10.dp),
-                    textStyle = TextStyle(MaterialTheme.colorScheme.primary),
+                    textStyle = TextStyle(
+                        color = MaterialTheme.colorScheme.onBackground
+                    ),
                     keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(
                         onNext = { focusManager.clearFocus() },
@@ -357,7 +360,7 @@ fun CreateTaskScreen(
                 },
                 iconResource = R.drawable.calendar_icon,
                 placeholder = "Enter start date",
-                containerColor = textFieldColor,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 imeAction = ImeAction.Done,
                 onDone = { focusManager.clearFocus() },
                 onNext = { focusManager.clearFocus() }
@@ -372,7 +375,7 @@ fun CreateTaskScreen(
                 },
                 iconResource = R.drawable.calendar_icon,
                 placeholder = "Enter end date",
-                containerColor = textFieldColor,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 imeAction = ImeAction.Done,
                 onDone = { focusManager.clearFocus() },
                 onNext = { focusManager.clearFocus() }

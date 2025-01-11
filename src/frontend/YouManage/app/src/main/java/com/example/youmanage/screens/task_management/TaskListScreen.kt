@@ -49,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -103,7 +104,10 @@ fun TaskListScreen(
                 }.join()
             }
         } catch (e: CancellationException) {
-            Log.d("Coroutine", "Job was cancelled during websocket connections: ${e.localizedMessage}")
+            Log.d(
+                "Coroutine",
+                "Job was cancelled during websocket connections: ${e.localizedMessage}"
+            )
         } catch (e: Exception) {
             Log.d("Coroutine", "Exception during websocket connection setup: ${e.localizedMessage}")
         }
@@ -136,8 +140,8 @@ fun TaskListScreen(
         }
     }
 
-    LaunchedEffect (shouldDisableAction){
-        if(shouldDisableAction){
+    LaunchedEffect(shouldDisableAction) {
+        if (shouldDisableAction) {
             onDisableAction()
         }
     }
@@ -183,10 +187,11 @@ fun TaskListScreen(
             .fillMaxSize()
             .padding(WindowInsets.statusBars.asPaddingValues())
             .padding(
-            bottom = WindowInsets
-                .systemBars.asPaddingValues()
-                .calculateBottomPadding()
-        ),
+                bottom = WindowInsets
+                    .systemBars
+                    .asPaddingValues()
+                    .calculateBottomPadding()
+            ),
         topBar = {
             com.example.youmanage.screens.project_management.TopBar(
                 title = "Task List",
@@ -239,7 +244,6 @@ fun TaskListScreen(
                 .fillMaxSize()
                 .background(backgroundColor)
                 .padding(paddingValues)
-                .padding(top = 24.dp)
         ) {
             Column {
                 ButtonSection(
@@ -249,12 +253,22 @@ fun TaskListScreen(
                     },
                     status = statusMapping
                 )
+                if(filterTasks.isEmpty()){
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ){
+                        Text(
+                            text = "No tasks found",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
 
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                } else {
                     LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -295,22 +309,21 @@ fun TaskItem(
 ) {
     Card(
         onClick = { onTaskClick() },
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(16.dp), // Góc bo tròn mềm mại hơn
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            containerColor = MaterialTheme.colorScheme.secondaryContainer, // Màu nền nhẹ nhàng
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp)
-
+            .padding(horizontal = 16.dp) // Padding mỏng để tạo không gian thoáng
     ) {
         Column(
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(50.dp),
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp)
+                .padding(16.dp), // Padding hợp lý cho không gian thoải mái
+            verticalArrangement = Arrangement.spacedBy(12.dp) // Tạo khoảng cách giữa các phần tử
         ) {
+            // Tiêu đề và mức độ ưu tiên
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -318,60 +331,60 @@ fun TaskItem(
             ) {
                 Text(
                     text = title,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Medium,
+                    style = TextStyle(fontWeight = FontWeight.Medium),
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .weight(1f)
                         .wrapContentWidth(Alignment.Start)
-                        .padding(end = 5.dp)
                 )
 
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(5.dp))
-                        .background(MaterialTheme.colorScheme.primary)
-                        .then(
-                            if (priority.isNullOrBlank()) Modifier
-                                .size(10.dp)
-                                .background(Color.Transparent) else Modifier
-                        )
-                ) {
-                    priority?.let {
+                priority?.let {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.primary)
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
                         Text(
                             text = it,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(vertical = 5.dp, horizontal = 10.dp),
-                            color = MaterialTheme.colorScheme.onPrimary
+                            style = TextStyle(
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontWeight = FontWeight.Bold
+                            ),
                         )
                     }
                 }
             }
 
+            // Hình ảnh người giao nhiệm vụ và tên người giao
             Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-
-                val id = if(userId > 0) userId else -1
+                val avatarId = if (userId > 0) userId else -1
 
                 Image(
-                    painter = painterResource(id = randomAvatar(id)),
+                    painter = painterResource(id = randomAvatar(avatarId)),
                     contentDescription = "Avatar",
                     modifier = Modifier
-                        .size(50.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
+                        .border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
                 )
+
                 Text(
-                    assignee, fontSize = 20.sp,
-                    fontWeight = FontWeight.Medium
+                    text = assignee,
+                    style = TextStyle(
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 )
             }
 
+            // Thông tin bình luận và ngày kết thúc
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.comment_icon),
@@ -381,9 +394,8 @@ fun TaskItem(
                 )
 
                 Text(
-                    comments.toString(),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium
+                    text = comments.toString(),
+                    style = TextStyle(fontWeight = FontWeight.Medium),
                 )
 
                 Icon(
@@ -391,13 +403,16 @@ fun TaskItem(
                     contentDescription = "Deadline",
                     tint = MaterialTheme.colorScheme.primary
                 )
-                Text(endDate, fontSize = 15.sp, fontWeight = FontWeight.Medium)
 
+                Text(
+                    text = endDate,
+                    style = TextStyle(fontWeight = FontWeight.Medium),
+                )
             }
-
         }
     }
 }
+
 
 @Composable
 fun TopBar(

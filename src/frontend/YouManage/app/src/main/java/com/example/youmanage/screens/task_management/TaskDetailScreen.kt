@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -442,9 +443,8 @@ fun TaskDetailScreen(
                 TextField(
                     value = taskState.editTitle,
                     textStyle = TextStyle(
-                        fontSize = 20.sp,
-                        fontFamily = fontFamily,
-                        color = MaterialTheme.colorScheme.primary
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
                     ),
                     leadingIcon = {
                         Icon(
@@ -455,9 +455,8 @@ fun TaskDetailScreen(
                     onValueChange = { taskState = taskState.copy(editTitle = it) },
                     placeholder = {
                         Text(
-                            text = "Enter project title",
-                            fontSize = 20.sp,
-                            color = Color.Gray
+                            text = "Enter task title",
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                     },
                     keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
@@ -466,8 +465,8 @@ fun TaskDetailScreen(
                         onDone = { focusManager.clearFocus() }
                     ),
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.onSurface,
+                        focusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent
                     ),
@@ -480,8 +479,8 @@ fun TaskDetailScreen(
             DropdownStatusSelector(
                 text = taskState.status,
                 onClick = { showStatusDialog = true },
-                backgroundColor = primaryColor,
-                textColor = MaterialTheme.colorScheme.primary
+                backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                textColor = MaterialTheme.colorScheme.onBackground
             )
 
             LabeledTextField(
@@ -490,7 +489,9 @@ fun TaskDetailScreen(
                 onValueChange = { taskState = taskState.copy(description = it) },
                 placeholder = "Enter project description",
                 leadingIconRes = R.drawable.description_icon,
-                backgroundColor = primaryColor,
+                backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                placeholderColor = MaterialTheme.colorScheme.onBackground,
+                textColor = MaterialTheme.colorScheme.onBackground,
                 imeAction = ImeAction.Done,
                 onDone = { focusManager.clearFocus() },
                 onNext = { focusManager.clearFocus() }
@@ -523,7 +524,7 @@ fun TaskDetailScreen(
                 },
                 iconResource = R.drawable.calendar_icon,
                 placeholder = "Enter start date",
-                containerColor = primaryColor,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 imeAction = ImeAction.Done,
                 onDone = { focusManager.clearFocus() },
                 onNext = { focusManager.clearFocus() }
@@ -538,7 +539,7 @@ fun TaskDetailScreen(
                 },
                 iconResource = R.drawable.calendar_icon,
                 placeholder = "Enter end date",
-                containerColor = primaryColor,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 imeAction = ImeAction.Done,
                 onDone = { focusManager.clearFocus() },
                 onNext = { focusManager.clearFocus() }
@@ -580,7 +581,7 @@ fun TaskDetailScreen(
         ChooseItemDialog(
             title = "Choose Member",
             showDialog = showMemberDialog,
-            items = members?.dropLast(1) ?: emptyList(),
+            items = members ?: emptyList(),
             displayText = { it.username ?: "Unknown" },
             onDismiss = { showMemberDialog = false },
             onConfirm = { user ->
@@ -691,7 +692,7 @@ fun TaskDetailScreen(
                 TaskUpdateStatus(
                     status = statusMapping.firstOrNull { it.first == taskState.status }?.second
                         ?: "PENDING",
-                    assigneeId = taskState.memberId
+                    assigneeId = if(taskState.memberId < 0) null else taskState.memberId
                 ),
                 "Bearer ${accessToken.value}"
             )
@@ -725,7 +726,7 @@ fun LabeledTextField(
     ) {
         Text(
             text = label,
-            color = textColor,
+            color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp
         )
@@ -755,7 +756,7 @@ fun LabeledTextField(
             },
             maxLines = Int.MAX_VALUE,
             shape = RoundedCornerShape(10.dp),
-            textStyle = TextStyle(color = MaterialTheme.colorScheme.primary),
+            textStyle = TextStyle(color = textColor),
             keyboardOptions = KeyboardOptions.Default.copy(imeAction = imeAction),
             keyboardActions = KeyboardActions(
                 onDone = { onDone() },
@@ -828,8 +829,15 @@ fun CommentSection(
                     tint = MaterialTheme.colorScheme.primary
                 )
             },
+            shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth(),
-            textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent
+            ),
+            textStyle = TextStyle(color = MaterialTheme.colorScheme.onBackground)
         )
     }
 }
@@ -946,8 +954,8 @@ fun ButtonBottomBar(
                 onClick = onDeleteClick,
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
                 )
             ) {
                 Text(
@@ -986,58 +994,50 @@ fun EditCommentDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
-                    .shadow(
-                        elevation = 8.dp,
-                        shape = RoundedCornerShape(10.dp)
-                    ),
-                shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
+                    .shadow(4.dp, RoundedCornerShape(12.dp)) // Sử dụng shadow nhẹ nhàng
+                    .animateContentSize(), // Thêm hiệu ứng khi thay đổi kích thước
+                shape = RoundedCornerShape(12.dp), // Bo góc mềm mại
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface) // Nền dễ chịu
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
+                        .padding(24.dp) // Padding bên trong rộng rãi
                 ) {
                     Text(
                         text = title,
-                        fontSize = 22.sp,
-                        fontFamily = fontFamily,
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        modifier = Modifier.padding(bottom = 16.dp) // Tạo khoảng cách
                     )
 
                     OutlinedTextField(
                         value = comment,
                         onValueChange = { comment = it },
                         maxLines = Int.MAX_VALUE,
-                        textStyle = TextStyle(color = MaterialTheme.colorScheme.primary),
+                        textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface), // Màu chữ dễ đọc
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(20.dp)) // Tạo khoảng cách giữa các nút
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        TextButton(
-                            onClick = onDismiss,
-                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
-                        ) {
-                            Text("Cancel", fontFamily = fontFamily)
-                        }
-
-                        Spacer(modifier = Modifier.width(8.dp))
 
                         Button(
                             onClick = { onSave(comment) },
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                            shape = RoundedCornerShape(10.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.height(40.dp) // Đảm bảo nút cao vừa phải
                         ) {
                             Text(
                                 "Save",
                                 color = MaterialTheme.colorScheme.onPrimary,
-                                fontFamily = fontFamily
+                                fontWeight = FontWeight.Bold
                             )
                         }
 
@@ -1045,13 +1045,15 @@ fun EditCommentDialog(
 
                         Button(
                             onClick = onDelete,
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                            shape = RoundedCornerShape(10.dp)
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.height(40.dp)
+                               
                         ) {
                             Text(
                                 "Delete",
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                fontFamily = fontFamily
+                                color = MaterialTheme.colorScheme.onError,
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }

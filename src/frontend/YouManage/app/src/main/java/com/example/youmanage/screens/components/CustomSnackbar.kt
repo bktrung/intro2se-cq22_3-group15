@@ -43,7 +43,7 @@ fun CustomSnackBar(
                     .calculateBottomPadding() * 5
             )
             .shadow(8.dp, RoundedCornerShape(10.dp)),
-        containerColor = MaterialTheme.colorScheme.onPrimary,
+        containerColor = MaterialTheme.colorScheme.secondaryContainer,
         contentColor = MaterialTheme.colorScheme.primary
     ) {
         Column(
@@ -59,13 +59,13 @@ fun CustomSnackBar(
                 Icon(
                     imageVector = Icons.Default.Notifications,
                     contentDescription = "Notification",
-                    tint = Color(0xffFFC107),
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(40.dp)
                 )
 
                 Text(
                     text = message,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 20.sp,
                     modifier = Modifier.padding(
