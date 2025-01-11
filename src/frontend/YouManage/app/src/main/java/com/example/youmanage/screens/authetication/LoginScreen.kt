@@ -116,7 +116,7 @@ fun LoginScreen(
             Icon(
                 painter = painterResource(id = R.drawable.back_arrow_icon),
                 contentDescription = "Back",
-                tint = MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.onBackground
             )
         }
 
@@ -134,19 +134,19 @@ fun LoginScreen(
                     fontSize = 48.sp,
                     fontWeight = FontWeight.Bold
                 ),
-                color = MaterialTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.primary,
                 textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(60.dp))
 
-            val textFieldBackgroundColor = MaterialTheme.colorScheme.surface
+            val textFieldBackgroundColor = MaterialTheme.colorScheme.secondaryContainer
 
             TextFieldComponent(
                 content = username,
                 onChangeValue = { username = it },
                 placeholderContent = "Email/Username",
-                placeholderColor = MaterialTheme.colorScheme.primary,
+                placeholderColor = MaterialTheme.colorScheme.onBackground,
                 containerColor = textFieldBackgroundColor,
                 imeAction = androidx.compose.ui.text.input.ImeAction.Next,
                 onDone = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) },
@@ -161,7 +161,7 @@ fun LoginScreen(
                 content = password,
                 onChangeValue = { password = it },
                 placeholderContent = "Password",
-                placeholderColor = MaterialTheme.colorScheme.primary,
+                placeholderColor = MaterialTheme.colorScheme.onBackground,
                 containerColor = textFieldBackgroundColor,
                 imeAction = androidx.compose.ui.text.input.ImeAction.Done,
                 onDone = { focusManager.clearFocus() },

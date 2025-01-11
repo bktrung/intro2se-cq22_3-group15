@@ -2,6 +2,7 @@ package com.example.youmanage.screens.authetication
 
 import android.annotation.SuppressLint
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
@@ -124,10 +125,10 @@ fun OTPTextField(
                         index < otp.length -> otp[index].toString()
                         else -> ""
                     }
-                    val isFocused = index == otp.length
+
                     OTPCell(
                         char = char,
-                        isFocus = isFocused,
+                        isFocus = index == otp.length,
                         isShowWarning = isShowWarning,
                         modifier = Modifier.weight(1f)
                     )
@@ -155,7 +156,7 @@ fun OTPTextField(
 @Composable
 fun OTPCell(
     char: String = "",
-    isFocus: Boolean = false,
+    isFocus: Boolean = true,
     isShowWarning: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -209,6 +210,10 @@ fun OTPVerificationScreen(
         else -> null
     }
 
+    BackHandler(enabled = true) {
+        onNavigateBack()
+    }
+
     val scrollState = rememberScrollState()
 
     var timeInSeconds by remember { mutableIntStateOf(expiredTime) }
@@ -257,7 +262,7 @@ fun OTPVerificationScreen(
 
     }
 
-    LaunchedEffect(isRunning) {
+    LaunchedEffect(isRunning, timeInSeconds) {
         while (isRunning) {
             delay(1000L)
             timeInSeconds -= 1
@@ -349,20 +354,21 @@ fun OTPVerificationScreen(
             
             Image(
                 painter = painterResource(id = R.drawable.otp_background),
-                contentDescription = "OTP Background"
+                contentDescription = "OTP Background",
+                modifier = Modifier.clip(RoundedCornerShape(10.dp))
             )
 
             Text(
                 "OTP Verification",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = "An 6-digits code has been sent to your email",
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
             )
 
             OTPTextField(
@@ -379,7 +385,7 @@ fun OTPVerificationScreen(
             ) {
                 Text(
                     text = "The OPT will be expired in ",
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
                 )
                 Text(
                     text = String.format("%02d:%02d", minutes, seconds),
@@ -394,7 +400,7 @@ fun OTPVerificationScreen(
 
                 Text(
                     text = "Didn't receive code?",
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
                 )
                 TextButton(onClick = {
                     authenticationViewModel.forgotPasswordSendOTP(
@@ -410,7 +416,7 @@ fun OTPVerificationScreen(
                     timeInSeconds = expiredTime
 
                 }) {
-                    Text(text = "Resend")
+                    Text(text = "Resend", color = MaterialTheme.colorScheme.primary)
                 }
             }
 

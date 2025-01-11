@@ -239,8 +239,8 @@ fun UpdateProjectScreen(
                         content = title,
                         onChangeValue = { title = it },
                         placeholderContent = "Enter project title",
-                        placeholderColor = MaterialTheme.colorScheme.primary,
-                        containerColor = MaterialTheme.colorScheme.surface,
+                        placeholderColor = MaterialTheme.colorScheme.onBackground,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         icon = R.drawable.project_title_icon,
                         imeAction = ImeAction.Next,
                         onDone = { focusManager.moveFocus(FocusDirection.Down)},
@@ -269,8 +269,8 @@ fun UpdateProjectScreen(
                         value = description,
                         onValueChange = { description = it },
                         colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                            focusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent
                         ),
@@ -280,13 +280,13 @@ fun UpdateProjectScreen(
                             Icon(
                                 painter = painterResource(id = R.drawable.description_icon),
                                 contentDescription = "",
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.onBackground
                             )
                         },
                         placeholder = {
                             Text(
                                 "Enter project description",
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.onBackground
                             )
                         },
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
@@ -297,7 +297,7 @@ fun UpdateProjectScreen(
                         maxLines = Int.MAX_VALUE,
                         shape = RoundedCornerShape(10.dp),
                         textStyle = TextStyle(
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                     )
                 }
@@ -336,7 +336,7 @@ fun UpdateProjectScreen(
                                         id = R.drawable.calendar_icon
                                     ),
                                     contentDescription = "",
-                                    tint = MaterialTheme.colorScheme.primary,
+                                    tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.clickable {
                                         showDatePicker = true
                                     }
@@ -350,13 +350,13 @@ fun UpdateProjectScreen(
                             },
                             shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
                             colors = TextFieldDefaults.colors(
-                                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                focusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                                 focusedIndicatorColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent
                             ),
                             textStyle = TextStyle(
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.onBackground
                             )
                         )
                     }

@@ -77,9 +77,7 @@ fun PasswordTextField(
         TextField(
             value = content,
             textStyle = TextStyle(
-                fontSize = 20.sp,
-                fontFamily = fontFamily,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.onBackground
             ),
             onValueChange = { onChangeValue(it) },
             placeholder = {
@@ -135,9 +133,7 @@ fun TextFieldComponent(
     TextField(
         value = content,
         textStyle = TextStyle(
-            fontSize = 20.sp,
-            fontFamily = fontFamily,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.onBackground
         ),
         onValueChange = { onChangeValue(it) },
         placeholder = {
@@ -182,15 +178,13 @@ fun LeadingTextFieldComponent(
         TextField(
             value = content,
             textStyle = TextStyle(
-                fontSize = 20.sp,
-                fontFamily = fontFamily,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.onBackground
             ),
             leadingIcon = {
                 Icon(
                     painter = painterResource(id = icon),
                     contentDescription = "",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             },
             onValueChange = { onChangeValue(it) },
@@ -261,13 +255,13 @@ fun DatePickerField(
                         painter = painterResource(id = iconResource),
                         contentDescription = null,
                         modifier = Modifier.clickable { onDateClick() },
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 placeholder = {
                     Text(
                         text = placeholder,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 colors = TextFieldDefaults.colors(
@@ -276,7 +270,9 @@ fun DatePickerField(
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
-                textStyle = TextStyle(color = MaterialTheme.colorScheme.primary),
+                textStyle = TextStyle(
+                    color = MaterialTheme.colorScheme.onBackground
+                ),
                 keyboardOptions = KeyboardOptions.Default.copy(imeAction = imeAction),
                 keyboardActions = KeyboardActions(
                     onNext = { onNext() },

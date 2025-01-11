@@ -125,12 +125,17 @@ fun HomeScreen(
             TextField(
                 value = searchQuery,
                 onValueChange = { newValue -> searchQuery = newValue },
-                placeholder = { Text("Find your project", color = MaterialTheme.colorScheme.primary) },
+                placeholder = {
+                    Text(
+                        "Find your project",
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                },
                 leadingIcon = {
                     Icon(
                         painter = painterResource(id = R.drawable.search_icon),
                         contentDescription = "Search",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 keyboardActions = KeyboardActions(
@@ -144,10 +149,10 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    focusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                     focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+                    unfocusedIndicatorColor = Color.Transparent,
                 ),
                 shape = RoundedCornerShape(16.dp),
                 textStyle = TextStyle(color = MaterialTheme.colorScheme.primary)
@@ -183,7 +188,7 @@ fun HomeScreen(
                             1 -> "You have one project"
                             else -> "You have $numOfProjects projects"
                         },
-                        style = TextStyle(color = MaterialTheme.colorScheme.primary)
+                        style = TextStyle(color = MaterialTheme.colorScheme.inversePrimary)
                     )
                 }
 
@@ -214,7 +219,7 @@ fun HomeScreen(
                                 backgroundColor = Color(randomColor(projectList[item].id)),
                                 onViewProject = {
                                     val id = projectList[item].id
-                                    if(id >= 0){
+                                    if (id >= 0) {
                                         onViewProject(id)
                                     }
                                 }

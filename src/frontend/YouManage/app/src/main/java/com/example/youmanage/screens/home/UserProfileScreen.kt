@@ -7,6 +7,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.CircleShape
@@ -38,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -87,58 +91,80 @@ fun UserProfileScreen(
     }
 
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background), // Background màu nền
         contentAlignment = Alignment.Center
     ) {
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .padding(
                     top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
                     bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
-                )
-            ,
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-
-            Image(
-                painter = painterResource(id = randomAvatar(user?.data?.id ?: 0)),
-                contentDescription = "Avatar",
-                modifier = Modifier.height(150.dp)
+            // Avatar
+            Box(
+                modifier = Modifier
+                    .size(150.dp)
                     .clip(CircleShape)
-            )
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .border(
+                        width = 4.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = CircleShape
+                    )
+            ) {
+                Image(
+                    painter = painterResource(id = randomAvatar(user?.data?.id ?: 0)),
+                    contentDescription = "Avatar",
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
+            // Welcome Text
             Text(
-                "Welcome, ${user?.data?.username}",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
+                text = "Welcome, ${user?.data?.username}",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp),
+                textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
+            // Email Text
             Text(
-                "Email: ${user?.data?.email}",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Normal
+                text = "Email: ${user?.data?.email}",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(horizontal = 16.dp),
+                textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            if(!isGoogleLogIn){
+            // Change Password Button
+            if (!isGoogleLogIn) {
                 Button(
-                    shape = RoundedCornerShape(8.dp),
+                    onClick = onChangePassword,
+                    shape = RoundedCornerShape(50),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
-                    onClick = {
-                        onChangePassword()
-                    }) {
+                    modifier = Modifier.padding(horizontal = 32.dp)
+                ) {
                     Text(
-                        "Change Password",
-                        fontSize = 20.sp,
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        text = "Change Password",
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
@@ -147,36 +173,39 @@ fun UserProfileScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Logout Button
             Button(
-                shape = RoundedCornerShape(8.dp),
+                onClick = { openLogoutDialog = true },
+                shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
                 ),
-                onClick = {
-                openLogoutDialog = true
-            }) {
+                modifier = Modifier.padding(horizontal = 32.dp)
+            ) {
                 Text(
-                    "Logout",
-                    fontSize = 20.sp,
-                    color = MaterialTheme.colorScheme.onPrimary,
+                    text = "Logout",
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
 
-
+            // Loading Indicator
             AnimatedVisibility(
                 visible = logOutResponse is Resource.Loading,
                 enter = fadeIn() + scaleIn(),
                 exit = fadeOut() + scaleOut()
             ) {
-                if(logOutResponse is Resource.Loading){
-                    CircularProgressIndicator()
+                if (logOutResponse is Resource.Loading) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }
-
     }
 
     AlertDialog(

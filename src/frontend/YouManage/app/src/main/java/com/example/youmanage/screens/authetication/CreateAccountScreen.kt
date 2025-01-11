@@ -115,7 +115,7 @@ fun CreateAccountScreen(
                 Icon(
                     painter = painterResource(id = R.drawable.back_arrow_icon),
                     contentDescription = "Back",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
 
@@ -152,8 +152,8 @@ fun CreateAccountScreen(
                     content = username,
                     onChangeValue = { username = it },
                     placeholderContent = "Username",
-                    placeholderColor = MaterialTheme.colorScheme.primary,
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    placeholderColor = Color.Gray,
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     imeAction = androidx.compose.ui.text.input.ImeAction.Next,
                     onDone = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) },
                     onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
@@ -165,8 +165,8 @@ fun CreateAccountScreen(
                     content = email,
                     onChangeValue = { email = it },
                     placeholderContent = "Email",
-                    placeholderColor = MaterialTheme.colorScheme.primary,
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    placeholderColor = Color.Gray,
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     imeAction = androidx.compose.ui.text.input.ImeAction.Next,
                     onDone = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) },
                     onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
@@ -178,8 +178,8 @@ fun CreateAccountScreen(
                     content = password,
                     onChangeValue = { password = it },
                     placeholderContent = "Password",
-                    placeholderColor = MaterialTheme.colorScheme.primary,
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    placeholderColor = Color.Gray,
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     imeAction = androidx.compose.ui.text.input.ImeAction.Next,
                     onDone = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) },
                     onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
@@ -191,8 +191,8 @@ fun CreateAccountScreen(
                     content = confirmPassword,
                     onChangeValue = { confirmPassword = it },
                     placeholderContent = "Confirm Password",
-                    placeholderColor = MaterialTheme.colorScheme.primary,
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    placeholderColor = Color.Gray,
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     imeAction = androidx.compose.ui.text.input.ImeAction.Done,
                     onDone = { focusManager.clearFocus() },
                     onNext = { focusManager.clearFocus() }

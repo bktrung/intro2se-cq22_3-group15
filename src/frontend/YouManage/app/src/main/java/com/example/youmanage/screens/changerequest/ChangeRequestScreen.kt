@@ -21,8 +21,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -276,65 +278,98 @@ fun ChangeRequestItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(10.dp)
-            .clip(RoundedCornerShape(10.dp))
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(12.dp))
             .clickable { onClick() },
-        shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(
-            2.dp,
-            if (request.status == "PENDING") Color.Green else MaterialTheme.colorScheme.primaryContainer
-        ),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(
+            width = 2.dp,
+            color = when (request.status) {
+                "PENDING" -> MaterialTheme.colorScheme.secondary
+                "REJECTED" -> MaterialTheme.colorScheme.error
+                else -> MaterialTheme.colorScheme.primary
+            }
         )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 18.dp)
-                .padding(vertical = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Header Row with Icon and Title
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(id = R.drawable.request),
+                        contentDescription = "Request Icon",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                            .padding(8.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = request.systemDescription ?: "No Description",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
 
-                Image(
-                    painter = painterResource(R.drawable.request),
-                    contentDescription = "icon",
-                    modifier = Modifier.size(30.dp)
-                )
-
+            // Status and Additional Information
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    request.systemDescription ?: "",
-                    textAlign = TextAlign.Start,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(start = 10.dp)
-
+                    text = when (request.status) {
+                        "PENDING" -> "Status: Pending"
+                        "REJECTED" -> "Status: Rejected"
+                        "APPROVED" -> "Status: Approved"
+                        else -> "Status: Unknown"
+                    },
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = when (request.status) {
+                            "PENDING" -> MaterialTheme.colorScheme.secondary
+                            "REJECTED" -> MaterialTheme.colorScheme.error
+                            else -> MaterialTheme.colorScheme.primary
+                        }
+                    )
+                )
+                Text(
+                    text = formatToRelativeTime(request.createdAt ?: ""),
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
-
+            // Declined Reason (if applicable)
             if (request.status == "REJECTED") {
                 Text(
-                    "Declined Reason: ${request.declinedReason ?: "No reason"}"
+                    text = "Declined Reason: ${request.declinedReason ?: "No reason"}",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontWeight = FontWeight.Normal,
+                        color = MaterialTheme.colorScheme.error
+                    ),
+                    modifier = Modifier.padding(start = 4.dp)
                 )
             }
-            Text(
-                formatToRelativeTime(request.createdAt ?: ""),
-                textAlign = TextAlign.Start,
-                color = Color.Gray,
-                modifier = Modifier.padding(start = 10.dp)
-            )
-
-
         }
     }
 }
-
-
