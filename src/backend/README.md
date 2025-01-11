@@ -67,14 +67,14 @@
 
 1. **Make sure you have Docker installed on your machine.**
 
-2. **In ./project_management/setting.py, change these settings**:
+<!-- 2. **In ./project_management/setting.py, change these settings**:
 - "hosts": [("localhost", 6379)] to "hosts": [("redis", 6379)]
 - 'LOCATION': 'redis://127.0.0.1:6379/2' to 'LOCATION': 'redis://redis:6379/2'
 - CELERY_BROKER_URL = 'redis://localhost:6379/1' to CELERY_BROKER_URL = 'redis://redis:6379/1'
 - CELERY_RESULT_BACKEND = 'redis://localhost:6379/1' to CELERY_RESULT_BACKEND = 'redis://redis:6379/1'
-- 'HOST': 'localhost' to 'HOST': 'postgres'
+- 'HOST': 'localhost' to 'HOST': 'postgres' -->
 
-3. **cd into the backend folder and run the following command:**
+2. **cd into the backend folder and run the following command:**
 
    ```bash
     docker compose up --build
