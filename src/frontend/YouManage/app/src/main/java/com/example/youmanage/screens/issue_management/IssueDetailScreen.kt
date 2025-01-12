@@ -214,6 +214,7 @@ fun IssueDetailScreen(
         },
         bottomBar = {
             IssueBottomBar(
+                enabled = title.isNotEmpty(),
                 onSaveClick = {
                     showSaveDialog = true
                 },
@@ -404,6 +405,7 @@ fun IssueDetailScreen(
 
 @Composable
 fun IssueBottomBar(
+    enabled: Boolean = true,
     onSaveClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
@@ -421,6 +423,7 @@ fun IssueBottomBar(
                 .padding(bottom = 10.dp)
         ) {
             Button(
+                enabled = enabled,
                 onClick = onSaveClick,
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(

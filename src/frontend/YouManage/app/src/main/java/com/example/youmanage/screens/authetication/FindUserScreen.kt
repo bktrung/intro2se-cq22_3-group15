@@ -61,7 +61,7 @@ fun FindUserScreen(
             authenticationViewModel.forgotPasswordSendOTP(Email(user))
             onFindSuccess(user)
         } else if (response is Resource.Error) {
-            errorMessage = response.message.toString()
+            errorMessage = response.message ?: "Unknown error occurred"
             openErrorDialog = true
         }
     }

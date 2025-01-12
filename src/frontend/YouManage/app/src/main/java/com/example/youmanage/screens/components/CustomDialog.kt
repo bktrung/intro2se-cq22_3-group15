@@ -678,9 +678,13 @@ fun ChangeRequestDialog(
                     ) {
                         TextButton(
                             onClick = onDismiss,
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onBackground)
                         ) {
-                            Text("Cancel", fontFamily = fontFamily)
+                            Text(
+                                "Cancel",
+                                fontFamily = fontFamily,
+
+                            )
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(

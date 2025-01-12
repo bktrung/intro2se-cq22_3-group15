@@ -178,6 +178,7 @@ fun AddIssueScreen(
                             )
                         }
                     },
+                    enabled = title.isNotBlank(),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary

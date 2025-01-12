@@ -412,7 +412,8 @@ fun TaskDetailScreen(
                         )
                         showRequestDialog = true
                     }
-                }
+                },
+                enable = taskState.title.isNotEmpty()
             )
         }
     ) { paddingValues ->
@@ -920,6 +921,7 @@ fun ButtonBottomBar(
     titleYes: String = "Save",
     titleNo: String = "Delete",
     onSaveClick: () -> Unit,
+    enable: Boolean = true,
     onDeleteClick: () -> Unit
 ) {
     Box(
@@ -936,6 +938,7 @@ fun ButtonBottomBar(
         ) {
             Button(
                 onClick = onSaveClick,
+                enabled = enable,
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,

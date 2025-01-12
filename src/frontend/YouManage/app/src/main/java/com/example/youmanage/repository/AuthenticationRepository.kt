@@ -31,6 +31,7 @@ import dagger.hilt.android.scopes.ActivityScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
+import org.json.JSONObject
 import retrofit2.HttpException
 import javax.inject.Inject
 
@@ -57,13 +58,28 @@ class AuthenticationRepository @Inject constructor(
     private fun <T> handleHttpException(e: HttpException): Resource.Error<T> {
         return when (e.code()) {
             400 -> {
-                Resource.Error("${e.response()?.errorBody()?.string()}")
+                val errorMessage = try {
+                    // Parse the JSON and extract the "error" value
+                    val jsonObject = JSONObject(e.response()?.errorBody().toString() ?: "{}")
+                    jsonObject.getString("error")
+                } catch (ex: Exception) {
+                    "Invalid error format"
+                }
+                Resource.Error(errorMessage)
             }
             401 -> {
                 Resource.Error("Unauthorized - ${e.response()?.errorBody()?.string()}")
             }
             404 -> {
-                Resource.Error("Not Found - ${e.response()?.errorBody()?.string()}")
+                val errorBody = e.response()?.errorBody()?.string()
+                val errorMessage = try {
+                    // Parse the JSON and extract the "error" value
+                    val jsonObject = JSONObject(errorBody ?: "{}")
+                    jsonObject.getString("error")
+                } catch (ex: Exception) {
+                    "Invalid error format"
+                }
+                Resource.Error(errorMessage)
             }
             else -> {
                 Resource.Error("HTTP Error: ${e.code()}")
