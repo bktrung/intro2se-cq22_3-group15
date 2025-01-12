@@ -164,17 +164,17 @@ class ChangeRequest(models.Model):
                 changes = []
                 
                 if self.new_data:
-                    if 'title' in self.new_data and self.new_data['title'] is not None:
+                    if 'title' in self.new_data and self.new_data['title'] is not None and self.new_data['title'] != '':
                         changes.append(f"title to '{self.new_data['title']}'")
-                    if 'description' in self.new_data and self.new_data['description'] is not None:
+                    if 'description' in self.new_data and self.new_data['description'] is not None and self.new_data['description'] != '':
                         changes.append(f"description to '{self.new_data['description']}'")
-                    if 'status' in self.new_data and self.new_data['status'] is not None:
+                    if 'status' in self.new_data and self.new_data['status'] is not None and self.new_data['status'] != '':
                         changes.append(f"status to {self.new_data['status']}")
-                    if 'priority' in self.new_data and self.new_data['priority'] is not None:
+                    if 'priority' in self.new_data and self.new_data['priority'] is not None and self.new_data['priority'] != '':
                         changes.append(f"priority to {self.new_data['priority']}")
-                    if 'start_date' in self.new_data and self.new_data['start_date'] is not None:
+                    if 'start_date' in self.new_data and self.new_data['start_date'] is not None and str(self.new_data['start_date']) != '':
                         changes.append(f"start date to {self.new_data['start_date']}")
-                    if 'end_date' in self.new_data and self.new_data['end_date'] is not None:
+                    if 'end_date' in self.new_data and self.new_data['end_date'] is not None and str(self.new_data['end_date']) != '':
                         changes.append(f"end date to {self.new_data['end_date']}")
                     if 'assignee_id' in self.new_data and self.new_data['assignee_id'] is not None:
                         try:
@@ -200,11 +200,11 @@ class ChangeRequest(models.Model):
                 changes = []
                 
                 if self.new_data:
-                    if 'role_name' in self.new_data:
+                    if 'role_name' in self.new_data and self.new_data['role_name'] is not None and self.new_data['role_name'] != '':
                         changes.append(f"name to '{self.new_data['role_name']}'")
-                    if 'description' in self.new_data:
-                        changes.append("description")
-                    if 'users' in self.new_data:
+                    if 'description' in self.new_data and self.new_data['description'] is not None and self.new_data['description'] != '':
+                        changes.append(f"description to '{self.new_data['description']}'")
+                    if 'users' in self.new_data and self.new_data['users'] is not None and len(self.new_data['users']) > 0:
                         changes.append("assigned users")
                 
                 changes_text = ", ".join(changes)
