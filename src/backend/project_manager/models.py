@@ -164,24 +164,24 @@ class ChangeRequest(models.Model):
                 changes = []
                 
                 if self.new_data:
-                    if 'title' in self.new_data:
+                    if 'title' in self.new_data and self.new_data['title'] is not None:
                         changes.append(f"title to '{self.new_data['title']}'")
-                    if 'description' in self.new_data:
-                        changes.append("description")
-                    if 'status' in self.new_data:
+                    if 'description' in self.new_data and self.new_data['description'] is not None:
+                        changes.append(f"description to '{self.new_data['description']}'")
+                    if 'status' in self.new_data and self.new_data['status'] is not None:
                         changes.append(f"status to {self.new_data['status']}")
-                    if 'priority' in self.new_data:
+                    if 'priority' in self.new_data and self.new_data['priority'] is not None:
                         changes.append(f"priority to {self.new_data['priority']}")
-                    if 'start_date' in self.new_data:
-                        changes.append("start date")
-                    if 'end_date' in self.new_data:
-                        changes.append("end date")
-                    if 'assignee_id' in self.new_data:
+                    if 'start_date' in self.new_data and self.new_data['start_date'] is not None:
+                        changes.append(f"start date to {self.new_data['start_date']}")
+                    if 'end_date' in self.new_data and self.new_data['end_date'] is not None:
+                        changes.append(f"end date to {self.new_data['end_date']}")
+                    if 'assignee_id' in self.new_data and self.new_data['assignee_id'] is not None:
                         try:
                             new_assignee = User.objects.get(id=self.new_data['assignee_id'])
                             changes.append(f"assignee to {new_assignee.username}")
                         except User.DoesNotExist:
-                            changes.append("assignee")
+                            changes.append("assignee to None")
                 
                 changes_text = ", ".join(changes)
                 return f"{requester_name} wants to update {changes_text} for task: '{title}'"
