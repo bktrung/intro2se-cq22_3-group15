@@ -73,11 +73,13 @@ fun CreateAccountScreen(
         when (signUpResponse) {
             is Resource.Success -> {
                 onCreateSuccess(signUpResponse.data?.email.toString())
+                isLoading = false
             }
 
             is Resource.Error -> {
                 errorMessage = extractMessages(signUpResponse.message.toString())
                 openAlertDialog = true
+                isLoading = false
             }
 
             is Resource.Loading -> {

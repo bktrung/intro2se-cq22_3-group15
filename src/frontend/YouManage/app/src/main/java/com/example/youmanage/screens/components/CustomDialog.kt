@@ -173,7 +173,9 @@ fun ErrorDialog(
                         shape = RoundedCornerShape(10.dp)
                     ),
                 shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.onError)
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.onError
+                )
             ) {
                 Column(
                     modifier = Modifier
@@ -192,14 +194,14 @@ fun ErrorDialog(
                         fontFamily = fontFamily,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                     Text(
                         text = content,
                         fontFamily = fontFamily,
                         fontSize = 16.sp,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.padding(bottom = 24.dp),
                         textAlign = TextAlign.Center
                     )
@@ -210,10 +212,13 @@ fun ErrorDialog(
                         TextButton(
                             onClick = onDismiss,
                             colors = ButtonDefaults.textButtonColors(
-                                contentColor = Color.White
+                                contentColor = MaterialTheme.colorScheme.onBackground
                             )
                         ) {
-                            Text("Cancel", fontFamily = fontFamily)
+                            Text("Cancel",
+                                fontFamily = fontFamily,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
