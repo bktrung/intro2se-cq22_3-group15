@@ -37,7 +37,14 @@ fun <T> handleHttpException(e: HttpException): Resource.Error<T> {
     return when (e.code()) {
         400 -> {
             val errorBody = e.response()?.errorBody()?.string()
-            Resource.Error(errorBody.toString())
+            val errorMessage = try {
+                // Parse the JSON and extract the "error" value
+                val jsonObject = JSONObject(errorBody ?: "{}")
+                jsonObject.getString("error")
+            } catch (ex: Exception) {
+                "Invalid error format"
+            }
+            Resource.Error(errorMessage)
         }
 
         404 -> Resource.Error("User not found")
