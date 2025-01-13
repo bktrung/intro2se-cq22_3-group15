@@ -103,6 +103,15 @@ fun HomeScreen(
 
     var projectList by remember { mutableStateOf<List<Project>>(emptyList()) }
 
+    fun onSearch(query: String) {
+        projectManagementViewModel.searchProject(
+            q = query,
+            authorization = "Bearer ${accessToken.value}"
+        )
+    }
+
+
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -118,6 +127,7 @@ fun HomeScreen(
                 value = searchQuery,
                 onValueChange = { newValue ->
                     searchQuery = newValue
+                    onSearch(newValue)
                 },
                 placeholder = {
                     Text(
@@ -134,11 +144,7 @@ fun HomeScreen(
                 },
                 keyboardActions = KeyboardActions(
                     onSearch = {
-                        projectManagementViewModel.searchProject(
-                            q = searchQuery,
-                            authorization = "Bearer ${accessToken.value}"
-                        )
-                        //onSearch(searchQuery) // Gọi hàm tìm kiếm khi nhấn "Enter"
+                        onSearch(searchQuery) // Gọi hàm tìm kiếm khi nhấn "Enter"
                     }
                 ),
                 keyboardOptions = KeyboardOptions.Default.copy(

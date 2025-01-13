@@ -614,6 +614,7 @@ fun TaskDetailScreen(
         EditCommentDialog(
             title = "Edit comment",
             content = currentComment.content,
+            isHost = isHost == true,
             showDialog = showCommentEditor,
             onDismiss = { showCommentEditor = false },
             onSave = { content ->
@@ -975,6 +976,7 @@ fun EditCommentDialog(
     title: String,
     content: String = "Hello",
     showDialog: Boolean = true,
+    isHost: Boolean = false,
     onDismiss: () -> Unit = {},
     onDelete: () -> Unit = {},
     onSave: (String) -> Unit = {}
@@ -1017,6 +1019,7 @@ fun EditCommentDialog(
 
                     OutlinedTextField(
                         value = comment,
+                        readOnly = isHost,
                         onValueChange = { comment = it },
                         maxLines = Int.MAX_VALUE,
                         textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface), // Màu chữ dễ đọc
@@ -1031,17 +1034,19 @@ fun EditCommentDialog(
                         horizontalArrangement = Arrangement.End
                     ) {
 
-                        Button(
-                            onClick = { onSave(comment) },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.height(40.dp) // Đảm bảo nút cao vừa phải
-                        ) {
-                            Text(
-                                "Save",
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                fontWeight = FontWeight.Bold
-                            )
+                        if(!isHost) {
+                            Button(
+                                onClick = { onSave(comment) },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.height(40.dp) // Đảm bảo nút cao vừa phải
+                            ) {
+                                Text(
+                                    "Save",
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
 
                         Spacer(modifier = Modifier.width(8.dp))
