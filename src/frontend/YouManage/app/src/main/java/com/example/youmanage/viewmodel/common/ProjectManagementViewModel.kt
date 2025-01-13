@@ -129,7 +129,7 @@ class ProjectManagementViewModel @Inject constructor(
 
     fun updateProject(id: String, project: ProjectCreate, authorization: String) {
         viewModelScopeWithSupervisor.launch {
-            repository.updateProject(id = id, project = project, authorization = authorization)
+            _updateProjectResponse.value = repository.updateProject(id = id, project = project, authorization = authorization)
         }
     }
 

@@ -177,6 +177,7 @@ fun UpdateProjectScreen(
             }
             Toast.makeText(context, "Updated Successfully!", Toast.LENGTH_SHORT).show()
         } else if(updateResponse is Resource.Error) {
+
             Toast.makeText(context, "Updated Failed!", Toast.LENGTH_SHORT).show()
         }
     }
