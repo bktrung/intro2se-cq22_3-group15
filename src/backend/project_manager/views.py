@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.db.models import Q
 from .models import *
 from .serializers import *
 from .permissons import *
@@ -635,6 +636,10 @@ class ProjectHostCheckView(generics.GenericAPIView):
 class ProjectSearchView(generics.GenericAPIView):
     def get(self, request):
         query = request.query_params.get('q', '')
-        projects = Project.objects.filter(name__icontains=query)
+        user = request.user
+        projects = Project.objects.filter(
+            Q(name__icontains=query) &
+            (Q(host=user) | Q(members=user))
+        )
         serializer = ProjectSerializer(projects, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

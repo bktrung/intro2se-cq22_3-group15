@@ -368,6 +368,6 @@ def notify_role_assignment(sender, instance, action, pk_set, **kwargs):
         for user in users:
             # Log notification
             log_notification(title, body, user, object)
-            send_notification_to_user(title, body, user, object)
+            send_notification_to_user(title, body, user)
             send_notification_in_app(title, body, user, object)
             
