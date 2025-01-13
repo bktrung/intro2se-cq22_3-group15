@@ -40,6 +40,9 @@ class ProjectManagementViewModel @Inject constructor(
     private val _projects = MutableLiveData<Resource<Projects>>()
     val projects: LiveData<Resource<Projects>> get() = _projects
 
+    private val _projectSearched = MutableLiveData<Resource<Projects>>()
+    val projectSearched: LiveData<Resource<Projects>> get() = _projectSearched
+
     private val _project = MutableLiveData<Resource<Project>>()
     val project: LiveData<Resource<Project>> get() = _project
 
@@ -104,6 +107,15 @@ class ProjectManagementViewModel @Inject constructor(
                 repository.getProjectList(authorization = authorization)
             }
             _projects.value = response
+        }
+    }
+
+    fun searchProject(q: String, authorization: String) {
+        viewModelScopeWithSupervisor.launch {
+            val response = withContext(Dispatchers.IO){
+                repository.searchProject(q, authorization)
+            }
+            _projects.value = repository.searchProject(q, authorization)
         }
     }
 

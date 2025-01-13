@@ -101,15 +101,7 @@ fun HomeScreen(
         }
     }
 
-
     var projectList by remember { mutableStateOf<List<Project>>(emptyList()) }
-
-    fun onSearch(query: String) {
-        val filteredList = projectList.filter { project ->
-            project.name.contains(query, ignoreCase = true)
-        }
-        projectList = filteredList
-    }
 
     Box(
         modifier = Modifier
@@ -124,7 +116,9 @@ fun HomeScreen(
         ) {
             TextField(
                 value = searchQuery,
-                onValueChange = { newValue -> searchQuery = newValue },
+                onValueChange = { newValue ->
+                    searchQuery = newValue
+                },
                 placeholder = {
                     Text(
                         "Find your project",
@@ -140,7 +134,11 @@ fun HomeScreen(
                 },
                 keyboardActions = KeyboardActions(
                     onSearch = {
-                        onSearch(searchQuery) // Gọi hàm tìm kiếm khi nhấn "Enter"
+                        projectManagementViewModel.searchProject(
+                            q = searchQuery,
+                            authorization = "Bearer ${accessToken.value}"
+                        )
+                        //onSearch(searchQuery) // Gọi hàm tìm kiếm khi nhấn "Enter"
                     }
                 ),
                 keyboardOptions = KeyboardOptions.Default.copy(
@@ -209,21 +207,34 @@ fun HomeScreen(
                 is Resource.Success -> {
                     projectList = (projects as Resource.Success<Projects>).data!!
 
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        items(projectList.size) { item ->
-                            ProjectItem(
-                                title = projectList[item].name,
-                                team = "",
-                                backgroundColor = Color(randomColor(projectList[item].id)),
-                                onViewProject = {
-                                    val id = projectList[item].id
-                                    if (id >= 0) {
-                                        onViewProject(id)
-                                    }
-                                }
+                    if (projectList.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Text(
+                                text = "No Project Found",
+                                style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.align(Alignment.Center)
                             )
+                        }
+                    } else {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            items(projectList.size) { item ->
+                                ProjectItem(
+                                    title = projectList[item].name,
+                                    team = "",
+                                    backgroundColor = Color(randomColor(projectList[item].id)),
+                                    onViewProject = {
+                                        val id = projectList[item].id
+                                        if (id >= 0) {
+                                            onViewProject(id)
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
                 }
