@@ -211,17 +211,19 @@ class RoleRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     
 
 class RoleManagementView(generics.GenericAPIView):
-    permission_classes = [IsProjectHostOrReadOnly]
-    
     def post(self, request, project_id, pk, action):
         project = get_object_or_404(Project, id=project_id)
         role = get_object_or_404(Role, pk=pk, project=project)
         
+        if request.user not in project.members.all():
+            raise PermissionDenied({"error": "You must be a project member."})
+        
         if action == 'unassign' and request.data.get('user_id') == str(request.user.id):
             return self.unassign_role(request, project, role)
-            
-        self.check_object_permissions(request, role)
         
+        if request.user != project.host:
+            raise PermissionDenied({"error": "Only the project host can manage roles."})
+
         if action == 'assign':
             return self.assign_role(request, project, role)
         elif action == 'unassign':
