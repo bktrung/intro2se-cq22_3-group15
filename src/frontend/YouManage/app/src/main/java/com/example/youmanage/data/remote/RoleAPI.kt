@@ -59,6 +59,14 @@ interface RoleAPI {
         @Header("Authorization") authorization: String
     ): Detail
 
+    @POST("projects/{projectId}/roles/{roleId}/unassign/")
+    suspend fun unassignRole(
+        @Path("projectId") projectId: String,
+        @Path("roleId") roleId: String,
+        @Body member: Assign,
+        @Header("Authorization") authorization: String
+    ) : Detail
+
     @GET("/projects/{project_id}/roles/{role_id}/non-members/")
     suspend fun getNonMembers(
         @Path("project_id") projectId: String,

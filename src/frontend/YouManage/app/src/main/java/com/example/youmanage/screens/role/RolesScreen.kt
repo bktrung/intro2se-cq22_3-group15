@@ -401,7 +401,7 @@ fun RolesScreen(
             roleViewmodel.assignRole(
                 projectId,
                 selectedRole.toString(),
-                Assign(it.id),
+                Assign(it.id.toString()),
                 "assign",
                 "Bearer ${accessToken.value}"
             )

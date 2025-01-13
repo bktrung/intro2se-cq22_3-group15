@@ -77,14 +77,13 @@ class MemberProfileViewModel @Inject constructor(
         }
     }
 
-    fun unAssignRole(projectId: String,roleId: String, memberId: Int, token: String) {
+    fun unAssignRole(projectId: String,roleId: String, member: Assign, token: String) {
         viewModelScope.launch {
             val response = withContext(Dispatchers.IO) {
-                projectManagementRepository.assignRole(
+                projectManagementRepository.unassignRole(
                     projectId= projectId,
                     roleId = roleId,
-                    action = "unassign",
-                    member = Assign(memberId),
+                    member = member,
                     authorization = "Bearer $token"
                 )
             }

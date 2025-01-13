@@ -1,5 +1,6 @@
 package com.example.youmanage.screens.project_management
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -51,6 +52,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.youmanage.data.remote.projectmanagement.Assign
 import com.example.youmanage.screens.components.AlertDialog
 import com.example.youmanage.utils.Constants.WEB_SOCKET
 import com.example.youmanage.utils.randomAvatar
@@ -87,6 +89,7 @@ fun MemberProfileScreen(
 
     var showUnAssignDialog by remember { mutableStateOf(false) }
     var isSelectedRole by remember { mutableIntStateOf(-1) }
+    var unassignRole by remember { mutableStateOf(false) }
 
     val webSocketUrl = "${WEB_SOCKET}project/$projectId/"
 
@@ -117,8 +120,23 @@ fun MemberProfileScreen(
         }
     }
 
+    LaunchedEffect(unassignRole){
+        if(unassignRole && accessToken.value != null){
+
+                    memberProfileViewModel.unAssignRole(
+                        projectId = projectId,
+                        roleId = isSelectedRole.toString(),
+                        member = Assign(memberId),
+                        token = accessToken.value.toString()
+                    )
+
+        }
+
+    }
+
     LaunchedEffect(unAssignResponse) {
         if (unAssignResponse) {
+            unassignRole  = false
             supervisorScope {
                 launch {
                    memberProfileViewModel.getRoles(
@@ -244,20 +262,7 @@ fun MemberProfileScreen(
         onDismiss = { showUnAssignDialog = false },
         onConfirm = {
 
-            CoroutineScope(Dispatchers.IO).launch {
-                accessToken.value?.let { token ->
-                    if (isSelectedRole != -1) {
-                        withContext(Dispatchers.IO) {
-                            memberProfileViewModel.unAssignRole(
-                                projectId = projectId,
-                                roleId = isSelectedRole.toString(),
-                                memberId = member.id,
-                                token = token
-                            )
-                        }
-                    }
-                }
-            }
+            unassignRole = true
             showUnAssignDialog = false
 
         }
