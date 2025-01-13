@@ -360,11 +360,14 @@ def notify_role_assignment(sender, instance, action, pk_set, **kwargs):
     if action in ["post_add", "post_remove"]:
         users = User.objects.filter(pk__in=pk_set)
         title = "Role Assignment"
+        body = f"You have been {'assigned to' if action == 'post_add' else 'removed from'} role {instance.role_name} in project {instance.project.name}"
+        object = {
+            "project_id": instance.project.id,
+            "role_id": instance.id
+        }
         for user in users:
-            body = f"You have been {'assigned to' if action == 'post_add' else 'removed from'} role {instance.role_name} in project {instance.project.name}"
-            
             # Log notification
-            log_notification(title, body, user)
-            send_notification_to_user(title, body, user)
-            send_notification_in_app(title, body, user)
+            log_notification(title, body, user, object)
+            send_notification_to_user(title, body, user, object)
+            send_notification_in_app(title, body, user, object)
             

@@ -630,3 +630,11 @@ class ProjectHostCheckView(generics.GenericAPIView):
     def get(self, request, pk):
         project = get_object_or_404(Project, pk=pk)
         return Response({"is_host": project.host == request.user}, status=status.HTTP_200_OK)
+    
+    
+class ProjectSearchView(generics.GenericAPIView):
+    def get(self, request):
+        query = request.query_params.get('q', '')
+        projects = Project.objects.filter(name__icontains=query)
+        serializer = ProjectSerializer(projects, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

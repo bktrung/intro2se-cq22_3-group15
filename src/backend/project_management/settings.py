@@ -214,3 +214,13 @@ CSRF_COOKIE_SECURE = True
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
+
+
+JAZZMIN_SETTINGS = {
+    # Other Jazzmin configurations...
+
+    "topmenu_links": [
+        # Add a custom link to the analytics page
+        {"name": "Analytics", "url": "/admin_tools_stats/analytics/", "permissions": ["auth.view_user"]},
+    ],
+}

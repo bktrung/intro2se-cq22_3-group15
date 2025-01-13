@@ -27,4 +27,5 @@ urlpatterns = [
     path('my-tasks/', TaskUserListView.as_view(), name='user-task-list'),
     path('projects/<int:pk>/quit/', ProjectMemberQuitView.as_view(), name='project-member-quit'),
     path('projects/<int:pk>/check-host/', ProjectHostCheckView.as_view(), name='project-host-check'),
+    path('projects/search/', ProjectSearchView.as_view(), name='project-search'),
 ]
