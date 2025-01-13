@@ -20,6 +20,7 @@ import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ProjectAPI {
     @GET("/projects/")
@@ -32,6 +33,12 @@ interface ProjectAPI {
         @Body project: ProjectCreate,
         @Header("Authorization") authorization: String
     ): Project
+
+    @GET("/projects/search")
+    suspend fun searchProject(
+        @Query("q") q: String,
+        @Header("Authorization") authorization: String
+    ): Projects
 
     @GET("/projects/{id}/")
     suspend fun getProject(

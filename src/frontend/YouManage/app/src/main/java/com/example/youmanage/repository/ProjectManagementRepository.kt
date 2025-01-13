@@ -94,6 +94,9 @@ class ProjectManagementRepository @Inject constructor(
         }
     }
 
+    suspend fun searchProject(q: String, authorization: String): Resource<Projects> =
+        safeApiCall { api.searchProject(q, authorization) }
+
     suspend fun addMember(id: String, member: Username, authorization: String): Resource<Detail> =
         safeApiCall { api.addMember(id, member, authorization) }
 

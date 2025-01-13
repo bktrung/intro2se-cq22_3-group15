@@ -559,7 +559,7 @@ fun TaskDetailScreen(
                 onClick = { comment ->
                     currentComment = comment
 
-                    if (currentComment.author.id == user?.data?.id) {
+                    if (currentComment.author.id == user?.data?.id || isHost == true) {
                         showCommentEditor = true
                     }
                 }
