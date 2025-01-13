@@ -40,4 +40,5 @@ application = ProtocolTypeRouter({
 # python manage.py runserver 8000
 # daphne -p 8001 project_management.asgi:application // production
 # docker run --rm -p 6379:6379 redis:7
+# sudo service redis-server start
 # python manage.py runserver & celery -A project_management worker -l info -B
